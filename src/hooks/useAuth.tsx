@@ -20,23 +20,33 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async (userId: string) => {
-    // Fetch profile data
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    
-    setProfile(profileData);
+    try {
+      // Fetch profile data
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+      }
+      setProfile(profileData);
 
-    // Fetch user roles from user_roles table (source of truth for RBAC)
-    const { data: userRoles } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId);
-    
-    const fetchedRoles = userRoles?.map(r => r.role as AppRole) || [];
-    setRoles(fetchedRoles);
+      // Fetch user roles from user_roles table (source of truth for RBAC)
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      
+      if (rolesError) {
+        console.error('Error fetching roles:', rolesError);
+      }
+      const fetchedRoles = userRoles?.map(r => r.role as AppRole) || [];
+      setRoles(fetchedRoles);
+    } catch (error) {
+      console.error('Error in fetchUserData:', error);
+    }
   };
 
   useEffect(() => {
