@@ -23,6 +23,7 @@ import PeritosPage from "./pages/PeritosPage";
 import PeritoFormPage from "./pages/PeritoFormPage";
 import ProcessosPage from "./pages/ProcessosPage";
 import ProcessoFormPage from "./pages/ProcessoFormPage";
+import ProtocolosPage from "./pages/ProtocolosPage";
 import FuncionariosPage from "./pages/FuncionariosPage";
 import FuncionarioFormPage from "./pages/FuncionarioFormPage";
 import CallCenterPage from "./pages/CallCenterPage";
@@ -76,7 +77,9 @@ const App = () => (
           <Route path="/cadastros/peritos" element={<ProtectedRoute><PeritosPage /></ProtectedRoute>} />
           <Route path="/cadastros/peritos/novo" element={<ProtectedRoute><PeritoFormPage /></ProtectedRoute>} />
           <Route path="/cadastros/peritos/:id/editar" element={<ProtectedRoute><PeritoFormPage /></ProtectedRoute>} />
-          {/* Processos */}
+          {/* Protocolos */}
+          <Route path="/protocolos" element={<ProtectedRoute><ProtocolosPage /></ProtectedRoute>} />
+          {/* Processos (Legado) */}
           <Route path="/processos" element={<ProtectedRoute><ProcessosPage /></ProtectedRoute>} />
           <Route path="/processos/novo" element={<ProtectedRoute><ProcessoFormPage /></ProtectedRoute>} />
           {/* Funcionários */}
