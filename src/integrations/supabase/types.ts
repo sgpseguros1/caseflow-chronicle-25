@@ -14,6 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
+      advogados: {
+        Row: {
+          cidade: string | null
+          created_at: string
+          email: string | null
+          especialidades: string[] | null
+          id: string
+          nome: string
+          oab: string
+          situacao_oab: string | null
+          status: string
+          telefone: string | null
+          uf: string
+          updated_at: string
+          verificado_em: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          created_at?: string
+          email?: string | null
+          especialidades?: string[] | null
+          id?: string
+          nome: string
+          oab: string
+          situacao_oab?: string | null
+          status?: string
+          telefone?: string | null
+          uf: string
+          updated_at?: string
+          verificado_em?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          created_at?: string
+          email?: string | null
+          especialidades?: string[] | null
+          id?: string
+          nome?: string
+          oab?: string
+          situacao_oab?: string | null
+          status?: string
+          telefone?: string | null
+          uf?: string
+          updated_at?: string
+          verificado_em?: string | null
+        }
+        Relationships: []
+      }
+      agenda: {
+        Row: {
+          created_at: string
+          data_evento: string
+          descricao: string | null
+          id: string
+          processo_id: string | null
+          responsavel_id: string | null
+          status: string
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_evento: string
+          descricao?: string | null
+          id?: string
+          processo_id?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tipo?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_evento?: string
+          descricao?: string | null
+          id?: string
+          processo_id?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -115,6 +217,48 @@ export type Database = {
           },
         ]
       }
+      funcionarios: {
+        Row: {
+          cargo: string
+          cpf: string | null
+          created_at: string
+          departamento: string | null
+          email: string
+          id: string
+          nome: string
+          status: string
+          telefone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cargo?: string
+          cpf?: string | null
+          created_at?: string
+          departamento?: string | null
+          email: string
+          id?: string
+          nome: string
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cargo?: string
+          cpf?: string | null
+          created_at?: string
+          departamento?: string | null
+          email?: string
+          id?: string
+          nome?: string
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       gestores: {
         Row: {
           cpf: string | null
@@ -151,6 +295,235 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          origem: string | null
+          prioridade: string | null
+          responsavel_id: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          origem?: string | null
+          prioridade?: string | null
+          responsavel_id?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          origem?: string | null
+          prioridade?: string | null
+          responsavel_id?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metricas_diarias: {
+        Row: {
+          clientes_atendidos: number | null
+          created_at: string
+          data: string
+          descricao: string | null
+          funcionario_id: string
+          id: string
+          pastas_liberadas: number | null
+          pendencias: string | null
+          processos_movidos: number | null
+        }
+        Insert: {
+          clientes_atendidos?: number | null
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          funcionario_id: string
+          id?: string
+          pastas_liberadas?: number | null
+          pendencias?: string | null
+          processos_movidos?: number | null
+        }
+        Update: {
+          clientes_atendidos?: number | null
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          funcionario_id?: string
+          id?: string
+          pastas_liberadas?: number | null
+          pendencias?: string | null
+          processos_movidos?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metricas_diarias_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      peritos: {
+        Row: {
+          created_at: string
+          email: string | null
+          especialidade: string | null
+          id: string
+          nome: string
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          especialidade?: string | null
+          id?: string
+          nome: string
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          especialidade?: string | null
+          id?: string
+          nome?: string
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      processos: {
+        Row: {
+          advogado_id: string | null
+          cliente_id: string | null
+          created_at: string
+          data_abertura: string | null
+          data_conclusao: string | null
+          etiquetas: string[] | null
+          honorarios: number | null
+          id: string
+          numero: string | null
+          observacoes: string | null
+          responsavel_id: string | null
+          seguradora_id: string | null
+          status: string
+          tipo: string
+          titulo: string | null
+          updated_at: string
+          valor_estimado: number | null
+          valor_final: number | null
+        }
+        Insert: {
+          advogado_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          data_abertura?: string | null
+          data_conclusao?: string | null
+          etiquetas?: string[] | null
+          honorarios?: number | null
+          id?: string
+          numero?: string | null
+          observacoes?: string | null
+          responsavel_id?: string | null
+          seguradora_id?: string | null
+          status?: string
+          tipo: string
+          titulo?: string | null
+          updated_at?: string
+          valor_estimado?: number | null
+          valor_final?: number | null
+        }
+        Update: {
+          advogado_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          data_abertura?: string | null
+          data_conclusao?: string | null
+          etiquetas?: string[] | null
+          honorarios?: number | null
+          id?: string
+          numero?: string | null
+          observacoes?: string | null
+          responsavel_id?: string | null
+          seguradora_id?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string | null
+          updated_at?: string
+          valor_estimado?: number | null
+          valor_final?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processos_advogado_id_fkey"
+            columns: ["advogado_id"]
+            isOneToOne: false
+            referencedRelation: "advogados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processos_seguradora_id_fkey"
+            columns: ["seguradora_id"]
+            isOneToOne: false
+            referencedRelation: "seguradoras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -177,6 +550,42 @@ export type Database = {
           is_active?: boolean
           name?: string
           role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      seguradoras: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome_fantasia: string | null
+          razao_social: string
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome_fantasia?: string | null
+          razao_social: string
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome_fantasia?: string | null
+          razao_social?: string
+          status?: string
+          telefone?: string | null
           updated_at?: string
         }
         Relationships: []
