@@ -7,6 +7,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ClientsPage from "./pages/ClientsPage";
 import ClientFormPage from "./pages/ClientFormPage";
 import GestoresPage from "./pages/GestoresPage";
@@ -52,6 +54,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           {/* Cadastros */}
           <Route path="/cadastros/gestores" element={<ProtectedRoute><GestoresPage /></ProtectedRoute>} />

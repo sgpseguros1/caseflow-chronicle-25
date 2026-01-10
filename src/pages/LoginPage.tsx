@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,6 +76,11 @@ export default function LoginPage() {
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
+          <div className="mt-4 text-center">
+            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+              Esqueci minha senha
+            </Link>
+          </div>
           <p className="text-xs text-muted-foreground text-center mt-4">
             Para criar uma conta, solicite ao administrador do sistema.
           </p>
