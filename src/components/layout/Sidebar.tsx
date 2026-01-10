@@ -54,6 +54,7 @@ const menuItems: MenuItem[] = [
   { icon: Bell, label: 'Alertas', path: '/alertas' },
   { icon: MessageSquare, label: 'Comunicação', path: '/comunicacao' },
   { icon: Bot, label: 'Módulo IA', path: '/ia' },
+  { icon: Shield, label: 'Usuários', path: '/admin/usuarios', adminOnly: true },
   { icon: Scale, label: 'Relatórios', path: '/relatorios', adminOnly: true },
 ];
 
