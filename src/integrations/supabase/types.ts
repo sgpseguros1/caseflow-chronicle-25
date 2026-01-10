@@ -176,24 +176,140 @@ export type Database = {
           },
         ]
       }
+      client_alerts: {
+        Row: {
+          client_id: string
+          created_at: string
+          descricao: string | null
+          id: string
+          prioridade: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string | null
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          prioridade?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string | null
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          prioridade?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string | null
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_alerts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_documents: {
+        Row: {
+          client_id: string
+          created_at: string
+          description: string | null
+          document_category: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          description?: string | null
+          document_category?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          document_category?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
+          accident_date: string | null
+          accident_location: string | null
+          accident_type: string | null
           address: string | null
+          admission_date: string | null
+          admission_hospital: string | null
+          advogado_id: string | null
           bank_account: string | null
           bank_account_type: string | null
           bank_agency: string | null
           bank_name: string | null
           birth_date: string | null
+          body_part_affected: string | null
           cep: string | null
+          cid_code: string | null
           city: string | null
           civil_status: string | null
+          client_status: string | null
           code: number
+          company_name: string | null
           complement: string | null
           cpf: string | null
           created_at: string
           created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          deletion_reason: string | null
+          disability_percentage: number | null
           email: string | null
+          had_surgery: boolean | null
+          has_police_report: boolean | null
+          has_sequelae: boolean | null
+          hospitalization_days: number | null
           id: string
+          injuries: string | null
+          injury_severity: string | null
+          is_clt: boolean | null
+          last_contact_date: string | null
           name: string
           nationality: string | null
           naturality: string | null
@@ -202,28 +318,59 @@ export type Database = {
           number: string | null
           phone1: string | null
           phone2: string | null
+          police_report_number: string | null
           profession: string | null
+          referral_source: string | null
+          referral_type: string | null
+          referrer_name: string | null
+          responsavel_id: string | null
           rg: string | null
+          seguradora_id: string | null
+          transfer_date: string | null
+          transfer_hospital: string | null
           uf: string | null
           updated_at: string
+          was_hospitalized: boolean | null
         }
         Insert: {
+          accident_date?: string | null
+          accident_location?: string | null
+          accident_type?: string | null
           address?: string | null
+          admission_date?: string | null
+          admission_hospital?: string | null
+          advogado_id?: string | null
           bank_account?: string | null
           bank_account_type?: string | null
           bank_agency?: string | null
           bank_name?: string | null
           birth_date?: string | null
+          body_part_affected?: string | null
           cep?: string | null
+          cid_code?: string | null
           city?: string | null
           civil_status?: string | null
+          client_status?: string | null
           code?: number
+          company_name?: string | null
           complement?: string | null
           cpf?: string | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
+          disability_percentage?: number | null
           email?: string | null
+          had_surgery?: boolean | null
+          has_police_report?: boolean | null
+          has_sequelae?: boolean | null
+          hospitalization_days?: number | null
           id?: string
+          injuries?: string | null
+          injury_severity?: string | null
+          is_clt?: boolean | null
+          last_contact_date?: string | null
           name: string
           nationality?: string | null
           naturality?: string | null
@@ -232,28 +379,59 @@ export type Database = {
           number?: string | null
           phone1?: string | null
           phone2?: string | null
+          police_report_number?: string | null
           profession?: string | null
+          referral_source?: string | null
+          referral_type?: string | null
+          referrer_name?: string | null
+          responsavel_id?: string | null
           rg?: string | null
+          seguradora_id?: string | null
+          transfer_date?: string | null
+          transfer_hospital?: string | null
           uf?: string | null
           updated_at?: string
+          was_hospitalized?: boolean | null
         }
         Update: {
+          accident_date?: string | null
+          accident_location?: string | null
+          accident_type?: string | null
           address?: string | null
+          admission_date?: string | null
+          admission_hospital?: string | null
+          advogado_id?: string | null
           bank_account?: string | null
           bank_account_type?: string | null
           bank_agency?: string | null
           bank_name?: string | null
           birth_date?: string | null
+          body_part_affected?: string | null
           cep?: string | null
+          cid_code?: string | null
           city?: string | null
           civil_status?: string | null
+          client_status?: string | null
           code?: number
+          company_name?: string | null
           complement?: string | null
           cpf?: string | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
+          disability_percentage?: number | null
           email?: string | null
+          had_surgery?: boolean | null
+          has_police_report?: boolean | null
+          has_sequelae?: boolean | null
+          hospitalization_days?: number | null
           id?: string
+          injuries?: string | null
+          injury_severity?: string | null
+          is_clt?: boolean | null
+          last_contact_date?: string | null
           name?: string
           nationality?: string | null
           naturality?: string | null
@@ -262,17 +440,47 @@ export type Database = {
           number?: string | null
           phone1?: string | null
           phone2?: string | null
+          police_report_number?: string | null
           profession?: string | null
+          referral_source?: string | null
+          referral_type?: string | null
+          referrer_name?: string | null
+          responsavel_id?: string | null
           rg?: string | null
+          seguradora_id?: string | null
+          transfer_date?: string | null
+          transfer_hospital?: string | null
           uf?: string | null
           updated_at?: string
+          was_hospitalized?: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_advogado_id_fkey"
+            columns: ["advogado_id"]
+            isOneToOne: false
+            referencedRelation: "advogados"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clients_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_seguradora_id_fkey"
+            columns: ["seguradora_id"]
+            isOneToOne: false
+            referencedRelation: "seguradoras"
             referencedColumns: ["id"]
           },
         ]
