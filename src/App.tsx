@@ -18,6 +18,8 @@ import VidaEmpresarialFormPage from "./pages/VidaEmpresarialFormPage";
 import DanosFormPage from "./pages/DanosFormPage";
 import JudicialFormPage from "./pages/JudicialFormPage";
 import FinanceiroFormPage from "./pages/FinanceiroFormPage";
+import GestoresPage from "./pages/GestoresPage";
+import GestorFormPage from "./pages/GestorFormPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -71,6 +73,10 @@ const App = () => (
           {/* Clientes */}
           <Route path="/clientes" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
           <Route path="/clientes/novo" element={<ProtectedRoute><ClientFormPage /></ProtectedRoute>} />
+          {/* Gestores */}
+          <Route path="/cadastros/gestores" element={<ProtectedRoute><GestoresPage /></ProtectedRoute>} />
+          <Route path="/cadastros/gestores/novo" element={<ProtectedRoute><GestorFormPage /></ProtectedRoute>} />
+          <Route path="/cadastros/gestores/:id/editar" element={<ProtectedRoute><GestorFormPage /></ProtectedRoute>} />
           {/* Financeiro */}
           <Route path="/financeiro" element={<ProtectedRoute><div className="text-center py-12"><h1 className="text-2xl font-bold">Financeiro</h1></div></ProtectedRoute>} />
           <Route path="/financeiro/novo" element={<ProtectedRoute><FinanceiroFormPage /></ProtectedRoute>} />
