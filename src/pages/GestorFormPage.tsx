@@ -23,12 +23,13 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGestor, useCreateGestor, useUpdateGestor } from '@/hooks/useGestores';
+import { cpfValidation, formatCPF } from '@/lib/documentValidation';
 
 const formSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo'),
   email: z.string().email('Email inválido').max(255, 'Email muito longo'),
   telefone: z.string().optional(),
-  cpf: z.string().optional(),
+  cpf: z.string().optional().refine(cpfValidation, { message: 'CPF inválido' }),
   status: z.string().default('ativo'),
 });
 

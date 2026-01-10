@@ -10,12 +10,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFuncionario, useCreateFuncionario, useUpdateFuncionario } from '@/hooks/useFuncionarios';
+import { cpfValidation, formatCPF } from '@/lib/documentValidation';
 
 const formSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   email: z.string().email('Email inválido'),
   telefone: z.string().optional(),
-  cpf: z.string().optional(),
+  cpf: z.string().optional().refine(cpfValidation, { message: 'CPF inválido' }),
   cargo: z.string().min(1, 'Cargo é obrigatório'),
   departamento: z.string().optional(),
   status: z.string().default('ativo'),

@@ -10,11 +10,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSeguradora, useCreateSeguradora, useUpdateSeguradora } from '@/hooks/useSeguradoras';
+import { cnpjValidation, formatCNPJ } from '@/lib/documentValidation';
 
 const formSchema = z.object({
   razao_social: z.string().min(1, 'Razão social é obrigatória'),
   nome_fantasia: z.string().optional(),
-  cnpj: z.string().optional(),
+  cnpj: z.string().optional().refine(cnpjValidation, { message: 'CNPJ inválido' }),
   telefone: z.string().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   status: z.string().default('ativo'),
