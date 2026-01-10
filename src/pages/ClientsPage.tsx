@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockClients } from '@/data/mockData';
+import { useClients } from '@/hooks/useClients';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,15 +18,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, Search, Users, MoreHorizontal, Eye, Edit, Briefcase, Phone } from 'lucide-react';
+import { Plus, Search, Users, MoreHorizontal, Eye, Edit, Briefcase, Phone, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function ClientsPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const { data: clients = [], isLoading } = useClients();
 
-  const filteredClients = mockClients.filter((c) =>
+  const filteredClients = clients.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.cpf?.includes(search) ||
     c.phone1?.includes(search)
@@ -60,7 +61,7 @@ export default function ClientsPage() {
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockClients.length}</p>
+                <p className="text-2xl font-bold">{clients.length}</p>
                 <p className="text-sm text-muted-foreground">Total</p>
               </div>
             </div>
@@ -120,6 +121,19 @@ export default function ClientsPage() {
 
       {/* Table */}
       <div className="rounded-xl border bg-card overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredClients.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center">
+            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">Nenhum cliente cadastrado</p>
+            <Button className="mt-4" onClick={() => navigate('/clientes/novo')}>
+              <Plus className="h-4 w-4 mr-2" /> Cadastrar primeiro cliente
+            </Button>
+          </div>
+        ) : (
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -169,7 +183,7 @@ export default function ClientsPage() {
                     : '-'}
                 </TableCell>
                 <TableCell className="hidden xl:table-cell text-sm text-muted-foreground">
-                  {format(new Date(client.createdAt), "dd/MM/yy", { locale: ptBR })}
+                  {format(new Date(client.created_at), "dd/MM/yy", { locale: ptBR })}
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
@@ -198,6 +212,7 @@ export default function ClientsPage() {
             ))}
           </TableBody>
         </Table>
+        )}
       </div>
     </div>
   );
