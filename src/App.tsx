@@ -32,6 +32,7 @@ import MetricasDiariasPage from "./pages/MetricasDiariasPage";
 import MetricaFormPage from "./pages/MetricaFormPage";
 import AlertasPage from "./pages/AlertasPage";
 import AlertasCriticosPage from "./pages/AlertasCriticosPage";
+import BauPainelPage from "./pages/BauPainelPage";
 import ComunicacaoPage from "./pages/ComunicacaoPage";
 import IAModulePage from "./pages/IAModulePage";
 import UsersAdminPage from "./pages/UsersAdminPage";
@@ -97,6 +98,7 @@ const App = () => (
           <Route path="/metricas/novo" element={<ProtectedRoute><MetricaFormPage /></ProtectedRoute>} />
           <Route path="/alertas" element={<ProtectedRoute><AlertasPage /></ProtectedRoute>} />
           <Route path="/alertas-criticos" element={<ProtectedRoute><AlertasCriticosPage /></ProtectedRoute>} />
+          <Route path="/bau" element={<ProtectedRoute><BauPainelPage /></ProtectedRoute>} />
           <Route path="/comunicacao" element={<ProtectedRoute><ComunicacaoPage /></ProtectedRoute>} />
           <Route path="/ia" element={<ProtectedRoute><IAModulePage /></ProtectedRoute>} />
           <Route path="/admin/usuarios" element={<ProtectedRoute><UsersAdminPage /></ProtectedRoute>} />
