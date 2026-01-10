@@ -18,6 +18,9 @@ import {
   Gavel,
   UserCheck,
   Shield,
+  Bell,
+  MessageSquare,
+  Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -48,6 +51,9 @@ const menuItems: MenuItem[] = [
   { icon: Briefcase, label: 'Funcionários', path: '/funcionarios' },
   { icon: BarChart3, label: 'Métricas Diárias', path: '/metricas' },
   { icon: Phone, label: 'Centro de Atendimento', path: '/call-center' },
+  { icon: Bell, label: 'Alertas', path: '/alertas' },
+  { icon: MessageSquare, label: 'Comunicação', path: '/comunicacao' },
+  { icon: Bot, label: 'Módulo IA', path: '/ia' },
   { icon: Scale, label: 'Relatórios', path: '/relatorios', adminOnly: true },
 ];
 
