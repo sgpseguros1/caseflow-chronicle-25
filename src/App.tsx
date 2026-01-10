@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import CasesListPage from "./pages/CasesListPage";
 import ClientsPage from "./pages/ClientsPage";
+import DPVATModule from "./pages/DPVATModule";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,7 +30,7 @@ const App = () => (
             path="/dpvat"
             element={
               <PageWithLayout>
-                <CasesListPage caseType="DPVAT" />
+                <DPVATModule />
               </PageWithLayout>
             }
           />
