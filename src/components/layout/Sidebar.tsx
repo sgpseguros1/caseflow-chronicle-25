@@ -21,6 +21,7 @@ import {
   Bell,
   MessageSquare,
   Bot,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,6 +37,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Painel', path: '/' },
   { icon: FileText, label: 'Protocolos', path: '/protocolos' },
+  { icon: AlertTriangle, label: 'Alertas Críticos', path: '/alertas-criticos' },
   {
     icon: Users,
     label: 'Cadastros',
