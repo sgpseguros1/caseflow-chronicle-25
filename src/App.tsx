@@ -22,6 +22,8 @@ import ProcessoFormPage from "./pages/ProcessoFormPage";
 import FuncionariosPage from "./pages/FuncionariosPage";
 import FuncionarioFormPage from "./pages/FuncionarioFormPage";
 import CallCenterPage from "./pages/CallCenterPage";
+import MetricasDiariasPage from "./pages/MetricasDiariasPage";
+import MetricaFormPage from "./pages/MetricaFormPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -73,7 +75,8 @@ const App = () => (
           <Route path="/call-center" element={<ProtectedRoute><CallCenterPage /></ProtectedRoute>} />
           {/* Placeholders */}
           <Route path="/calendario" element={<ProtectedRoute><div className="text-center py-12"><h1 className="text-2xl font-bold">Calendário</h1><p className="text-muted-foreground">Em desenvolvimento</p></div></ProtectedRoute>} />
-          <Route path="/metricas" element={<ProtectedRoute><div className="text-center py-12"><h1 className="text-2xl font-bold">Métricas Diárias</h1><p className="text-muted-foreground">Em desenvolvimento</p></div></ProtectedRoute>} />
+          <Route path="/metricas" element={<ProtectedRoute><MetricasDiariasPage /></ProtectedRoute>} />
+          <Route path="/metricas/novo" element={<ProtectedRoute><MetricaFormPage /></ProtectedRoute>} />
           <Route path="/relatorios" element={<ProtectedRoute><div className="text-center py-12"><h1 className="text-2xl font-bold">Relatórios</h1><p className="text-muted-foreground">Acesso restrito a administradores</p></div></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
