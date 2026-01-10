@@ -1,0 +1,369 @@
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCreateProtocolo, useUpsertAuxilioAcidente, useUpsertProtocoloFinanceiro } from '@/hooks/useProtocolos';
+import { useFuncionarios } from '@/hooks/useFuncionarios';
+import { useAdvogados } from '@/hooks/useAdvogados';
+import { useSeguradoras } from '@/hooks/useSeguradoras';
+import { 
+  TIPO_PROTOCOLO_LABELS, 
+  NATUREZA_LABELS, 
+  PRIORIDADE_LABELS,
+  STATUS_PROTOCOLO_LABELS,
+  TIPO_BENEFICIO_LABELS,
+  TipoProtocolo,
+  NaturezaProtocolo,
+  PrioridadeProtocolo,
+  StatusProtocolo,
+  TipoBeneficio,
+} from '@/types/protocolo';
+import { Loader2 } from 'lucide-react';
+
+interface ClientProtocoloFormProps {
+  clienteId: string;
+  onSuccess: () => void;
+}
+
+export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFormProps) {
+  const [tipo, setTipo] = useState<TipoProtocolo>('AUXILIO_ACIDENTE');
+  const [showAuxilioFields, setShowAuxilioFields] = useState(true);
+  
+  const createProtocolo = useCreateProtocolo();
+  const upsertAuxilio = useUpsertAuxilioAcidente();
+  const upsertFinanceiro = useUpsertProtocoloFinanceiro();
+  
+  const { data: funcionarios = [] } = useFuncionarios();
+  const { data: advogados = [] } = useAdvogados();
+  const { data: seguradoras = [] } = useSeguradoras();
+
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
+    defaultValues: {
+      natureza: 'ADMINISTRATIVO' as NaturezaProtocolo,
+      prioridade: 'normal' as PrioridadeProtocolo,
+      status: 'novo' as StatusProtocolo,
+      funcionario_id: '',
+      advogado_id: '',
+      seguradora_id: '',
+      observacoes: '',
+      sla_dias: 30,
+      prazo_estimado: '',
+      // Campos Auxílio-Acidente
+      data_acidente: '',
+      data_requerimento: '',
+      numero_protocolo_inss: '',
+      tipo_beneficio: '' as TipoBeneficio | '',
+      situacao_atual: '',
+      pericia_realizada: false,
+      data_pericia: '',
+      resultado_pericia: '',
+      judicializado: false,
+      numero_processo_judicial: '',
+      // Campos Financeiro
+      valor_estimado: 0,
+    }
+  });
+
+  const periciaRealizada = watch('pericia_realizada');
+  const judicializado = watch('judicializado');
+
+  const onSubmit = async (data: any) => {
+    try {
+      // 1. Criar protocolo principal
+      const result = await createProtocolo.mutateAsync({
+        cliente_id: clienteId,
+        tipo,
+        natureza: data.natureza,
+        prioridade: data.prioridade,
+        status: data.status,
+        funcionario_id: data.funcionario_id || null,
+        advogado_id: data.advogado_id || null,
+        seguradora_id: data.seguradora_id || null,
+        observacoes: data.observacoes || null,
+        sla_dias: data.sla_dias,
+        prazo_estimado: data.prazo_estimado || null,
+      });
+
+      // 2. Se for Auxílio-Acidente, criar dados específicos
+      if (tipo === 'AUXILIO_ACIDENTE') {
+        await upsertAuxilio.mutateAsync({
+          protocolo_id: result.id,
+          data_acidente: data.data_acidente || null,
+          data_requerimento: data.data_requerimento || null,
+          numero_protocolo_inss: data.numero_protocolo_inss || null,
+          tipo_beneficio: data.tipo_beneficio || null,
+          situacao_atual: data.situacao_atual || null,
+          pericia_realizada: data.pericia_realizada,
+          data_pericia: data.data_pericia || null,
+          resultado_pericia: data.resultado_pericia || null,
+          judicializado: data.judicializado,
+          numero_processo_judicial: data.numero_processo_judicial || null,
+        });
+      }
+
+      // 3. Criar dados financeiros iniciais
+      if (data.valor_estimado > 0) {
+        await upsertFinanceiro.mutateAsync({
+          protocolo_id: result.id,
+          valor_estimado: data.valor_estimado,
+        });
+      }
+
+      onSuccess();
+    } catch (error) {
+      console.error('Erro ao criar protocolo:', error);
+    }
+  };
+
+  const handleTipoChange = (value: TipoProtocolo) => {
+    setTipo(value);
+    setShowAuxilioFields(value === 'AUXILIO_ACIDENTE');
+  };
+
+  const isLoading = createProtocolo.isPending || upsertAuxilio.isPending || upsertFinanceiro.isPending;
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Dados Principais */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados do Protocolo</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          {/* Tipo */}
+          <div className="space-y-2">
+            <Label>Tipo do Protocolo *</Label>
+            <Select value={tipo} onValueChange={handleTipoChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(TIPO_PROTOCOLO_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Natureza */}
+          <div className="space-y-2">
+            <Label>Natureza *</Label>
+            <Select 
+              defaultValue="ADMINISTRATIVO" 
+              onValueChange={(v) => setValue('natureza', v as NaturezaProtocolo)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(NATUREZA_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Prioridade */}
+          <div className="space-y-2">
+            <Label>Prioridade</Label>
+            <Select 
+              defaultValue="normal" 
+              onValueChange={(v) => setValue('prioridade', v as PrioridadeProtocolo)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PRIORIDADE_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Status Inicial */}
+          <div className="space-y-2">
+            <Label>Status Inicial</Label>
+            <Select 
+              defaultValue="novo" 
+              onValueChange={(v) => setValue('status', v as StatusProtocolo)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(STATUS_PROTOCOLO_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Funcionário Responsável */}
+          <div className="space-y-2">
+            <Label>Funcionário Responsável</Label>
+            <Select onValueChange={(v) => setValue('funcionario_id', v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar..." />
+              </SelectTrigger>
+              <SelectContent>
+                {funcionarios.filter(f => f.status === 'ativo').map((f) => (
+                  <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Advogado */}
+          <div className="space-y-2">
+            <Label>Advogado</Label>
+            <Select onValueChange={(v) => setValue('advogado_id', v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar..." />
+              </SelectTrigger>
+              <SelectContent>
+                {advogados.filter(a => a.status === 'ativo').map((a) => (
+                  <SelectItem key={a.id} value={a.id}>{a.nome} - OAB {a.oab}/{a.uf}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Seguradora */}
+          <div className="space-y-2">
+            <Label>Seguradora</Label>
+            <Select onValueChange={(v) => setValue('seguradora_id', v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar..." />
+              </SelectTrigger>
+              <SelectContent>
+                {seguradoras.filter(s => s.status === 'ativo').map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.razao_social}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* SLA */}
+          <div className="space-y-2">
+            <Label>SLA (dias)</Label>
+            <Input type="number" {...register('sla_dias', { valueAsNumber: true })} />
+          </div>
+
+          {/* Prazo Estimado */}
+          <div className="space-y-2">
+            <Label>Prazo Estimado</Label>
+            <Input type="date" {...register('prazo_estimado')} />
+          </div>
+
+          {/* Valor Estimado */}
+          <div className="space-y-2">
+            <Label>Valor Estimado (R$)</Label>
+            <Input type="number" step="0.01" {...register('valor_estimado', { valueAsNumber: true })} />
+          </div>
+
+          {/* Observações */}
+          <div className="space-y-2 md:col-span-2">
+            <Label>Observações</Label>
+            <Textarea {...register('observacoes')} rows={3} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Campos específicos Auxílio-Acidente */}
+      {showAuxilioFields && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Dados do Auxílio-Acidente (INSS)</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Data do Acidente</Label>
+              <Input type="date" {...register('data_acidente')} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Data do Requerimento</Label>
+              <Input type="date" {...register('data_requerimento')} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Nº Protocolo INSS</Label>
+              <Input {...register('numero_protocolo_inss')} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tipo de Benefício</Label>
+              <Select onValueChange={(v) => setValue('tipo_beneficio', v as TipoBeneficio)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(TIPO_BENEFICIO_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label>Situação Atual</Label>
+              <Input {...register('situacao_atual')} placeholder="Descreva a situação atual do processo" />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Switch 
+                checked={periciaRealizada}
+                onCheckedChange={(v) => setValue('pericia_realizada', v)}
+              />
+              <Label>Perícia Realizada</Label>
+            </div>
+
+            {periciaRealizada && (
+              <>
+                <div className="space-y-2">
+                  <Label>Data da Perícia</Label>
+                  <Input type="date" {...register('data_pericia')} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Resultado da Perícia</Label>
+                  <Input {...register('resultado_pericia')} />
+                </div>
+              </>
+            )}
+
+            <div className="flex items-center gap-3">
+              <Switch 
+                checked={judicializado}
+                onCheckedChange={(v) => setValue('judicializado', v)}
+              />
+              <Label>Judicializado</Label>
+            </div>
+
+            {judicializado && (
+              <div className="space-y-2">
+                <Label>Nº Processo Judicial</Label>
+                <Input {...register('numero_processo_judicial')} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex justify-end gap-3">
+        <Button type="button" variant="outline" onClick={onSuccess}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Criar Protocolo
+        </Button>
+      </div>
+    </form>
+  );
+}

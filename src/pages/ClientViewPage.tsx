@@ -1,5 +1,5 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, FileText, AlertTriangle, User, MapPin, Phone, Building2, Car, Stethoscope, Hospital, UserPlus, Briefcase, Loader2, Download, Eye } from 'lucide-react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Edit, Trash2, FileText, AlertTriangle, User, MapPin, Phone, Building2, Car, Stethoscope, Hospital, UserPlus, Briefcase, Loader2, Download, Eye, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,10 +14,13 @@ import { useExtendedClient, useClientDocuments, useClientAlerts, useClientProces
 import { useClientPermissions } from '@/hooks/useClientPermissions';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { ClientProtocolosTab } from '@/components/client/ClientProtocolosTab';
 
 export default function ClientViewPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'dados';
   const { user } = useAuth();
   const { canEdit, canDelete } = useClientPermissions();
   const { data: client, isLoading } = useExtendedClient(id);
@@ -185,12 +188,16 @@ export default function ClientViewPage() {
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="dados" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs defaultValue={defaultTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="dados">Dados Pessoais</TabsTrigger>
           <TabsTrigger value="acidente">Acidente</TabsTrigger>
           <TabsTrigger value="medico">Médico</TabsTrigger>
           <TabsTrigger value="documentos">Documentos ({documents.length})</TabsTrigger>
+          <TabsTrigger value="protocolos" className="gap-1">
+            <ClipboardList className="h-4 w-4" />
+            Protocolos
+          </TabsTrigger>
           <TabsTrigger value="processos">Processos ({processes.length})</TabsTrigger>
         </TabsList>
 
@@ -410,6 +417,15 @@ export default function ClientViewPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Aba Protocolos - PONTO ÚNICO DE EDIÇÃO */}
+        <TabsContent value="protocolos" className="space-y-4">
+          <ClientProtocolosTab 
+            clienteId={id!} 
+            clienteName={client.name}
+            canEdit={canEdit}
+          />
         </TabsContent>
 
         <TabsContent value="processos" className="space-y-4">
