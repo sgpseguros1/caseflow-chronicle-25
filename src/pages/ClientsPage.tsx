@@ -148,7 +148,7 @@ export default function ClientsPage() {
           </TableHeader>
           <TableBody>
             {filteredClients.map((client) => (
-              <TableRow key={client.id} className="data-table-row cursor-pointer">
+              <TableRow key={client.id} className="data-table-row cursor-pointer" onClick={() => navigate(`/clientes/${client.id}`)}>
                 <TableCell>
                   <span className="font-mono text-sm text-muted-foreground">
                     #{client.code}
@@ -193,15 +193,15 @@ export default function ClientsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${client.id}`); }}>
                         <Eye className="mr-2 h-4 w-4" />
                         Ver detalhes
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/clientes/${client.id}/editar`); }}>
                         <Edit className="mr-2 h-4 w-4" />
                         Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                         <Briefcase className="mr-2 h-4 w-4" />
                         Ver processos
                       </DropdownMenuItem>
