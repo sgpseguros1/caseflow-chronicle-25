@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 
@@ -18,72 +18,102 @@ export function useAuth() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = useCallback(async (userId: string) => {
     try {
-      // Fetch profile data
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-      }
-      setProfile(profileData);
+      // Fetch profile and roles in parallel
+      const [profileResult, rolesResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle(),
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+      ]);
 
-      // Fetch user roles from user_roles table (source of truth for RBAC)
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-      
-      if (rolesError) {
-        console.error('Error fetching roles:', rolesError);
+      if (profileResult.error) {
+        console.error('Error fetching profile:', profileResult.error);
       }
-      const fetchedRoles = userRoles?.map(r => r.role as AppRole) || [];
+      setProfile(profileResult.data);
+
+      if (rolesResult.error) {
+        console.error('Error fetching roles:', rolesResult.error);
+      }
+      const fetchedRoles = rolesResult.data?.map(r => r.role as AppRole) || [];
       setRoles(fetchedRoles);
     } catch (error) {
       console.error('Error in fetchUserData:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    // Set up auth state listener BEFORE getting session
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           await fetchUserData(session.user.id);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // Set up auth state listener after initial load
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Use setTimeout to prevent Supabase auth deadlock
+          setTimeout(async () => {
+            if (mounted) {
+              await fetchUserData(session.user.id);
+            }
+          }, 0);
         } else {
           setProfile(null);
           setRoles([]);
         }
         
-        setLoading(false);
+        if (initialized) {
+          setLoading(false);
+        }
       }
     );
 
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await fetchUserData(session.user.id);
-      }
-      
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchUserData, initialized]);
 
   const signOut = async () => {
+    setLoading(true);
     await supabase.auth.signOut();
+    setLoading(false);
   };
 
   const hasRole = (role: AppRole) => roles.includes(role);
