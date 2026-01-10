@@ -7,18 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { useCreateClient } from '@/hooks/useClients';
 
 export default function ClientFormPage() {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const createClient = useCreateClient();
   const [formData, setFormData] = useState({
     name: '',
     cpf: '',
     rg: '',
-    birthDate: '',
-    maritalStatus: '',
+    birth_date: '',
+    civil_status: '',
     profession: '',
     phone1: '',
     phone2: '',
@@ -30,10 +29,10 @@ export default function ClientFormPage() {
     neighborhood: '',
     city: '',
     uf: '',
-    bankName: '',
-    bankAgency: '',
-    bankAccount: '',
-    bankAccountType: '',
+    bank_name: '',
+    bank_agency: '',
+    bank_account: '',
+    bank_account_type: '',
     notes: '',
   });
 
@@ -63,23 +62,34 @@ export default function ClientFormPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.cpf || !formData.phone1) {
-      toast({
-        title: 'Campos obrigatórios',
-        description: 'Preencha nome, CPF e telefone.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setLoading(true);
-    // Simular salvamento
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast({
-      title: 'Cliente cadastrado!',
-      description: `${formData.name} foi adicionado com sucesso.`,
+    
+    await createClient.mutateAsync({
+      name: formData.name,
+      cpf: formData.cpf || null,
+      rg: formData.rg || null,
+      birth_date: formData.birth_date || null,
+      civil_status: formData.civil_status || null,
+      profession: formData.profession || null,
+      phone1: formData.phone1 || null,
+      phone2: formData.phone2 || null,
+      email: formData.email || null,
+      cep: formData.cep || null,
+      address: formData.address || null,
+      number: formData.number || null,
+      complement: formData.complement || null,
+      neighborhood: formData.neighborhood || null,
+      city: formData.city || null,
+      uf: formData.uf || null,
+      nationality: 'Brasileira',
+      naturality: null,
+      bank_name: formData.bank_name || null,
+      bank_agency: formData.bank_agency || null,
+      bank_account: formData.bank_account || null,
+      bank_account_type: formData.bank_account_type || null,
+      notes: formData.notes || null,
+      created_by: null,
     });
-    setLoading(false);
+    
     navigate('/clientes');
   };
 
@@ -136,17 +146,17 @@ export default function ClientFormPage() {
               />
             </div>
             <div>
-              <Label htmlFor="birthDate">Data de Nascimento</Label>
+              <Label htmlFor="birth_date">Data de Nascimento</Label>
               <Input
-                id="birthDate"
+                id="birth_date"
                 type="date"
-                value={formData.birthDate}
-                onChange={(e) => handleChange('birthDate', e.target.value)}
+                value={formData.birth_date}
+                onChange={(e) => handleChange('birth_date', e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="maritalStatus">Estado Civil</Label>
-              <Select value={formData.maritalStatus} onValueChange={(v) => handleChange('maritalStatus', v)}>
+              <Label htmlFor="civil_status">Estado Civil</Label>
+              <Select value={formData.civil_status} onValueChange={(v) => handleChange('civil_status', v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -302,35 +312,35 @@ export default function ClientFormPage() {
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-4">
             <div>
-              <Label htmlFor="bankName">Banco</Label>
+              <Label htmlFor="bank_name">Banco</Label>
               <Input
-                id="bankName"
-                value={formData.bankName}
-                onChange={(e) => handleChange('bankName', e.target.value)}
+                id="bank_name"
+                value={formData.bank_name}
+                onChange={(e) => handleChange('bank_name', e.target.value)}
                 placeholder="Nome do banco"
               />
             </div>
             <div>
-              <Label htmlFor="bankAgency">Agência</Label>
+              <Label htmlFor="bank_agency">Agência</Label>
               <Input
-                id="bankAgency"
-                value={formData.bankAgency}
-                onChange={(e) => handleChange('bankAgency', e.target.value)}
+                id="bank_agency"
+                value={formData.bank_agency}
+                onChange={(e) => handleChange('bank_agency', e.target.value)}
                 placeholder="0000"
               />
             </div>
             <div>
-              <Label htmlFor="bankAccount">Conta</Label>
+              <Label htmlFor="bank_account">Conta</Label>
               <Input
-                id="bankAccount"
-                value={formData.bankAccount}
-                onChange={(e) => handleChange('bankAccount', e.target.value)}
+                id="bank_account"
+                value={formData.bank_account}
+                onChange={(e) => handleChange('bank_account', e.target.value)}
                 placeholder="00000-0"
               />
             </div>
             <div>
-              <Label htmlFor="bankAccountType">Tipo</Label>
-              <Select value={formData.bankAccountType} onValueChange={(v) => handleChange('bankAccountType', v)}>
+              <Label htmlFor="bank_account_type">Tipo</Label>
+              <Select value={formData.bank_account_type} onValueChange={(v) => handleChange('bank_account_type', v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
@@ -363,9 +373,9 @@ export default function ClientFormPage() {
           <Button type="button" variant="outline" onClick={() => navigate('/clientes')}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={loading} className="gap-2">
+          <Button type="submit" disabled={createClient.isPending} className="gap-2">
             <Save className="h-4 w-4" />
-            {loading ? 'Salvando...' : 'Salvar Cliente'}
+            {createClient.isPending ? 'Salvando...' : 'Salvar Cliente'}
           </Button>
         </div>
       </form>
