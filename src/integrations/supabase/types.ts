@@ -223,6 +223,129 @@ export type Database = {
           },
         ]
       }
+      client_bau_contatos: {
+        Row: {
+          bau_id: string
+          created_at: string
+          descricao: string
+          id: string
+          nova_previsao: string | null
+          registrado_por: string | null
+          resultado: string | null
+          tipo_contato: string
+        }
+        Insert: {
+          bau_id: string
+          created_at?: string
+          descricao: string
+          id?: string
+          nova_previsao?: string | null
+          registrado_por?: string | null
+          resultado?: string | null
+          tipo_contato?: string
+        }
+        Update: {
+          bau_id?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          nova_previsao?: string | null
+          registrado_por?: string | null
+          resultado?: string | null
+          tipo_contato?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_bau_contatos_bau_id_fkey"
+            columns: ["bau_id"]
+            isOneToOne: false
+            referencedRelation: "client_baus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_bau_contatos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_baus: {
+        Row: {
+          client_id: string
+          created_at: string
+          data_recebimento: string | null
+          data_solicitacao: string
+          fase_cobranca: string | null
+          hospital_contato: string | null
+          hospital_nome: string
+          hospital_telefone: string | null
+          id: string
+          motivo_incompleto: string | null
+          observacoes: string | null
+          previsao_entrega: string | null
+          qualidade_status: string | null
+          responsavel_id: string | null
+          status: string
+          tipo_solicitacao: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          data_recebimento?: string | null
+          data_solicitacao?: string
+          fase_cobranca?: string | null
+          hospital_contato?: string | null
+          hospital_nome: string
+          hospital_telefone?: string | null
+          id?: string
+          motivo_incompleto?: string | null
+          observacoes?: string | null
+          previsao_entrega?: string | null
+          qualidade_status?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tipo_solicitacao?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          data_recebimento?: string | null
+          data_solicitacao?: string
+          fase_cobranca?: string | null
+          hospital_contato?: string | null
+          hospital_nome?: string
+          hospital_telefone?: string | null
+          id?: string
+          motivo_incompleto?: string | null
+          observacoes?: string | null
+          previsao_entrega?: string | null
+          qualidade_status?: string | null
+          responsavel_id?: string | null
+          status?: string
+          tipo_solicitacao?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_baus_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_baus_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_documents: {
         Row: {
           client_id: string

@@ -38,6 +38,7 @@ const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Painel', path: '/' },
   { icon: FileText, label: 'Protocolos', path: '/protocolos' },
   { icon: AlertTriangle, label: 'Alertas Críticos', path: '/alertas-criticos' },
+  { icon: Building2, label: 'BAU (Hospitais)', path: '/bau' },
   {
     icon: Users,
     label: 'Cadastros',
