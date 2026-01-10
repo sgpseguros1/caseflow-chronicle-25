@@ -41,7 +41,6 @@ const menuItems: MenuItem[] = [
     children: [
       { icon: UserCog, label: 'Gestores', path: '/cadastros/gestores' },
       { icon: Users, label: 'Clientes', path: '/clientes' },
-      { icon: Gavel, label: 'Advogados', path: '/cadastros/advogados' },
       { icon: Building2, label: 'Seguradoras', path: '/cadastros/seguradoras' },
       { icon: UserCheck, label: 'Peritos', path: '/cadastros/peritos' },
     ],
