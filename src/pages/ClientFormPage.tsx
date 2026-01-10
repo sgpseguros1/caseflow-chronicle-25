@@ -8,10 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateClient } from '@/hooks/useClients';
+import { isValidCPF, formatCPF } from '@/lib/documentValidation';
+import { toast } from 'sonner';
 
 export default function ClientFormPage() {
   const navigate = useNavigate();
   const createClient = useCreateClient();
+  const [cpfError, setCpfError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     cpf: '',
@@ -38,6 +41,21 @@ export default function ClientFormPage() {
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'cpf') {
+      setCpfError('');
+    }
+  };
+
+  const handleCpfBlur = () => {
+    if (formData.cpf && formData.cpf.trim() !== '') {
+      if (!isValidCPF(formData.cpf)) {
+        setCpfError('CPF inválido');
+      } else {
+        setCpfError('');
+        // Auto-format CPF
+        setFormData(prev => ({ ...prev, cpf: formatCPF(prev.cpf) }));
+      }
+    }
   };
 
   const handleCepSearch = async () => {
@@ -62,6 +80,13 @@ export default function ClientFormPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate CPF if provided
+    if (formData.cpf && formData.cpf.trim() !== '' && !isValidCPF(formData.cpf)) {
+      setCpfError('CPF inválido');
+      toast.error('Por favor, corrija o CPF antes de salvar.');
+      return;
+    }
     
     await createClient.mutateAsync({
       name: formData.name,
@@ -132,9 +157,12 @@ export default function ClientFormPage() {
                 id="cpf"
                 value={formData.cpf}
                 onChange={(e) => handleChange('cpf', e.target.value)}
+                onBlur={handleCpfBlur}
                 placeholder="000.000.000-00"
+                className={cpfError ? 'border-destructive' : ''}
                 required
               />
+              {cpfError && <p className="text-sm text-destructive mt-1">{cpfError}</p>}
             </div>
             <div>
               <Label htmlFor="rg">RG</Label>
