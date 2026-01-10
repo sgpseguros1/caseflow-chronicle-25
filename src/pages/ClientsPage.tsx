@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { mockClients } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -22,6 +23,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function ClientsPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
   const filteredClients = mockClients.filter((c) =>
@@ -43,7 +45,7 @@ export default function ClientsPage() {
             {filteredClients.length} clientes cadastrados
           </p>
         </div>
-        <Button className="gap-2 bg-primary hover:bg-primary/90">
+        <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={() => navigate('/clientes/novo')}>
           <Plus className="h-4 w-4" />
           Novo Cliente
         </Button>
