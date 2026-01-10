@@ -11,6 +11,8 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ClientsPage from "./pages/ClientsPage";
 import ClientFormPage from "./pages/ClientFormPage";
+import ClientViewPage from "./pages/ClientViewPage";
+import ClientEditPage from "./pages/ClientEditPage";
 import GestoresPage from "./pages/GestoresPage";
 import GestorFormPage from "./pages/GestorFormPage";
 import AdvogadosPage from "./pages/AdvogadosPage";
@@ -63,6 +65,8 @@ const App = () => (
           <Route path="/cadastros/gestores/:id/editar" element={<ProtectedRoute><GestorFormPage /></ProtectedRoute>} />
           <Route path="/clientes" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
           <Route path="/clientes/novo" element={<ProtectedRoute><ClientFormPage /></ProtectedRoute>} />
+          <Route path="/clientes/:id" element={<ProtectedRoute><ClientViewPage /></ProtectedRoute>} />
+          <Route path="/clientes/:id/editar" element={<ProtectedRoute><ClientEditPage /></ProtectedRoute>} />
           <Route path="/cadastros/advogados" element={<ProtectedRoute><AdvogadosPage /></ProtectedRoute>} />
           <Route path="/cadastros/advogados/novo" element={<ProtectedRoute><AdvogadoFormPage /></ProtectedRoute>} />
           <Route path="/cadastros/advogados/:id/editar" element={<ProtectedRoute><AdvogadoFormPage /></ProtectedRoute>} />
