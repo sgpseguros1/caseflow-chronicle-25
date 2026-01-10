@@ -966,6 +966,532 @@ export type Database = {
         }
         Relationships: []
       }
+      protocolo_alertas: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          escalonado_para: string | null
+          escalonamento_nivel: number | null
+          id: string
+          nivel: string
+          protocolo_id: string
+          resolucao_observacao: string | null
+          resolvido_em: string | null
+          resolvido_por: string | null
+          status: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          escalonado_para?: string | null
+          escalonamento_nivel?: number | null
+          id?: string
+          nivel: string
+          protocolo_id: string
+          resolucao_observacao?: string | null
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          status?: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          escalonado_para?: string | null
+          escalonamento_nivel?: number | null
+          id?: string
+          nivel?: string
+          protocolo_id?: string
+          resolucao_observacao?: string | null
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocolo_alertas_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocolo_auxilio_acidente: {
+        Row: {
+          created_at: string
+          data_acidente: string | null
+          data_pericia: string | null
+          data_requerimento: string | null
+          id: string
+          judicializado: boolean | null
+          numero_processo_judicial: string | null
+          numero_protocolo_inss: string | null
+          pericia_realizada: boolean | null
+          protocolo_id: string
+          resultado_pericia: string | null
+          situacao_atual: string | null
+          tipo_beneficio: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_acidente?: string | null
+          data_pericia?: string | null
+          data_requerimento?: string | null
+          id?: string
+          judicializado?: boolean | null
+          numero_processo_judicial?: string | null
+          numero_protocolo_inss?: string | null
+          pericia_realizada?: boolean | null
+          protocolo_id: string
+          resultado_pericia?: string | null
+          situacao_atual?: string | null
+          tipo_beneficio?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_acidente?: string | null
+          data_pericia?: string | null
+          data_requerimento?: string | null
+          id?: string
+          judicializado?: boolean | null
+          numero_processo_judicial?: string | null
+          numero_protocolo_inss?: string | null
+          pericia_realizada?: boolean | null
+          protocolo_id?: string
+          resultado_pericia?: string | null
+          situacao_atual?: string | null
+          tipo_beneficio?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocolo_auxilio_acidente_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: true
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocolo_checklist_encerramento: {
+        Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          created_at: string
+          documento_final_anexado: boolean | null
+          financeiro_preenchido: boolean | null
+          honorarios_calculados: boolean | null
+          id: string
+          observacao_final_registrada: boolean | null
+          protocolo_id: string
+          status_final_definido: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          created_at?: string
+          documento_final_anexado?: boolean | null
+          financeiro_preenchido?: boolean | null
+          honorarios_calculados?: boolean | null
+          id?: string
+          observacao_final_registrada?: boolean | null
+          protocolo_id: string
+          status_final_definido?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          created_at?: string
+          documento_final_anexado?: boolean | null
+          financeiro_preenchido?: boolean | null
+          honorarios_calculados?: boolean | null
+          id?: string
+          observacao_final_registrada?: boolean | null
+          protocolo_id?: string
+          status_final_definido?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocolo_checklist_encerramento_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: true
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocolo_documentos: {
+        Row: {
+          categoria: string
+          created_at: string
+          descricao: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          nome: string
+          obrigatorio: boolean | null
+          protocolo_id: string
+          status: string
+          updated_at: string
+          uploaded_by: string | null
+          validado_em: string | null
+          validado_por: string | null
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          descricao?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          nome: string
+          obrigatorio?: boolean | null
+          protocolo_id: string
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          validado_em?: string | null
+          validado_por?: string | null
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          descricao?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          nome?: string
+          obrigatorio?: boolean | null
+          protocolo_id?: string
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          validado_em?: string | null
+          validado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocolo_documentos_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocolo_etiquetas: {
+        Row: {
+          ativo: boolean | null
+          codigo: string
+          cor: string
+          created_at: string
+          gerado_automaticamente: boolean | null
+          id: string
+          nome: string
+          protocolo_id: string
+          regra_aplicada: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          codigo: string
+          cor: string
+          created_at?: string
+          gerado_automaticamente?: boolean | null
+          id?: string
+          nome: string
+          protocolo_id: string
+          regra_aplicada?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean | null
+          codigo?: string
+          cor?: string
+          created_at?: string
+          gerado_automaticamente?: boolean | null
+          id?: string
+          nome?: string
+          protocolo_id?: string
+          regra_aplicada?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocolo_etiquetas_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocolo_financeiro: {
+        Row: {
+          comissao_interna: number | null
+          comprovante_path: string | null
+          created_at: string
+          data_pagamento: string | null
+          honorarios_calculados: number | null
+          id: string
+          motivo_prejuizo: string | null
+          percentual_honorario: number | null
+          prejuizo_registrado: number | null
+          protocolo_id: string
+          tipo_honorario: string | null
+          updated_at: string
+          valor_a_receber: number | null
+          valor_estimado: number | null
+          valor_fixo_honorario: number | null
+          valor_recebido: number | null
+        }
+        Insert: {
+          comissao_interna?: number | null
+          comprovante_path?: string | null
+          created_at?: string
+          data_pagamento?: string | null
+          honorarios_calculados?: number | null
+          id?: string
+          motivo_prejuizo?: string | null
+          percentual_honorario?: number | null
+          prejuizo_registrado?: number | null
+          protocolo_id: string
+          tipo_honorario?: string | null
+          updated_at?: string
+          valor_a_receber?: number | null
+          valor_estimado?: number | null
+          valor_fixo_honorario?: number | null
+          valor_recebido?: number | null
+        }
+        Update: {
+          comissao_interna?: number | null
+          comprovante_path?: string | null
+          created_at?: string
+          data_pagamento?: string | null
+          honorarios_calculados?: number | null
+          id?: string
+          motivo_prejuizo?: string | null
+          percentual_honorario?: number | null
+          prejuizo_registrado?: number | null
+          protocolo_id?: string
+          tipo_honorario?: string | null
+          updated_at?: string
+          valor_a_receber?: number | null
+          valor_estimado?: number | null
+          valor_fixo_honorario?: number | null
+          valor_recebido?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocolo_financeiro_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: true
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocolo_historico: {
+        Row: {
+          campo_alterado: string
+          created_at: string
+          id: string
+          observacao: string
+          protocolo_id: string
+          usuario_id: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          campo_alterado: string
+          created_at?: string
+          id?: string
+          observacao: string
+          protocolo_id: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          campo_alterado?: string
+          created_at?: string
+          id?: string
+          observacao?: string
+          protocolo_id?: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocolo_historico_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocolo_responsaveis: {
+        Row: {
+          ativo: boolean | null
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          funcionario_id: string
+          id: string
+          protocolo_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          funcionario_id: string
+          id?: string
+          protocolo_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          funcionario_id?: string
+          id?: string
+          protocolo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocolo_responsaveis_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protocolo_responsaveis_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocolos: {
+        Row: {
+          advogado_id: string | null
+          cliente_id: string
+          codigo: number
+          created_at: string
+          data_protocolo: string
+          data_ultima_movimentacao: string | null
+          funcionario_id: string | null
+          id: string
+          natureza: string
+          observacoes: string | null
+          orgao_responsavel: string | null
+          prazo_estimado: string | null
+          prioridade: string | null
+          seguradora_id: string | null
+          sla_dias: number | null
+          status: string
+          subtipo: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          advogado_id?: string | null
+          cliente_id: string
+          codigo?: number
+          created_at?: string
+          data_protocolo?: string
+          data_ultima_movimentacao?: string | null
+          funcionario_id?: string | null
+          id?: string
+          natureza: string
+          observacoes?: string | null
+          orgao_responsavel?: string | null
+          prazo_estimado?: string | null
+          prioridade?: string | null
+          seguradora_id?: string | null
+          sla_dias?: number | null
+          status?: string
+          subtipo?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          advogado_id?: string | null
+          cliente_id?: string
+          codigo?: number
+          created_at?: string
+          data_protocolo?: string
+          data_ultima_movimentacao?: string | null
+          funcionario_id?: string | null
+          id?: string
+          natureza?: string
+          observacoes?: string | null
+          orgao_responsavel?: string | null
+          prazo_estimado?: string | null
+          prioridade?: string | null
+          seguradora_id?: string | null
+          sla_dias?: number | null
+          status?: string
+          subtipo?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocolos_advogado_id_fkey"
+            columns: ["advogado_id"]
+            isOneToOne: false
+            referencedRelation: "advogados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protocolos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protocolos_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "protocolos_seguradora_id_fkey"
+            columns: ["seguradora_id"]
+            isOneToOne: false
+            referencedRelation: "seguradoras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seguradoras: {
         Row: {
           cnpj: string | null

@@ -35,6 +35,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Painel', path: '/' },
+  { icon: FileText, label: 'Protocolos', path: '/protocolos' },
   {
     icon: Users,
     label: 'Cadastros',
@@ -45,7 +46,7 @@ const menuItems: MenuItem[] = [
       { icon: UserCheck, label: 'Peritos', path: '/cadastros/peritos' },
     ],
   },
-  { icon: FileText, label: 'Processos', path: '/processos' },
+  { icon: Gavel, label: 'Processos (Legado)', path: '/processos' },
   { icon: Calendar, label: 'Calendário', path: '/calendario' },
   { icon: Briefcase, label: 'Funcionários', path: '/funcionarios' },
   { icon: BarChart3, label: 'Métricas Diárias', path: '/metricas' },
