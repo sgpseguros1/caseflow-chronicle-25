@@ -176,6 +176,56 @@ export type Database = {
           },
         ]
       }
+      auditoria_financeira: {
+        Row: {
+          acao: string
+          created_at: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          descricao: string | null
+          id: string
+          ip_address: string | null
+          lancamento_id: string | null
+          usuario_id: string | null
+          valor_anterior: number | null
+          valor_novo: number | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          descricao?: string | null
+          id?: string
+          ip_address?: string | null
+          lancamento_id?: string | null
+          usuario_id?: string | null
+          valor_anterior?: number | null
+          valor_novo?: number | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          descricao?: string | null
+          id?: string
+          ip_address?: string | null
+          lancamento_id?: string | null
+          usuario_id?: string | null
+          valor_anterior?: number | null
+          valor_novo?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_financeira_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos_financeiros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_alerts: {
         Row: {
           client_id: string
@@ -714,6 +764,51 @@ export type Database = {
         }
         Relationships: []
       }
+      fechamentos_mensais: {
+        Row: {
+          ano: number
+          created_at: string
+          fechado_em: string
+          fechado_por: string | null
+          id: string
+          mes: number
+          numero_lancamentos: number
+          observacoes: string | null
+          resumo_por_tipo: Json | null
+          total_a_receber: number
+          total_em_atraso: number
+          total_recebido: number
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          fechado_em?: string
+          fechado_por?: string | null
+          id?: string
+          mes: number
+          numero_lancamentos?: number
+          observacoes?: string | null
+          resumo_por_tipo?: Json | null
+          total_a_receber?: number
+          total_em_atraso?: number
+          total_recebido?: number
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          fechado_em?: string
+          fechado_por?: string | null
+          id?: string
+          mes?: number
+          numero_lancamentos?: number
+          observacoes?: string | null
+          resumo_por_tipo?: Json | null
+          total_a_receber?: number
+          total_em_atraso?: number
+          total_recebido?: number
+        }
+        Relationships: []
+      }
       funcionarios: {
         Row: {
           cargo: string
@@ -791,6 +886,78 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      lancamentos_financeiros: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          data_recebimento: string | null
+          data_vencimento: string | null
+          forma_pagamento: string | null
+          id: string
+          observacoes: string | null
+          protocolo_id: string | null
+          status: string
+          tipo_receita: string
+          tipo_receita_justificativa: string | null
+          updated_at: string
+          valor_bruto: number
+          valor_pago: number
+          valor_pendente: number | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          data_recebimento?: string | null
+          data_vencimento?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          protocolo_id?: string | null
+          status?: string
+          tipo_receita: string
+          tipo_receita_justificativa?: string | null
+          updated_at?: string
+          valor_bruto?: number
+          valor_pago?: number
+          valor_pendente?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          data_recebimento?: string | null
+          data_vencimento?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          protocolo_id?: string | null
+          status?: string
+          tipo_receita?: string
+          tipo_receita_justificativa?: string | null
+          updated_at?: string
+          valor_bruto?: number
+          valor_pago?: number
+          valor_pendente?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lancamentos_financeiros_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_financeiros_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leads: {
         Row: {
