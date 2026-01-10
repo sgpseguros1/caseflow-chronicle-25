@@ -61,9 +61,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['Cadastros']);
   const location = useLocation();
-  const { signOut, profile } = useAuth();
-
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'gestor';
+  const { signOut, profile, isAdminOrGestor } = useAuth();
 
   const toggleMenu = (label: string) => {
     setExpandedMenus((prev) =>
@@ -114,7 +112,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-1">
           {menuItems.map((item) => {
-            if (item.adminOnly && !isAdmin) return null;
+            if (item.adminOnly && !isAdminOrGestor) return null;
 
             const isActive = isMenuActive(item);
             const isExpanded = expandedMenus.includes(item.label);

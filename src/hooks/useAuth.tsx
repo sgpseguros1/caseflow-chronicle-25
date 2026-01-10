@@ -10,11 +10,34 @@ interface Profile {
   is_active: boolean;
 }
 
+type AppRole = 'admin' | 'gestor' | 'funcionario';
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const fetchUserData = async (userId: string) => {
+    // Fetch profile data
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    setProfile(profileData);
+
+    // Fetch user roles from user_roles table (source of truth for RBAC)
+    const { data: userRoles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+    
+    const fetchedRoles = userRoles?.map(r => r.role as AppRole) || [];
+    setRoles(fetchedRoles);
+  };
 
   useEffect(() => {
     // Set up auth state listener BEFORE getting session
@@ -24,16 +47,10 @@ export function useAuth() {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch profile data
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          setProfile(profileData);
+          await fetchUserData(session.user.id);
         } else {
           setProfile(null);
+          setRoles([]);
         }
         
         setLoading(false);
@@ -46,13 +63,7 @@ export function useAuth() {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        
-        setProfile(profileData);
+        await fetchUserData(session.user.id);
       }
       
       setLoading(false);
@@ -65,5 +76,21 @@ export function useAuth() {
     await supabase.auth.signOut();
   };
 
-  return { user, session, profile, loading, signOut };
+  const hasRole = (role: AppRole) => roles.includes(role);
+  const isAdmin = hasRole('admin');
+  const isGestor = hasRole('gestor');
+  const isAdminOrGestor = isAdmin || isGestor;
+
+  return { 
+    user, 
+    session, 
+    profile, 
+    roles,
+    loading, 
+    signOut,
+    hasRole,
+    isAdmin,
+    isGestor,
+    isAdminOrGestor
+  };
 }
