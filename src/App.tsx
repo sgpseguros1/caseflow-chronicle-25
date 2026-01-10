@@ -24,6 +24,9 @@ import FuncionarioFormPage from "./pages/FuncionarioFormPage";
 import CallCenterPage from "./pages/CallCenterPage";
 import MetricasDiariasPage from "./pages/MetricasDiariasPage";
 import MetricaFormPage from "./pages/MetricaFormPage";
+import AlertasPage from "./pages/AlertasPage";
+import ComunicacaoPage from "./pages/ComunicacaoPage";
+import IAModulePage from "./pages/IAModulePage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -77,6 +80,9 @@ const App = () => (
           <Route path="/calendario" element={<ProtectedRoute><div className="text-center py-12"><h1 className="text-2xl font-bold">Calendário</h1><p className="text-muted-foreground">Em desenvolvimento</p></div></ProtectedRoute>} />
           <Route path="/metricas" element={<ProtectedRoute><MetricasDiariasPage /></ProtectedRoute>} />
           <Route path="/metricas/novo" element={<ProtectedRoute><MetricaFormPage /></ProtectedRoute>} />
+          <Route path="/alertas" element={<ProtectedRoute><AlertasPage /></ProtectedRoute>} />
+          <Route path="/comunicacao" element={<ProtectedRoute><ComunicacaoPage /></ProtectedRoute>} />
+          <Route path="/ia" element={<ProtectedRoute><IAModulePage /></ProtectedRoute>} />
           <Route path="/relatorios" element={<ProtectedRoute><div className="text-center py-12"><h1 className="text-2xl font-bold">Relatórios</h1><p className="text-muted-foreground">Acesso restrito a administradores</p></div></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

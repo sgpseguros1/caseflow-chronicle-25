@@ -116,6 +116,66 @@ export type Database = {
           },
         ]
       }
+      alertas: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          funcionario_id: string | null
+          id: string
+          lido_em: string | null
+          prioridade: string
+          processo_id: string | null
+          resolvido_em: string | null
+          status: string
+          tipo: string
+          titulo: string
+          usuario_alvo_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          funcionario_id?: string | null
+          id?: string
+          lido_em?: string | null
+          prioridade?: string
+          processo_id?: string | null
+          resolvido_em?: string | null
+          status?: string
+          tipo: string
+          titulo: string
+          usuario_alvo_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          funcionario_id?: string | null
+          id?: string
+          lido_em?: string | null
+          prioridade?: string
+          processo_id?: string | null
+          resolvido_em?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+          usuario_alvo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alertas_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -216,6 +276,112 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      comunicacao_historico: {
+        Row: {
+          assunto: string | null
+          canal: string
+          cliente_id: string | null
+          conteudo: string
+          destinatario: string
+          enviado_em: string
+          enviado_por: string | null
+          erro_detalhes: string | null
+          id: string
+          processo_id: string | null
+          status: string
+          template_id: string | null
+        }
+        Insert: {
+          assunto?: string | null
+          canal: string
+          cliente_id?: string | null
+          conteudo: string
+          destinatario: string
+          enviado_em?: string
+          enviado_por?: string | null
+          erro_detalhes?: string | null
+          id?: string
+          processo_id?: string | null
+          status?: string
+          template_id?: string | null
+        }
+        Update: {
+          assunto?: string | null
+          canal?: string
+          cliente_id?: string | null
+          conteudo?: string
+          destinatario?: string
+          enviado_em?: string
+          enviado_por?: string | null
+          erro_detalhes?: string | null
+          id?: string
+          processo_id?: string | null
+          status?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicacao_historico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicacao_historico_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicacao_historico_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "comunicacao_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comunicacao_templates: {
+        Row: {
+          assunto: string | null
+          ativo: boolean | null
+          canal: string
+          conteudo: string
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          updated_at: string
+          variaveis: string[] | null
+        }
+        Insert: {
+          assunto?: string | null
+          ativo?: boolean | null
+          canal: string
+          conteudo: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+          variaveis?: string[] | null
+        }
+        Update: {
+          assunto?: string | null
+          ativo?: boolean | null
+          canal?: string
+          conteudo?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+          variaveis?: string[] | null
+        }
+        Relationships: []
       }
       funcionarios: {
         Row: {
@@ -432,6 +598,41 @@ export type Database = {
         }
         Relationships: []
       }
+      processo_acessos: {
+        Row: {
+          acao: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          processo_id: string
+          user_id: string
+        }
+        Insert: {
+          acao?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          processo_id: string
+          user_id: string
+        }
+        Update: {
+          acao?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          processo_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processo_acessos_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processos: {
         Row: {
           advogado_id: string | null
@@ -449,6 +650,7 @@ export type Database = {
           status: string
           tipo: string
           titulo: string | null
+          ultima_movimentacao: string | null
           updated_at: string
           valor_estimado: number | null
           valor_final: number | null
@@ -469,6 +671,7 @@ export type Database = {
           status?: string
           tipo: string
           titulo?: string | null
+          ultima_movimentacao?: string | null
           updated_at?: string
           valor_estimado?: number | null
           valor_final?: number | null
@@ -489,6 +692,7 @@ export type Database = {
           status?: string
           tipo?: string
           titulo?: string | null
+          ultima_movimentacao?: string | null
           updated_at?: string
           valor_estimado?: number | null
           valor_final?: number | null
