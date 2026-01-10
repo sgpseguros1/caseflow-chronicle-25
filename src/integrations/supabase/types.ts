@@ -14,7 +14,137 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          address: string | null
+          bank_account: string | null
+          bank_account_type: string | null
+          bank_agency: string | null
+          bank_name: string | null
+          birth_date: string | null
+          cep: string | null
+          city: string | null
+          civil_status: string | null
+          code: number
+          complement: string | null
+          cpf: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          name: string
+          nationality: string | null
+          naturality: string | null
+          neighborhood: string | null
+          notes: string | null
+          number: string | null
+          phone1: string | null
+          phone2: string | null
+          profession: string | null
+          rg: string | null
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          bank_account?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_name?: string | null
+          birth_date?: string | null
+          cep?: string | null
+          city?: string | null
+          civil_status?: string | null
+          code?: number
+          complement?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          nationality?: string | null
+          naturality?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          number?: string | null
+          phone1?: string | null
+          phone2?: string | null
+          profession?: string | null
+          rg?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          bank_account?: string | null
+          bank_account_type?: string | null
+          bank_agency?: string | null
+          bank_name?: string | null
+          birth_date?: string | null
+          cep?: string | null
+          city?: string | null
+          civil_status?: string | null
+          code?: number
+          complement?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          nationality?: string | null
+          naturality?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          number?: string | null
+          phone1?: string | null
+          phone2?: string | null
+          profession?: string | null
+          rg?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+          name: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          is_active?: boolean
+          name: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
