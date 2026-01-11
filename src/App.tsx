@@ -38,6 +38,7 @@ import IAModulePage from "./pages/IAModulePage";
 import UsersAdminPage from "./pages/UsersAdminPage";
 import FinanceiroPainelPage from "./pages/FinanceiroPainelPage";
 import FinanceiroFormPage from "./pages/FinanceiroFormPage";
+import ControleProcessosPage from "./pages/ControleProcessosPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -101,6 +102,7 @@ const App = () => (
           <Route path="/alertas" element={<ProtectedRoute><AlertasPage /></ProtectedRoute>} />
           <Route path="/alertas-criticos" element={<ProtectedRoute><AlertasCriticosPage /></ProtectedRoute>} />
           <Route path="/bau" element={<ProtectedRoute><BauPainelPage /></ProtectedRoute>} />
+          <Route path="/controle-processos" element={<ProtectedRoute><ControleProcessosPage /></ProtectedRoute>} />
           <Route path="/comunicacao" element={<ProtectedRoute><ComunicacaoPage /></ProtectedRoute>} />
           <Route path="/ia" element={<ProtectedRoute><IAModulePage /></ProtectedRoute>} />
           <Route path="/admin/usuarios" element={<ProtectedRoute><UsersAdminPage /></ProtectedRoute>} />

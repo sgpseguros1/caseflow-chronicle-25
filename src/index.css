@@ -2,49 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
-
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
 
 @layer base {
   :root {
-    /* JUS PRO - Paleta Azul e Branca */
+    /* JUS PRO - Paleta Azul Marinho e Dourado (baseado na logo) */
     --background: 0 0% 100%;
-    --foreground: 215 25% 15%;
+    --foreground: 220 30% 15%;
 
     /* Cards and surfaces - Branco puro */
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 220 30% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 220 30% 15%;
 
-    /* Primary - Azul Institucional #0B5ED7 (HSL: 214 90% 44%) */
-    --primary: 214 90% 44%;
+    /* Primary - Azul Marinho #1A365D (HSL: 220 56% 24%) */
+    --primary: 220 56% 24%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Azul Secundário #1F7AE0 (HSL: 210 75% 50%) */
-    --secondary: 210 30% 96%;
-    --secondary-foreground: 214 90% 44%;
+    /* Secondary - Fundo claro azulado */
+    --secondary: 220 30% 96%;
+    --secondary-foreground: 220 56% 24%;
+
+    /* Gold/Accent - Dourado #C9A227 (HSL: 46 71% 47%) */
+    --gold: 46 71% 47%;
+    --gold-foreground: 220 30% 15%;
 
     /* Muted tones - Cinza azulado */
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 15% 45%;
+    --muted: 220 20% 96%;
+    --muted-foreground: 220 15% 45%;
 
-    /* Accent - Azul claro para destaques */
-    --accent: 210 75% 50%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Dourado para destaques */
+    --accent: 46 71% 47%;
+    --accent-foreground: 220 30% 15%;
 
     /* Status colors */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 215 35% 15%;
+    --warning-foreground: 220 35% 15%;
 
     --info: 210 75% 50%;
     --info-foreground: 0 0% 100%;
@@ -53,38 +51,41 @@
     --destructive-foreground: 0 0% 100%;
 
     /* UI elements */
-    --border: 210 20% 90%;
-    --input: 210 20% 90%;
-    --ring: 214 90% 44%;
+    --border: 220 20% 90%;
+    --input: 220 20% 90%;
+    --ring: 220 56% 24%;
 
     --radius: 0.5rem;
 
-    /* Sidebar - Azul escuro institucional #0B5ED7 */
-    --sidebar-background: 214 90% 44%;
+    /* Sidebar - Azul Marinho escuro */
+    --sidebar-background: 220 56% 24%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 214 90% 44%;
-    --sidebar-accent: 214 80% 55%;
+    --sidebar-primary: 46 71% 47%;
+    --sidebar-primary-foreground: 220 30% 15%;
+    --sidebar-accent: 220 50% 32%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 214 70% 50%;
-    --sidebar-ring: 0 0% 100%;
+    --sidebar-border: 220 45% 30%;
+    --sidebar-ring: 46 71% 47%;
 
     /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(214 90% 44%), hsl(214 85% 35%));
-    --gradient-accent: linear-gradient(135deg, hsl(210 75% 50%), hsl(214 90% 44%));
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 25% 98%));
+    --gradient-primary: linear-gradient(135deg, hsl(220 56% 24%), hsl(220 56% 18%));
+    --gradient-accent: linear-gradient(135deg, hsl(46 71% 47%), hsl(46 71% 38%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 25% 98%));
+    --gradient-gold: linear-gradient(135deg, hsl(46 71% 55%), hsl(46 71% 42%));
 
     /* Shadows */
-    --shadow-sm: 0 1px 3px 0px hsl(214 90% 44% / 0.08), 0 1px 2px -1px hsl(214 90% 44% / 0.08);
-    --shadow-md: 0 1px 3px 0px hsl(214 90% 44% / 0.1), 0 2px 4px -1px hsl(214 90% 44% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(214 90% 44% / 0.1), 0 4px 6px -1px hsl(214 90% 44% / 0.1);
-    --shadow-card: 0 1px 3px hsl(214 90% 44% / 0.06), 0 1px 2px -1px hsl(214 90% 44% / 0.06);
-    --chart-1: 214 90% 44%;
-    --chart-2: 210 75% 50%;
-    --chart-3: 214 60% 60%;
-    --chart-4: 210 50% 70%;
-    --chart-5: 214 40% 75%;
-    --sidebar: 214 90% 44%;
+    --shadow-sm: 0 1px 3px 0px hsl(220 56% 24% / 0.08), 0 1px 2px -1px hsl(220 56% 24% / 0.08);
+    --shadow-md: 0 1px 3px 0px hsl(220 56% 24% / 0.1), 0 2px 4px -1px hsl(220 56% 24% / 0.1);
+    --shadow-lg: 0 1px 3px 0px hsl(220 56% 24% / 0.1), 0 4px 6px -1px hsl(220 56% 24% / 0.1);
+    --shadow-card: 0 1px 3px hsl(220 56% 24% / 0.06), 0 1px 2px -1px hsl(220 56% 24% / 0.06);
+    
+    --chart-1: 220 56% 24%;
+    --chart-2: 46 71% 47%;
+    --chart-3: 220 45% 40%;
+    --chart-4: 46 60% 60%;
+    --chart-5: 220 35% 55%;
+    --sidebar: 220 56% 24%;
+    
     --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
