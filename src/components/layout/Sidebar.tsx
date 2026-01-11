@@ -22,15 +22,19 @@ import {
   MessageSquare,
   Bot,
   AlertTriangle,
+  DollarSign,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import logoJusPro from '@/assets/logo-juspro.png';
 
 interface MenuItem {
   icon: React.ElementType;
   label: string;
   path?: string;
   adminOnly?: boolean;
+  gestorOnly?: boolean;
   children?: { icon: React.ElementType; label: string; path: string }[];
 }
 
@@ -39,6 +43,7 @@ const menuItems: MenuItem[] = [
   { icon: FileText, label: 'Protocolos', path: '/protocolos' },
   { icon: AlertTriangle, label: 'Alertas Críticos', path: '/alertas-criticos' },
   { icon: Building2, label: 'BAU (Hospitais)', path: '/bau' },
+  { icon: ClipboardList, label: 'Controle Processos', path: '/controle-processos' },
   {
     icon: Users,
     label: 'Cadastros',
@@ -57,6 +62,7 @@ const menuItems: MenuItem[] = [
   { icon: Bell, label: 'Alertas', path: '/alertas' },
   { icon: MessageSquare, label: 'Comunicação', path: '/comunicacao' },
   { icon: Bot, label: 'Módulo IA', path: '/ia' },
+  { icon: DollarSign, label: 'Financeiro', path: '/financeiro', gestorOnly: true },
   { icon: Shield, label: 'Usuários', path: '/admin/usuarios', adminOnly: true },
   { icon: Scale, label: 'Relatórios', path: '/relatorios', adminOnly: true },
 ];
@@ -65,7 +71,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['Cadastros']);
   const location = useLocation();
-  const { signOut, profile, isAdminOrGestor } = useAuth();
+  const { signOut, profile, isAdminOrGestor, isAdmin, isGestor } = useAuth();
 
   const toggleMenu = (label: string) => {
     setExpandedMenus((prev) =>
@@ -85,6 +91,12 @@ export function Sidebar() {
     return false;
   };
 
+  const shouldShowItem = (item: MenuItem) => {
+    if (item.adminOnly && !isAdmin) return false;
+    if (item.gestorOnly && !isAdminOrGestor) return false;
+    return true;
+  };
+
   return (
     <aside
       className={cn(
@@ -93,22 +105,22 @@ export function Sidebar() {
       )}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
-              <Shield className="h-5 w-5 text-sidebar-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-sidebar-accent-foreground">JUS PRO</h1>
-              <p className="text-[10px] text-sidebar-foreground/60">Gestão Jurídica</p>
-            </div>
+      <div className="flex h-20 items-center justify-center border-b border-sidebar-border px-4">
+        {!collapsed ? (
+          <div className="flex flex-col items-center gap-1">
+            <img 
+              src={logoJusPro} 
+              alt="JUS PRO" 
+              className="h-12 w-auto object-contain"
+            />
+            <p className="text-[10px] text-sidebar-foreground/60">Gestão Jurídica</p>
           </div>
-        )}
-        {collapsed && (
-          <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
-            <Shield className="h-5 w-5 text-sidebar-primary-foreground" />
-          </div>
+        ) : (
+          <img 
+            src={logoJusPro} 
+            alt="JUS PRO" 
+            className="h-10 w-auto object-contain"
+          />
         )}
       </div>
 
@@ -116,7 +128,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-1">
           {menuItems.map((item) => {
-            if (item.adminOnly && !isAdminOrGestor) return null;
+            if (!shouldShowItem(item)) return null;
 
             const isActive = isMenuActive(item);
             const isExpanded = expandedMenus.includes(item.label);
@@ -199,7 +211,7 @@ export function Sidebar() {
       <div className="border-t border-sidebar-border p-4">
         {!collapsed ? (
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground font-medium">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold text-gold-foreground font-medium">
               {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
             <div className="flex-1 min-w-0">
@@ -220,7 +232,7 @@ export function Sidebar() {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground font-medium">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold text-gold-foreground font-medium">
               {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
             <button
@@ -237,7 +249,7 @@ export function Sidebar() {
       {/* Collapse Toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm hover:bg-muted transition-colors"
+        className="absolute -right-3 top-24 flex h-6 w-6 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm hover:bg-muted transition-colors"
       >
         {collapsed ? (
           <ChevronRight className="h-4 w-4" />
