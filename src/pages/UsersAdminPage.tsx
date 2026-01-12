@@ -68,6 +68,8 @@ import {
   UserCheck,
   Briefcase,
   KeyRound,
+  UserX,
+  History,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -100,9 +102,17 @@ const DEPARTAMENTOS = [
   'Comercial',
 ];
 
+interface EditingUser {
+  id: string;
+  name: string;
+  email: string;
+  is_active: boolean;
+  roles: Array<{ role: 'admin' | 'gestor' | 'funcionario' }>;
+}
+
 export default function UsersAdminPage() {
   const navigate = useNavigate();
-  const { isAdmin, user: currentUser } = useAuth();
+  const { isAdmin, isGestor, isAdminOrGestor, user: currentUser } = useAuth();
   const { data: users, isLoading, error } = useUsers();
   const { data: funcionarios, isLoading: loadingFuncionarios } = useFuncionarios();
   const addRole = useAddUserRole();
@@ -122,18 +132,19 @@ export default function UsersAdminPage() {
   
   // Edit user dialog
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [editingUser, setEditingUser] = useState<EditingUser | null>(null);
   const [savingUser, setSavingUser] = useState(false);
   
   // Delete user dialog
   const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [deletingUserName, setDeletingUserName] = useState<string>('');
   const [deletingUser, setDeletingUser] = useState(false);
   
   // Convert to funcionario dialog
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [convertingUser, setConvertingUser] = useState<{ id: string; name: string; email: string } | null>(null);
-  const [convertData, setConvertData] = useState({ cargo: 'Analista', departamento: 'Operacional', telefone: '' });
+  const [convertData, setConvertData] = useState({ cargo: 'Analista', departamento: 'Operacional', telefone: '', cpf: '' });
   const [converting, setConverting] = useState(false);
   
   // Edit funcionario dialog
@@ -143,18 +154,61 @@ export default function UsersAdminPage() {
   
   // Delete funcionario dialog
   const [deleteFuncDialogOpen, setDeleteFuncDialogOpen] = useState(false);
+  const [deletingFuncId, setDeletingFuncId] = useState<string | null>(null);
+  const [deletingFuncName, setDeletingFuncName] = useState<string>('');
+  
+  // Inactivate funcionario dialog
+  const [inactivateFuncDialogOpen, setInactivateFuncDialogOpen] = useState(false);
+  const [inactivatingFuncId, setInactivatingFuncId] = useState<string | null>(null);
+  const [inactivatingFuncName, setInactivatingFuncName] = useState<string>('');
   
   // Reset password state
   const [resettingPasswordId, setResettingPasswordId] = useState<string | null>(null);
-  const [deletingFuncId, setDeletingFuncId] = useState<string | null>(null);
 
-  // Redirect if not admin
-  if (!isAdmin) {
+  // Check if user is admin based on roles
+  const isUserAdmin = (userRoles: Array<{ role: 'admin' | 'gestor' | 'funcionario' }> | undefined) => {
+    return userRoles?.some(r => r.role === 'admin') || false;
+  };
+
+  // Check if current user can perform action on target user
+  const canEditUser = (targetUser: { id: string; roles: Array<{ role: 'admin' | 'gestor' | 'funcionario' }> }) => {
+    // Admin can edit everyone
+    if (isAdmin) return true;
+    // Gestor can edit non-admins
+    if (isGestor && !isUserAdmin(targetUser.roles)) return true;
+    // Users can edit themselves
+    if (targetUser.id === currentUser?.id) return true;
+    return false;
+  };
+
+  const canDeleteUser = (targetUser: { id: string; roles: Array<{ role: 'admin' | 'gestor' | 'funcionario' }> }) => {
+    // Only Admin can delete users
+    if (!isAdmin) return false;
+    // Cannot delete yourself
+    if (targetUser.id === currentUser?.id) return false;
+    return true;
+  };
+
+  const canResetPassword = (targetUser: { id: string; roles: Array<{ role: 'admin' | 'gestor' | 'funcionario' }> }) => {
+    // Admin can reset anyone's password
+    if (isAdmin) return true;
+    // Gestor can reset non-admin passwords
+    if (isGestor && !isUserAdmin(targetUser.roles)) return true;
+    return false;
+  };
+
+  const canManageRoles = () => {
+    // Only Admin can manage roles
+    return isAdmin;
+  };
+
+  // Redirect if not admin or gestor
+  if (!isAdminOrGestor) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="h-16 w-16 text-destructive mb-4" />
         <h1 className="text-2xl font-bold mb-2">Acesso Negado</h1>
-        <p className="text-muted-foreground">Apenas administradores podem acessar esta página.</p>
+        <p className="text-muted-foreground">Apenas administradores e gestores podem acessar esta página.</p>
       </div>
     );
   }
@@ -168,6 +222,20 @@ export default function UsersAdminPage() {
     func.nome.toLowerCase().includes(funcSearch.toLowerCase()) ||
     func.email.toLowerCase().includes(funcSearch.toLowerCase())
   ) || [];
+
+  // Audit log function
+  const logAuditAction = async (action: string, targetType: 'usuario' | 'funcionario', targetId: string, targetName: string, details?: string) => {
+    try {
+      await supabase.from('auditoria_financeira').insert({
+        acao: action,
+        usuario_id: currentUser?.id,
+        descricao: `${action} - ${targetType}: ${targetName} (ID: ${targetId})${details ? ` - ${details}` : ''}`,
+        dados_novos: { targetType, targetId, targetName, details, action }
+      });
+    } catch (error) {
+      console.error('Erro ao registrar log de auditoria:', error);
+    }
+  };
 
   const handleCreateUser = async () => {
     if (!newUser.email || !newUser.password || !newUser.name) {
@@ -195,6 +263,8 @@ export default function UsersAdminPage() {
         if (roleError) {
           console.error('Error adding role:', roleError);
         }
+        
+        await logAuditAction('Criação de Usuário', 'usuario', data.user.id, newUser.name, `Role: ${newUser.role}`);
       }
 
       toast({ title: 'Sucesso', description: 'Usuário criado com sucesso!' });
@@ -219,10 +289,16 @@ export default function UsersAdminPage() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ name: editingUser.name, email: editingUser.email })
+        .update({ 
+          name: editingUser.name, 
+          email: editingUser.email,
+          is_active: editingUser.is_active
+        })
         .eq('id', editingUser.id);
 
       if (error) throw error;
+
+      await logAuditAction('Edição de Usuário', 'usuario', editingUser.id, editingUser.name);
 
       toast({ title: 'Sucesso', description: 'Usuário atualizado com sucesso!' });
       setEditUserDialogOpen(false);
@@ -258,9 +334,12 @@ export default function UsersAdminPage() {
 
       if (error) throw error;
 
+      await logAuditAction('Exclusão de Usuário', 'usuario', deletingUserId, deletingUserName, 'Usuário desativado e permissões removidas');
+
       toast({ title: 'Sucesso', description: 'Usuário desativado com sucesso!' });
       setDeleteUserDialogOpen(false);
       setDeletingUserId(null);
+      setDeletingUserName('');
       queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error: any) {
       toast({ 
@@ -292,15 +371,17 @@ export default function UsersAdminPage() {
         cargo: convertData.cargo,
         departamento: convertData.departamento,
         telefone: convertData.telefone || null,
-        cpf: null,
+        cpf: convertData.cpf || null,
         user_id: convertingUser.id,
         status: 'ativo',
       });
 
+      await logAuditAction('Conversão para Funcionário', 'usuario', convertingUser.id, convertingUser.name, `Cargo: ${convertData.cargo}, Departamento: ${convertData.departamento}`);
+
       toast({ title: 'Sucesso', description: 'Usuário convertido para funcionário!' });
       setConvertDialogOpen(false);
       setConvertingUser(null);
-      setConvertData({ cargo: 'Analista', departamento: 'Operacional', telefone: '' });
+      setConvertData({ cargo: 'Analista', departamento: 'Operacional', telefone: '', cpf: '' });
     } catch (error: any) {
       toast({ 
         title: 'Erro ao converter usuário', 
@@ -324,8 +405,11 @@ export default function UsersAdminPage() {
         cargo: editingFunc.cargo,
         departamento: editingFunc.departamento,
         telefone: editingFunc.telefone,
+        cpf: editingFunc.cpf,
         status: editingFunc.status,
       });
+
+      await logAuditAction('Edição de Funcionário', 'funcionario', editingFunc.id, editingFunc.nome);
 
       toast({ title: 'Sucesso', description: 'Funcionário atualizado com sucesso!' });
       setEditFuncDialogOpen(false);
@@ -346,9 +430,11 @@ export default function UsersAdminPage() {
     
     try {
       await deleteFuncionario.mutateAsync(deletingFuncId);
+      await logAuditAction('Exclusão de Funcionário', 'funcionario', deletingFuncId, deletingFuncName);
       toast({ title: 'Sucesso', description: 'Funcionário excluído com sucesso!' });
       setDeleteFuncDialogOpen(false);
       setDeletingFuncId(null);
+      setDeletingFuncName('');
     } catch (error: any) {
       toast({ 
         title: 'Erro ao excluir funcionário', 
@@ -358,15 +444,39 @@ export default function UsersAdminPage() {
     }
   };
 
-  const handleToggleRole = (userId: string, role: 'admin' | 'gestor' | 'funcionario', hasRole: boolean) => {
-    if (hasRole) {
-      removeRole.mutate({ userId, role });
-    } else {
-      addRole.mutate({ userId, role });
+  const handleInactivateFuncionario = async () => {
+    if (!inactivatingFuncId) return;
+    
+    try {
+      await updateFuncionario.mutateAsync({
+        id: inactivatingFuncId,
+        status: 'inativo',
+      });
+      await logAuditAction('Inativação de Funcionário', 'funcionario', inactivatingFuncId, inactivatingFuncName);
+      toast({ title: 'Sucesso', description: 'Funcionário inativado com sucesso!' });
+      setInactivateFuncDialogOpen(false);
+      setInactivatingFuncId(null);
+      setInactivatingFuncName('');
+    } catch (error: any) {
+      toast({ 
+        title: 'Erro ao inativar funcionário', 
+        description: error.message || 'Tente novamente.', 
+        variant: 'destructive' 
+      });
     }
   };
 
-  const handleResetPassword = async (email: string, userId: string) => {
+  const handleToggleRole = (userId: string, role: 'admin' | 'gestor' | 'funcionario', hasRole: boolean, userName: string) => {
+    if (hasRole) {
+      removeRole.mutate({ userId, role });
+      logAuditAction('Remoção de Role', 'usuario', userId, userName, `Role removida: ${role}`);
+    } else {
+      addRole.mutate({ userId, role });
+      logAuditAction('Atribuição de Role', 'usuario', userId, userName, `Role atribuída: ${role}`);
+    }
+  };
+
+  const handleResetPassword = async (email: string, userId: string, userName: string) => {
     setResettingPasswordId(userId);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -374,6 +484,8 @@ export default function UsersAdminPage() {
       });
 
       if (error) throw error;
+
+      await logAuditAction('Reset de Senha', 'usuario', userId, userName, `Email enviado para: ${email}`);
 
       toast({ 
         title: 'E-mail enviado', 
@@ -388,6 +500,21 @@ export default function UsersAdminPage() {
     } finally {
       setResettingPasswordId(null);
     }
+  };
+
+  const handleResetFuncionarioPassword = async (func: any) => {
+    // Find the user associated with this funcionario
+    const associatedUser = users?.find(u => u.email === func.email);
+    if (!associatedUser) {
+      toast({ 
+        title: 'Erro', 
+        description: 'Este funcionário não possui uma conta de usuário vinculada.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
+    await handleResetPassword(func.email, associatedUser.id, func.nome);
   };
 
   const getRoleBadges = (roles: Array<{ role: 'admin' | 'gestor' | 'funcionario' }>) => {
@@ -411,6 +538,10 @@ export default function UsersAdminPage() {
     return funcionarios?.some(f => f.email === email);
   };
 
+  const getFuncionarioForUser = (email: string) => {
+    return funcionarios?.find(f => f.email === email);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -432,81 +563,83 @@ export default function UsersAdminPage() {
           </p>
         </div>
         
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <UserPlus className="h-4 w-4" />
-              Novo Usuário
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Criar Novo Usuário</DialogTitle>
-              <DialogDescription>
-                Preencha os dados para criar uma nova conta de usuário.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome Completo</Label>
-                <Input
-                  id="name"
-                  value={newUser.name}
-                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                  placeholder="Nome do usuário"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  placeholder="email@exemplo.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  placeholder="Mínimo 6 caracteres"
-                  minLength={6}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Função</Label>
-                <div className="flex gap-2 flex-wrap">
-                  {ROLES.map((role) => (
-                    <Button
-                      key={role.value}
-                      type="button"
-                      variant={newUser.role === role.value ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setNewUser({ ...newUser, role: role.value })}
-                      className="gap-2"
-                    >
-                      <role.icon className="h-4 w-4" />
-                      {role.label}
-                    </Button>
-                  ))}
+        {isAdmin && (
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <UserPlus className="h-4 w-4" />
+                Novo Usuário
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Criar Novo Usuário</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados para criar uma nova conta de usuário.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome Completo</Label>
+                  <Input
+                    id="name"
+                    value={newUser.name}
+                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                    placeholder="Nome do usuário"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                    placeholder="email@exemplo.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    placeholder="Mínimo 6 caracteres"
+                    minLength={6}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Função</Label>
+                  <div className="flex gap-2 flex-wrap">
+                    {ROLES.map((role) => (
+                      <Button
+                        key={role.value}
+                        type="button"
+                        variant={newUser.role === role.value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setNewUser({ ...newUser, role: role.value })}
+                        className="gap-2"
+                      >
+                        <role.icon className="h-4 w-4" />
+                        {role.label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreateUser} disabled={creating}>
-                {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Criar Usuário
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateUser} disabled={creating}>
+                  {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Criar Usuário
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <Tabs defaultValue="usuarios" className="space-y-4">
@@ -567,6 +700,10 @@ export default function UsersAdminPage() {
                       filteredUsers.map((user) => {
                         const isFuncionario = isUserFuncionario(user.email);
                         const isCurrentUser = user.id === currentUser?.id;
+                        const userIsAdmin = isUserAdmin(user.roles);
+                        const canEdit = canEditUser(user);
+                        const canDelete = canDeleteUser(user);
+                        const canReset = canResetPassword(user);
                         
                         return (
                           <TableRow key={user.id}>
@@ -602,8 +739,13 @@ export default function UsersAdminPage() {
                               <div className="flex items-center gap-2">
                                 <Switch
                                   checked={user.is_active}
-                                  onCheckedChange={(checked) => toggleActive.mutate({ userId: user.id, isActive: checked })}
-                                  disabled={isCurrentUser}
+                                  onCheckedChange={(checked) => {
+                                    if (canEdit) {
+                                      toggleActive.mutate({ userId: user.id, isActive: checked });
+                                      logAuditAction(checked ? 'Ativação de Usuário' : 'Desativação de Usuário', 'usuario', user.id, user.name);
+                                    }
+                                  }}
+                                  disabled={isCurrentUser || !canEdit}
                                 />
                                 <span className={user.is_active ? 'text-green-600' : 'text-muted-foreground'}>
                                   {user.is_active ? 'Ativo' : 'Inativo'}
@@ -623,16 +765,28 @@ export default function UsersAdminPage() {
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuLabel>Ações</DropdownMenuLabel>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem 
-                                    onClick={() => {
-                                      setEditingUser({ id: user.id, name: user.name, email: user.email });
-                                      setEditUserDialogOpen(true);
-                                    }}
-                                  >
-                                    <Pencil className="h-4 w-4 mr-2" />
-                                    Editar Usuário
-                                  </DropdownMenuItem>
-                                  {!isFuncionario && (
+                                  
+                                  {/* Edit User */}
+                                  {canEdit && (
+                                    <DropdownMenuItem 
+                                      onClick={() => {
+                                        setEditingUser({ 
+                                          id: user.id, 
+                                          name: user.name, 
+                                          email: user.email,
+                                          is_active: user.is_active,
+                                          roles: user.roles
+                                        });
+                                        setEditUserDialogOpen(true);
+                                      }}
+                                    >
+                                      <Pencil className="h-4 w-4 mr-2" />
+                                      Editar Usuário
+                                    </DropdownMenuItem>
+                                  )}
+                                  
+                                  {/* Convert to Funcionario */}
+                                  {!isFuncionario && isAdmin && (
                                     <DropdownMenuItem 
                                       onClick={() => {
                                         setConvertingUser({ id: user.id, name: user.name, email: user.email });
@@ -643,44 +797,68 @@ export default function UsersAdminPage() {
                                       Tornar Funcionário
                                     </DropdownMenuItem>
                                   )}
-                                  <DropdownMenuItem 
-                                    onClick={() => handleResetPassword(user.email, user.id)}
-                                    disabled={resettingPasswordId === user.id}
-                                  >
-                                    {resettingPasswordId === user.id ? (
-                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    ) : (
-                                      <KeyRound className="h-4 w-4 mr-2" />
-                                    )}
-                                    Resetar Senha
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuLabel>Gerenciar Roles</DropdownMenuLabel>
-                                  {ROLES.map((role) => {
-                                    const hasRole = user.roles?.some(r => r.role === role.value);
-                                    return (
-                                      <DropdownMenuCheckboxItem
-                                        key={role.value}
-                                        checked={hasRole}
-                                        onCheckedChange={() => handleToggleRole(user.id, role.value, hasRole)}
+                                  
+                                  {/* Reset Password */}
+                                  {canReset && (
+                                    <DropdownMenuItem 
+                                      onClick={() => handleResetPassword(user.email, user.id, user.name)}
+                                      disabled={resettingPasswordId === user.id}
+                                    >
+                                      {resettingPasswordId === user.id ? (
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      ) : (
+                                        <KeyRound className="h-4 w-4 mr-2" />
+                                      )}
+                                      Resetar Senha
+                                    </DropdownMenuItem>
+                                  )}
+                                  
+                                  {/* Manage Roles - Admin Only */}
+                                  {canManageRoles() && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuLabel>Gerenciar Roles</DropdownMenuLabel>
+                                      {ROLES.map((role) => {
+                                        const hasRole = user.roles?.some(r => r.role === role.value);
+                                        return (
+                                          <DropdownMenuCheckboxItem
+                                            key={role.value}
+                                            checked={hasRole}
+                                            onCheckedChange={() => handleToggleRole(user.id, role.value, hasRole, user.name)}
+                                          >
+                                            <role.icon className="h-4 w-4 mr-2" />
+                                            {role.label}
+                                          </DropdownMenuCheckboxItem>
+                                        );
+                                      })}
+                                    </>
+                                  )}
+                                  
+                                  {/* Delete User - Admin Only */}
+                                  {canDelete && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem 
+                                        className="text-destructive"
+                                        onClick={() => {
+                                          setDeletingUserId(user.id);
+                                          setDeletingUserName(user.name);
+                                          setDeleteUserDialogOpen(true);
+                                        }}
                                       >
-                                        <role.icon className="h-4 w-4 mr-2" />
-                                        {role.label}
-                                      </DropdownMenuCheckboxItem>
-                                    );
-                                  })}
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem 
-                                    className="text-destructive"
-                                    onClick={() => {
-                                      setDeletingUserId(user.id);
-                                      setDeleteUserDialogOpen(true);
-                                    }}
-                                    disabled={isCurrentUser}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Excluir Usuário
-                                  </DropdownMenuItem>
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Excluir Usuário
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  
+                                  {/* Show message if user is admin and current user is gestor */}
+                                  {!canEdit && userIsAdmin && isGestor && (
+                                    <DropdownMenuItem disabled>
+                                      <Shield className="h-4 w-4 mr-2" />
+                                      <span className="text-xs">Sem permissão (Admin)</span>
+                                    </DropdownMenuItem>
+                                  )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </TableCell>
@@ -716,10 +894,12 @@ export default function UsersAdminPage() {
                       className="pl-9"
                     />
                   </div>
-                  <Button onClick={() => navigate('/funcionarios/novo')} className="gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    Novo
-                  </Button>
+                  {isAdmin && (
+                    <Button onClick={() => navigate('/funcionarios/novo')} className="gap-2">
+                      <UserPlus className="h-4 w-4" />
+                      Novo
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -729,6 +909,7 @@ export default function UsersAdminPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Funcionário</TableHead>
+                      <TableHead>CPF</TableHead>
                       <TableHead>Cargo</TableHead>
                       <TableHead>Departamento</TableHead>
                       <TableHead>Telefone</TableHead>
@@ -739,77 +920,138 @@ export default function UsersAdminPage() {
                   <TableBody>
                     {loadingFuncionarios ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8">
+                        <TableCell colSpan={7} className="text-center py-8">
                           <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
                         </TableCell>
                       </TableRow>
                     ) : filteredFuncionarios.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           Nenhum funcionário encontrado.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredFuncionarios.map((func) => (
-                        <TableRow key={func.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground font-medium">
-                                {func.nome?.charAt(0)?.toUpperCase() || 'F'}
+                      filteredFuncionarios.map((func) => {
+                        // Check if this funcionario has an admin user
+                        const associatedUser = users?.find(u => u.email === func.email);
+                        const funcIsAdmin = associatedUser ? isUserAdmin(associatedUser.roles) : false;
+                        const canEditFunc = isAdmin || (isGestor && !funcIsAdmin);
+                        const canDeleteFunc = isAdmin;
+                        const canResetFuncPassword = isAdmin || (isGestor && !funcIsAdmin);
+                        
+                        return (
+                          <TableRow key={func.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground font-medium">
+                                  {func.nome?.charAt(0)?.toUpperCase() || 'F'}
+                                </div>
+                                <div>
+                                  <p className="font-medium">{func.nome}</p>
+                                  <p className="text-sm text-muted-foreground">{func.email}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-medium">{func.nome}</p>
-                                <p className="text-sm text-muted-foreground">{func.email}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{func.cargo}</TableCell>
-                          <TableCell>{func.departamento || '-'}</TableCell>
-                          <TableCell>{func.telefone || '-'}</TableCell>
-                          <TableCell>
-                            <Badge variant={func.status === 'ativo' ? 'default' : 'secondary'}>
-                              {func.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    setEditingFunc({ ...func });
-                                    setEditFuncDialogOpen(true);
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4 mr-2" />
-                                  Editar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => navigate(`/funcionarios/${func.id}`)}
-                                >
-                                  <UserCog className="h-4 w-4 mr-2" />
-                                  Abrir Página
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  className="text-destructive"
-                                  onClick={() => {
-                                    setDeletingFuncId(func.id);
-                                    setDeleteFuncDialogOpen(true);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Excluir
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                            </TableCell>
+                            <TableCell>{func.cpf || '-'}</TableCell>
+                            <TableCell>{func.cargo}</TableCell>
+                            <TableCell>{func.departamento || '-'}</TableCell>
+                            <TableCell>{func.telefone || '-'}</TableCell>
+                            <TableCell>
+                              <Badge variant={func.status === 'ativo' ? 'default' : 'secondary'}>
+                                {func.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  
+                                  {/* Edit Funcionario */}
+                                  {canEditFunc && (
+                                    <DropdownMenuItem 
+                                      onClick={() => {
+                                        setEditingFunc({ ...func });
+                                        setEditFuncDialogOpen(true);
+                                      }}
+                                    >
+                                      <Pencil className="h-4 w-4 mr-2" />
+                                      Editar Funcionário
+                                    </DropdownMenuItem>
+                                  )}
+                                  
+                                  {/* Reset Password */}
+                                  {canResetFuncPassword && associatedUser && (
+                                    <DropdownMenuItem 
+                                      onClick={() => handleResetFuncionarioPassword(func)}
+                                      disabled={resettingPasswordId === associatedUser?.id}
+                                    >
+                                      {resettingPasswordId === associatedUser?.id ? (
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      ) : (
+                                        <KeyRound className="h-4 w-4 mr-2" />
+                                      )}
+                                      Resetar Senha
+                                    </DropdownMenuItem>
+                                  )}
+                                  
+                                  <DropdownMenuItem 
+                                    onClick={() => navigate(`/funcionarios/${func.id}`)}
+                                  >
+                                    <UserCog className="h-4 w-4 mr-2" />
+                                    Abrir Página
+                                  </DropdownMenuItem>
+                                  
+                                  <DropdownMenuSeparator />
+                                  
+                                  {/* Inactivate Funcionario */}
+                                  {canEditFunc && func.status === 'ativo' && (
+                                    <DropdownMenuItem 
+                                      className="text-orange-600"
+                                      onClick={() => {
+                                        setInactivatingFuncId(func.id);
+                                        setInactivatingFuncName(func.nome);
+                                        setInactivateFuncDialogOpen(true);
+                                      }}
+                                    >
+                                      <UserX className="h-4 w-4 mr-2" />
+                                      Inativar Funcionário
+                                    </DropdownMenuItem>
+                                  )}
+                                  
+                                  {/* Delete Funcionario - Admin Only */}
+                                  {canDeleteFunc && (
+                                    <DropdownMenuItem 
+                                      className="text-destructive"
+                                      onClick={() => {
+                                        setDeletingFuncId(func.id);
+                                        setDeletingFuncName(func.nome);
+                                        setDeleteFuncDialogOpen(true);
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Excluir Funcionário
+                                    </DropdownMenuItem>
+                                  )}
+                                  
+                                  {/* Show message if funcionario is admin and current user is gestor */}
+                                  {!canEditFunc && funcIsAdmin && isGestor && (
+                                    <DropdownMenuItem disabled>
+                                      <Shield className="h-4 w-4 mr-2" />
+                                      <span className="text-xs">Sem permissão (Admin)</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
@@ -876,12 +1118,12 @@ export default function UsersAdminPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar Usuário</DialogTitle>
-            <DialogDescription>Atualize os dados do usuário.</DialogDescription>
+            <DialogDescription>Atualize os dados do usuário. As alterações serão registradas no log de auditoria.</DialogDescription>
           </DialogHeader>
           {editingUser && (
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Nome</Label>
+                <Label>Nome Completo</Label>
                 <Input
                   value={editingUser.name}
                   onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
@@ -893,7 +1135,30 @@ export default function UsersAdminPage() {
                   type="email"
                   value={editingUser.email}
                   onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                  disabled={!isAdmin}
                 />
+                {!isAdmin && (
+                  <p className="text-xs text-muted-foreground">Apenas administradores podem alterar o e-mail.</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select 
+                  value={editingUser.is_active ? 'ativo' : 'inativo'} 
+                  onValueChange={(v) => setEditingUser({ ...editingUser, is_active: v === 'ativo' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="inativo">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
+                <History className="h-3 w-3" />
+                <span>Todas as alterações são registradas no log de auditoria</span>
               </div>
             </div>
           )}
@@ -919,6 +1184,14 @@ export default function UsersAdminPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>CPF</Label>
+              <Input
+                value={convertData.cpf}
+                onChange={(e) => setConvertData({ ...convertData, cpf: e.target.value })}
+                placeholder="000.000.000-00"
+              />
+            </div>
             <div className="space-y-2">
               <Label>Cargo</Label>
               <Select value={convertData.cargo} onValueChange={(v) => setConvertData({ ...convertData, cargo: v })}>
@@ -964,68 +1237,87 @@ export default function UsersAdminPage() {
 
       {/* Dialog: Editar Funcionário */}
       <Dialog open={editFuncDialogOpen} onOpenChange={setEditFuncDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Editar Funcionário</DialogTitle>
-            <DialogDescription>Atualize os dados do funcionário.</DialogDescription>
+            <DialogDescription>Atualize os dados do funcionário. As alterações serão registradas no log de auditoria.</DialogDescription>
           </DialogHeader>
           {editingFunc && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Nome</Label>
-                <Input
-                  value={editingFunc.nome}
-                  onChange={(e) => setEditingFunc({ ...editingFunc, nome: e.target.value })}
-                />
+            <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 col-span-2">
+                  <Label>Nome Completo</Label>
+                  <Input
+                    value={editingFunc.nome}
+                    onChange={(e) => setEditingFunc({ ...editingFunc, nome: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>E-mail</Label>
+                  <Input
+                    type="email"
+                    value={editingFunc.email}
+                    onChange={(e) => setEditingFunc({ ...editingFunc, email: e.target.value })}
+                    disabled={!isAdmin}
+                  />
+                  {!isAdmin && (
+                    <p className="text-xs text-muted-foreground">Apenas administradores podem alterar o e-mail.</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>CPF</Label>
+                  <Input
+                    value={editingFunc.cpf || ''}
+                    onChange={(e) => setEditingFunc({ ...editingFunc, cpf: e.target.value })}
+                    placeholder="000.000.000-00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Telefone</Label>
+                  <Input
+                    value={editingFunc.telefone || ''}
+                    onChange={(e) => setEditingFunc({ ...editingFunc, telefone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Cargo</Label>
+                  <Select value={editingFunc.cargo} onValueChange={(v) => setEditingFunc({ ...editingFunc, cargo: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CARGOS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Departamento</Label>
+                  <Select value={editingFunc.departamento || ''} onValueChange={(v) => setEditingFunc({ ...editingFunc, departamento: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DEPARTAMENTOS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>Status</Label>
+                  <Select value={editingFunc.status} onValueChange={(v) => setEditingFunc({ ...editingFunc, status: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ativo">Ativo</SelectItem>
+                      <SelectItem value="inativo">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>E-mail</Label>
-                <Input
-                  type="email"
-                  value={editingFunc.email}
-                  onChange={(e) => setEditingFunc({ ...editingFunc, email: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Cargo</Label>
-                <Select value={editingFunc.cargo} onValueChange={(v) => setEditingFunc({ ...editingFunc, cargo: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CARGOS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Departamento</Label>
-                <Select value={editingFunc.departamento || ''} onValueChange={(v) => setEditingFunc({ ...editingFunc, departamento: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DEPARTAMENTOS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Telefone</Label>
-                <Input
-                  value={editingFunc.telefone || ''}
-                  onChange={(e) => setEditingFunc({ ...editingFunc, telefone: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={editingFunc.status} onValueChange={(v) => setEditingFunc({ ...editingFunc, status: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ativo">Ativo</SelectItem>
-                    <SelectItem value="inativo">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
+                <History className="h-3 w-3" />
+                <span>Todas as alterações são registradas no log de auditoria</span>
               </div>
             </div>
           )}
@@ -1045,9 +1337,19 @@ export default function UsersAdminPage() {
       <AlertDialog open={deleteUserDialogOpen} onOpenChange={setDeleteUserDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação irá desativar o usuário e remover todas as suas permissões. O usuário não poderá mais acessar o sistema.
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              Excluir Usuário
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Tem certeza que deseja excluir o usuário <strong>{deletingUserName}</strong>?</p>
+              <p>Esta ação irá:</p>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                <li>Desativar a conta do usuário</li>
+                <li>Remover todas as permissões (roles)</li>
+                <li>Impedir o acesso ao sistema</li>
+              </ul>
+              <p className="text-amber-600 font-medium pt-2">Esta ação não poderá ser desfeita.</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1068,9 +1370,14 @@ export default function UsersAdminPage() {
       <AlertDialog open={deleteFuncDialogOpen} onOpenChange={setDeleteFuncDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Funcionário</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este funcionário? Esta ação não pode ser desfeita.
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              Excluir Funcionário
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Tem certeza que deseja excluir o funcionário <strong>{deletingFuncName}</strong>?</p>
+              <p className="text-amber-600 font-medium">Esta ação não poderá ser desfeita.</p>
+              <p className="text-sm">Se este funcionário possui processos vinculados, considere inativá-lo ao invés de excluir.</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1080,6 +1387,31 @@ export default function UsersAdminPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Alert Dialog: Inativar Funcionário */}
+      <AlertDialog open={inactivateFuncDialogOpen} onOpenChange={setInactivateFuncDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-orange-600">
+              <UserX className="h-5 w-5" />
+              Inativar Funcionário
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Tem certeza que deseja inativar o funcionário <strong>{inactivatingFuncName}</strong>?</p>
+              <p className="text-sm">O funcionário será marcado como inativo, mas seus registros e histórico serão mantidos no sistema.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleInactivateFuncionario}
+              className="bg-orange-600 text-white hover:bg-orange-700"
+            >
+              Inativar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
