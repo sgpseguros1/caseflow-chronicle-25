@@ -67,6 +67,7 @@ import {
   Trash2,
   UserCheck,
   Briefcase,
+  KeyRound,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -142,6 +143,9 @@ export default function UsersAdminPage() {
   
   // Delete funcionario dialog
   const [deleteFuncDialogOpen, setDeleteFuncDialogOpen] = useState(false);
+  
+  // Reset password state
+  const [resettingPasswordId, setResettingPasswordId] = useState<string | null>(null);
   const [deletingFuncId, setDeletingFuncId] = useState<string | null>(null);
 
   // Redirect if not admin
@@ -359,6 +363,30 @@ export default function UsersAdminPage() {
       removeRole.mutate({ userId, role });
     } else {
       addRole.mutate({ userId, role });
+    }
+  };
+
+  const handleResetPassword = async (email: string, userId: string) => {
+    setResettingPasswordId(userId);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast({ 
+        title: 'E-mail enviado', 
+        description: `Um link de redefinição de senha foi enviado para ${email}.` 
+      });
+    } catch (error: any) {
+      toast({ 
+        title: 'Erro ao enviar e-mail', 
+        description: error.message || 'Tente novamente.', 
+        variant: 'destructive' 
+      });
+    } finally {
+      setResettingPasswordId(null);
     }
   };
 
@@ -615,6 +643,17 @@ export default function UsersAdminPage() {
                                       Tornar Funcionário
                                     </DropdownMenuItem>
                                   )}
+                                  <DropdownMenuItem 
+                                    onClick={() => handleResetPassword(user.email, user.id)}
+                                    disabled={resettingPasswordId === user.id}
+                                  >
+                                    {resettingPasswordId === user.id ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <KeyRound className="h-4 w-4 mr-2" />
+                                    )}
+                                    Resetar Senha
+                                  </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuLabel>Gerenciar Roles</DropdownMenuLabel>
                                   {ROLES.map((role) => {
