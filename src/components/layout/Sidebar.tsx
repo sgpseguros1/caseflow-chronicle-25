@@ -110,7 +110,7 @@ export function Sidebar() {
           <div className="flex flex-col items-center gap-1">
             <img 
               src={logoJusPro} 
-              alt="JUS PRO" 
+              alt="Rafael Assessoria em Seguros"
               className="h-12 w-auto object-contain"
             />
             <p className="text-[10px] text-sidebar-foreground/60">Gestão Jurídica</p>
@@ -118,7 +118,7 @@ export function Sidebar() {
         ) : (
           <img 
             src={logoJusPro} 
-            alt="JUS PRO" 
+            alt="Rafael Assessoria em Seguros" 
             className="h-10 w-auto object-contain"
           />
         )}

@@ -44,8 +44,8 @@ export default function LoginPage() {
             <Scale className="h-8 w-8" />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold">JUS PRO</CardTitle>
-            <CardDescription>Sistema de Gestão Jurídica</CardDescription>
+            <CardTitle className="text-2xl font-bold">Rafael Assessoria</CardTitle>
+            <CardDescription>Sistema de Gestão em Seguros</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
