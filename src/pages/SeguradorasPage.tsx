@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Search, Pencil, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { useSeguradoras, useDeleteSeguradora } from '@/hooks/useSeguradoras';
+import { useSeguradoras } from '@/hooks/useSeguradoras';
 
 export default function SeguradorasPage() {
   const [search, setSearch] = useState('');
@@ -16,7 +15,7 @@ export default function SeguradorasPage() {
   const itemsPerPage = 10;
 
   const { data: seguradoras, isLoading } = useSeguradoras();
-  const deleteSeguradora = useDeleteSeguradora();
+  // REMOVIDO: deleteSeguradora - ninguém pode excluir seguradoras
 
   const filtered = seguradoras?.filter((seg) => {
     const matchesSearch = seg.razao_social.toLowerCase().includes(search.toLowerCase()) ||
@@ -89,19 +88,7 @@ export default function SeguradorasPage() {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="icon" asChild><Link to={`/cadastros/seguradoras/${seg.id}/editar`}><Pencil className="h-4 w-4" /></Link></Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir seguradora?</AlertDialogTitle>
-                            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteSeguradora.mutate(seg.id)} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      {/* Botão de exclusão removido - ninguém pode excluir seguradoras */}
                     </div>
                   </TableCell>
                 </TableRow>

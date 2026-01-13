@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useExtendedClient, useUpdateExtendedClient, useClientDocuments, useUploadClientDocument, useDeleteClientDocument } from '@/hooks/useExtendedClients';
+import { useExtendedClient, useUpdateExtendedClient, useClientDocuments, useUploadClientDocument } from '@/hooks/useExtendedClients';
 import { useClientPermissions } from '@/hooks/useClientPermissions';
 import { useAdvogados } from '@/hooks/useAdvogados';
 import { useSeguradoras } from '@/hooks/useSeguradoras';
@@ -36,7 +36,7 @@ export default function ClientEditPage() {
   const updateClient = useUpdateExtendedClient();
   const { data: documents = [] } = useClientDocuments(id);
   const uploadDocument = useUploadClientDocument();
-  const deleteDocument = useDeleteClientDocument();
+  // REMOVIDO: deleteDocument - ninguém pode excluir documentos
   const { data: advogados = [] } = useAdvogados();
   const { data: seguradoras = [] } = useSeguradoras();
   const { data: funcionarios = [] } = useFuncionarios();
@@ -152,10 +152,11 @@ export default function ClientEditPage() {
     setUploadCategory('');
   };
 
-  const handleDeleteDocument = async (docId: string, filePath: string) => {
-    if (!id) return;
-    await deleteDocument.mutateAsync({ id: docId, filePath, clientId: id });
-  };
+  // REMOVIDO: Ninguém pode excluir documentos
+  // const handleDeleteDocument = async (docId: string, filePath: string) => {
+  //   if (!id) return;
+  //   await deleteDocument.mutateAsync({ id: docId, filePath, clientId: id });
+  // };
 
   const getAiSuggestion = async () => {
     if (!formData.accident_type || !formData.injuries) {
@@ -233,9 +234,11 @@ Responda de forma objetiva e profissional.`,
                   <Input
                     id="name"
                     value={formData.name || ''}
-                    onChange={(e) => handleChange('name', e.target.value)}
-                    required
+                    disabled
+                    className="bg-muted cursor-not-allowed"
+                    title="O nome do cliente não pode ser alterado"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">O nome não pode ser alterado</p>
                 </div>
                 <div>
                   <Label htmlFor="cpf">CPF</Label>
@@ -262,8 +265,11 @@ Responda de forma objetiva e profissional.`,
                     id="birth_date"
                     type="date"
                     value={formData.birth_date || ''}
-                    onChange={(e) => handleChange('birth_date', e.target.value)}
+                    disabled
+                    className="bg-muted cursor-not-allowed"
+                    title="A data de nascimento não pode ser alterada"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">Não pode ser alterada</p>
                 </div>
                 <div>
                   <Label htmlFor="civil_status">Estado Civil</Label>
@@ -890,15 +896,7 @@ Responda de forma objetiva e profissional.`,
                             </p>
                           </div>
                         </div>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleDeleteDocument(doc.id, doc.file_path)}
-                          disabled={deleteDocument.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        {/* Botão de exclusão removido - ninguém pode excluir documentos */}
                       </div>
                     ))}
                   </div>

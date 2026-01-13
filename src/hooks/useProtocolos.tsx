@@ -26,7 +26,7 @@ export function useProtocolos() {
         .from('protocolos')
         .select(`
           *,
-          cliente:clients(name, cpf),
+          cliente:clients(id, name, cpf),
           seguradora:seguradoras(razao_social),
           advogado:advogados(nome),
           funcionario:funcionarios(nome),
@@ -60,7 +60,7 @@ export function useProtocolo(id: string | undefined) {
         .from('protocolos')
         .select(`
           *,
-          cliente:clients(name, cpf, phone1, email),
+          cliente:clients(id, name, cpf, phone1, email),
           seguradora:seguradoras(razao_social),
           advogado:advogados(nome),
           funcionario:funcionarios(nome),

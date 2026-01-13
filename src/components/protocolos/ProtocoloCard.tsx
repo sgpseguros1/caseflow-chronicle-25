@@ -42,10 +42,20 @@ export function ProtocoloCard({ protocolo, className }: ProtocoloCardProps) {
                 </Badge>
               </div>
               
-              {/* Cliente */}
+              {/* Cliente - clicável para Visão 360° */}
               <div className="flex items-center gap-2 text-sm mb-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium truncate">{protocolo.cliente?.name || 'Cliente não informado'}</span>
+                {protocolo.cliente?.id ? (
+                  <Link 
+                    to={`/clientes/${protocolo.cliente.id}`} 
+                    className="font-medium truncate text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {protocolo.cliente?.name || 'Cliente não informado'}
+                  </Link>
+                ) : (
+                  <span className="font-medium truncate">{protocolo.cliente?.name || 'Cliente não informado'}</span>
+                )}
               </div>
               
               {/* Info */}

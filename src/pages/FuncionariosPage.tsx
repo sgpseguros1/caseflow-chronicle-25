@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { useFuncionarios, useDeleteFuncionario } from '@/hooks/useFuncionarios';
+import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 
 const cargoLabels: Record<string, string> = {
@@ -25,6 +26,7 @@ export default function FuncionariosPage() {
 
   const { data: funcionarios, isLoading } = useFuncionarios();
   const deleteFuncionario = useDeleteFuncionario();
+  const { isAdmin } = useAuth();
 
   const filtered = funcionarios?.filter((f) => {
     const matchesSearch = f.nome.toLowerCase().includes(search.toLowerCase()) ||
@@ -112,16 +114,18 @@ export default function FuncionariosPage() {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="icon" asChild><Link to={`/funcionarios/${f.id}/editar`}><Pencil className="h-4 w-4" /></Link></Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader><AlertDialogTitle>Excluir funcionário?</AlertDialogTitle><AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteFuncionario.mutate(f.id)} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      {isAdmin && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>Excluir funcionário?</AlertDialogTitle><AlertDialogDescription>Esta ação não pode ser desfeita. Somente administradores podem excluir.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteFuncionario.mutate(f.id)} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

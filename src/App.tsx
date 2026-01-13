@@ -40,6 +40,7 @@ import FinanceiroPainelPage from "./pages/FinanceiroPainelPage";
 import FinanceiroFormPage from "./pages/FinanceiroFormPage";
 import ControleProcessosPage from "./pages/ControleProcessosPage";
 import NotFound from "./pages/NotFound";
+import CalendarioPage from "./pages/CalendarioPage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -96,7 +97,7 @@ const App = () => (
           {/* Call Center */}
           <Route path="/call-center" element={<ProtectedRoute><CallCenterPage /></ProtectedRoute>} />
           {/* Placeholders */}
-          <Route path="/calendario" element={<ProtectedRoute><div className="text-center py-12"><h1 className="text-2xl font-bold">Calendário</h1><p className="text-muted-foreground">Em desenvolvimento</p></div></ProtectedRoute>} />
+          <Route path="/calendario" element={<ProtectedRoute><CalendarioPage /></ProtectedRoute>} />
           <Route path="/metricas" element={<ProtectedRoute><MetricasDiariasPage /></ProtectedRoute>} />
           <Route path="/metricas/novo" element={<ProtectedRoute><MetricaFormPage /></ProtectedRoute>} />
           <Route path="/alertas" element={<ProtectedRoute><AlertasPage /></ProtectedRoute>} />
