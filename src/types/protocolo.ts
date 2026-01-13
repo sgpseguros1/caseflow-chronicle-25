@@ -6,9 +6,14 @@ export type TipoProtocolo =
   | 'AUXILIO_ACIDENTE' 
   | 'DPVAT' 
   | 'SEGURO_VIDA' 
+  | 'SEGURO_VIDA_EMPRESARIAL'
+  | 'DANOS_ADMINISTRATIVO'
+  | 'JUDICIAL'
   | 'PREVIDENCIARIO' 
   | 'JUDICIAL_CIVEL' 
-  | 'ADMINISTRATIVO_SEGURADORA';
+  | 'ADMINISTRATIVO_SEGURADORA'
+  | 'RAFAEL_PROTOCOLAR'
+  | 'INSS';
 
 export type NaturezaProtocolo = 'ADMINISTRATIVO' | 'JUDICIAL';
 
@@ -210,18 +215,28 @@ export const TIPO_PROTOCOLO_LABELS: Record<TipoProtocolo, string> = {
   AUXILIO_ACIDENTE: 'Auxílio-Acidente',
   DPVAT: 'DPVAT',
   SEGURO_VIDA: 'Seguro Vida',
+  SEGURO_VIDA_EMPRESARIAL: 'Seguro Vida Empresarial',
+  DANOS_ADMINISTRATIVO: 'Danos Administrativo',
+  JUDICIAL: 'Judicial',
   PREVIDENCIARIO: 'Previdenciário',
   JUDICIAL_CIVEL: 'Judicial Cível',
   ADMINISTRATIVO_SEGURADORA: 'Administrativo Seguradora',
+  RAFAEL_PROTOCOLAR: 'Rafael Protocolar',
+  INSS: 'INSS',
 };
 
 export const TIPO_PROTOCOLO_COLORS: Record<TipoProtocolo, string> = {
   AUXILIO_ACIDENTE: 'bg-purple-500',
   DPVAT: 'bg-blue-500',
   SEGURO_VIDA: 'bg-green-500',
+  SEGURO_VIDA_EMPRESARIAL: 'bg-emerald-600',
+  DANOS_ADMINISTRATIVO: 'bg-orange-500',
+  JUDICIAL: 'bg-rose-600',
   PREVIDENCIARIO: 'bg-amber-500',
   JUDICIAL_CIVEL: 'bg-red-500',
   ADMINISTRATIVO_SEGURADORA: 'bg-cyan-500',
+  RAFAEL_PROTOCOLAR: 'bg-indigo-600',
+  INSS: 'bg-teal-500',
 };
 
 export const NATUREZA_LABELS: Record<NaturezaProtocolo, string> = {
@@ -337,6 +352,26 @@ export const DOCUMENTOS_OBRIGATORIOS: Record<TipoProtocolo, string[]> = {
     'Atestado/Laudo Médico',
     'Comprovante de Residência',
   ],
+  SEGURO_VIDA_EMPRESARIAL: [
+    'RG/CPF',
+    'Apólice de Seguro',
+    'CTPS',
+    'Atestado/Laudo Médico',
+    'Comprovante de Residência',
+  ],
+  DANOS_ADMINISTRATIVO: [
+    'RG/CPF',
+    'Documentos do Sinistro',
+    'Laudos',
+    'Comprovante de Residência',
+  ],
+  JUDICIAL: [
+    'RG/CPF',
+    'Procuração',
+    'Petição Inicial',
+    'Documentos do Processo',
+    'Comprovante de Residência',
+  ],
   PREVIDENCIARIO: [
     'RG/CPF',
     'CTPS',
@@ -355,6 +390,19 @@ export const DOCUMENTOS_OBRIGATORIOS: Record<TipoProtocolo, string[]> = {
     'Apólice',
     'Sinistro',
     'Laudos',
+    'Comprovante de Residência',
+  ],
+  RAFAEL_PROTOCOLAR: [
+    'RG/CPF',
+    'Comprovante de Residência',
+    'Documentos Específicos',
+  ],
+  INSS: [
+    'RG/CPF',
+    'CTPS',
+    'CNIS',
+    'Laudos Médicos',
+    'Protocolo INSS',
     'Comprovante de Residência',
   ],
 };

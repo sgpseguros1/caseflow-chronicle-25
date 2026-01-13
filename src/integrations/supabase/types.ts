@@ -814,6 +814,8 @@ export type Database = {
           cargo: string
           cpf: string | null
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           departamento: string | null
           email: string
           id: string
@@ -827,6 +829,8 @@ export type Database = {
           cargo?: string
           cpf?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           departamento?: string | null
           email: string
           id?: string
@@ -840,6 +844,8 @@ export type Database = {
           cargo?: string
           cpf?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           departamento?: string | null
           email?: string
           id?: string
@@ -1229,6 +1235,8 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           email: string
           id: string
           is_active: boolean
@@ -1238,6 +1246,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           email: string
           id: string
           is_active?: boolean
@@ -1247,6 +1257,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string
           id?: string
           is_active?: boolean

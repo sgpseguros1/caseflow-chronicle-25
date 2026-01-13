@@ -26,7 +26,7 @@ export default function FuncionariosPage() {
 
   const { data: funcionarios, isLoading } = useFuncionarios();
   const deleteFuncionario = useDeleteFuncionario();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const filtered = funcionarios?.filter((f) => {
     const matchesSearch = f.nome.toLowerCase().includes(search.toLowerCase()) ||
@@ -118,10 +118,10 @@ export default function FuncionariosPage() {
                         <AlertDialog>
                           <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
                           <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Excluir funcionário?</AlertDialogTitle><AlertDialogDescription>Esta ação não pode ser desfeita. Somente administradores podem excluir.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogHeader><AlertDialogTitle>Excluir funcionário?</AlertDialogTitle><AlertDialogDescription>O funcionário será removido da lista. Apenas o administrador Rafael poderá restaurá-lo.</AlertDialogDescription></AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteFuncionario.mutate(f.id)} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
+                              <AlertDialogAction onClick={() => deleteFuncionario.mutate({ id: f.id, deletedBy: user?.id || '' })} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>

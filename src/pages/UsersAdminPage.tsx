@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useUsers, useAddUserRole, useRemoveUserRole, useToggleUserActive } from '@/hooks/useUsers';
-import { useFuncionarios, useCreateFuncionario, useDeleteFuncionario, useUpdateFuncionario } from '@/hooks/useFuncionarios';
+import { useUsers, useAddUserRole, useRemoveUserRole, useToggleUserActive, useSoftDeleteUser, useRestoreUser } from '@/hooks/useUsers';
+import { useFuncionarios, useCreateFuncionario, useDeleteFuncionario, useUpdateFuncionario, useRestoreFuncionario } from '@/hooks/useFuncionarios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -70,6 +70,9 @@ import {
   KeyRound,
   UserX,
   History,
+  RotateCcw,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -113,14 +116,25 @@ interface EditingUser {
 export default function UsersAdminPage() {
   const navigate = useNavigate();
   const { isAdmin, isGestor, isAdminOrGestor, user: currentUser } = useAuth();
-  const { data: users, isLoading, error } = useUsers();
-  const { data: funcionarios, isLoading: loadingFuncionarios } = useFuncionarios();
+  
+  // Determine if current user is Rafael (master admin)
+  const isRafael = currentUser?.email === 'rafaelneves.adv2026@gmail.com';
+  
+  // State for showing deleted items
+  const [showDeletedUsers, setShowDeletedUsers] = useState(false);
+  const [showDeletedFuncionarios, setShowDeletedFuncionarios] = useState(false);
+  
+  const { data: users, isLoading, error } = useUsers(showDeletedUsers);
+  const { data: funcionarios, isLoading: loadingFuncionarios } = useFuncionarios(showDeletedFuncionarios);
   const addRole = useAddUserRole();
   const removeRole = useRemoveUserRole();
   const toggleActive = useToggleUserActive();
+  const softDeleteUser = useSoftDeleteUser();
+  const restoreUser = useRestoreUser();
   const createFuncionario = useCreateFuncionario();
   const updateFuncionario = useUpdateFuncionario();
   const deleteFuncionario = useDeleteFuncionario();
+  const restoreFuncionario = useRestoreFuncionario();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -316,39 +330,50 @@ export default function UsersAdminPage() {
   };
 
   const handleDeleteUser = async () => {
-    if (!deletingUserId) return;
+    if (!deletingUserId || !currentUser?.id) return;
     
     setDeletingUser(true);
     try {
-      // First delete user roles
-      await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', deletingUserId);
+      await softDeleteUser.mutateAsync({ userId: deletingUserId, deletedBy: currentUser.id });
+      await logAuditAction('Exclusão de Usuário', 'usuario', deletingUserId, deletingUserName, 'Usuário excluído (soft-delete)');
 
-      // Deactivate the profile (we can't delete auth users from client)
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_active: false })
-        .eq('id', deletingUserId);
-
-      if (error) throw error;
-
-      await logAuditAction('Exclusão de Usuário', 'usuario', deletingUserId, deletingUserName, 'Usuário desativado e permissões removidas');
-
-      toast({ title: 'Sucesso', description: 'Usuário desativado com sucesso!' });
       setDeleteUserDialogOpen(false);
       setDeletingUserId(null);
       setDeletingUserName('');
-      queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error: any) {
       toast({ 
-        title: 'Erro ao desativar usuário', 
+        title: 'Erro ao excluir usuário', 
         description: error.message || 'Tente novamente.', 
         variant: 'destructive' 
       });
     } finally {
       setDeletingUser(false);
+    }
+  };
+
+  const handleRestoreUser = async (userId: string, userName: string) => {
+    try {
+      await restoreUser.mutateAsync(userId);
+      await logAuditAction('Restauração de Usuário', 'usuario', userId, userName, 'Usuário restaurado');
+    } catch (error: any) {
+      toast({ 
+        title: 'Erro ao restaurar usuário', 
+        description: error.message || 'Tente novamente.', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  const handleRestoreFuncionario = async (funcId: string, funcName: string) => {
+    try {
+      await restoreFuncionario.mutateAsync(funcId);
+      await logAuditAction('Restauração de Funcionário', 'funcionario', funcId, funcName, 'Funcionário restaurado');
+    } catch (error: any) {
+      toast({ 
+        title: 'Erro ao restaurar funcionário', 
+        description: error.message || 'Tente novamente.', 
+        variant: 'destructive' 
+      });
     }
   };
 
@@ -426,12 +451,11 @@ export default function UsersAdminPage() {
   };
 
   const handleDeleteFuncionario = async () => {
-    if (!deletingFuncId) return;
+    if (!deletingFuncId || !currentUser?.id) return;
     
     try {
-      await deleteFuncionario.mutateAsync(deletingFuncId);
+      await deleteFuncionario.mutateAsync({ id: deletingFuncId, deletedBy: currentUser.id });
       await logAuditAction('Exclusão de Funcionário', 'funcionario', deletingFuncId, deletingFuncName);
-      toast({ title: 'Sucesso', description: 'Funcionário excluído com sucesso!' });
       setDeleteFuncDialogOpen(false);
       setDeletingFuncId(null);
       setDeletingFuncName('');
@@ -665,14 +689,27 @@ export default function UsersAdminPage() {
                     {filteredUsers.length} usuário(s) encontrado(s)
                   </CardDescription>
                 </div>
-                <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar usuários..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9"
-                  />
+                <div className="flex gap-2 items-center">
+                  {isRafael && (
+                    <Button
+                      variant={showDeletedUsers ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowDeletedUsers(!showDeletedUsers)}
+                      className="gap-2"
+                    >
+                      {showDeletedUsers ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      {showDeletedUsers ? 'Mostrando Excluídos' : 'Ver Excluídos'}
+                    </Button>
+                  )}
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar usuários..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -852,6 +889,17 @@ export default function UsersAdminPage() {
                                     </>
                                   )}
                                   
+                                  {/* Restore User - Rafael Only */}
+                                  {isRafael && user.deleted_at && (
+                                    <DropdownMenuItem 
+                                      className="text-green-600"
+                                      onClick={() => handleRestoreUser(user.id, user.name)}
+                                    >
+                                      <RotateCcw className="h-4 w-4 mr-2" />
+                                      Restaurar Usuário
+                                    </DropdownMenuItem>
+                                  )}
+                                  
                                   {/* Show message if user is admin and current user is gestor */}
                                   {!canEdit && userIsAdmin && isGestor && (
                                     <DropdownMenuItem disabled>
@@ -884,7 +932,18 @@ export default function UsersAdminPage() {
                     {filteredFuncionarios.length} funcionário(s) encontrado(s)
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                  {isRafael && (
+                    <Button
+                      variant={showDeletedFuncionarios ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowDeletedFuncionarios(!showDeletedFuncionarios)}
+                      className="gap-2"
+                    >
+                      {showDeletedFuncionarios ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      {showDeletedFuncionarios ? 'Mostrando Excluídos' : 'Ver Excluídos'}
+                    </Button>
+                  )}
                   <div className="relative w-full sm:w-64">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -1036,6 +1095,17 @@ export default function UsersAdminPage() {
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
                                       Excluir Funcionário
+                                    </DropdownMenuItem>
+                                  )}
+                                  
+                                  {/* Restore Funcionario - Rafael Only */}
+                                  {isRafael && func.deleted_at && (
+                                    <DropdownMenuItem 
+                                      className="text-green-600"
+                                      onClick={() => handleRestoreFuncionario(func.id, func.nome)}
+                                    >
+                                      <RotateCcw className="h-4 w-4 mr-2" />
+                                      Restaurar Funcionário
                                     </DropdownMenuItem>
                                   )}
                                   

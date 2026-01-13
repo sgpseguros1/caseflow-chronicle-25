@@ -14,13 +14,21 @@ export interface Funcionario {
   status: string;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
+  deleted_by: string | null;
 }
 
-export function useFuncionarios() {
+export function useFuncionarios(includeDeleted = false) {
   return useQuery({
-    queryKey: ['funcionarios'],
+    queryKey: ['funcionarios', includeDeleted],
     queryFn: async () => {
-      const { data, error } = await supabase.from('funcionarios').select('*').order('nome');
+      let query = supabase.from('funcionarios').select('*').order('nome');
+      
+      if (!includeDeleted) {
+        query = query.is('deleted_at', null);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data as Funcionario[];
     },
@@ -43,7 +51,7 @@ export function useFuncionario(id: string | undefined) {
 export function useCreateFuncionario() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (funcionario: Omit<Funcionario, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (funcionario: Omit<Funcionario, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'deleted_by'>) => {
       const { data, error } = await supabase.from('funcionarios').insert(funcionario).select().single();
       if (error) throw error;
       return data;
@@ -76,8 +84,15 @@ export function useUpdateFuncionario() {
 export function useDeleteFuncionario() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('funcionarios').delete().eq('id', id);
+    mutationFn: async ({ id, deletedBy }: { id: string; deletedBy: string }) => {
+      const { error } = await supabase
+        .from('funcionarios')
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          deleted_by: deletedBy,
+          status: 'inativo'
+        })
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -85,5 +100,27 @@ export function useDeleteFuncionario() {
       toast({ title: 'Funcionário excluído com sucesso' });
     },
     onError: (error) => toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' }),
+  });
+}
+
+export function useRestoreFuncionario() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('funcionarios')
+        .update({ 
+          deleted_at: null,
+          deleted_by: null,
+          status: 'ativo'
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['funcionarios'] });
+      toast({ title: 'Funcionário restaurado com sucesso' });
+    },
+    onError: (error) => toast({ title: 'Erro ao restaurar', description: error.message, variant: 'destructive' }),
   });
 }

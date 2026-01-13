@@ -24,9 +24,14 @@ const TIPO_ICONS: Record<TipoProtocolo, React.ComponentType<{ className?: string
   AUXILIO_ACIDENTE: Accessibility,
   DPVAT: Car,
   SEGURO_VIDA: Shield,
+  SEGURO_VIDA_EMPRESARIAL: Shield,
+  DANOS_ADMINISTRATIVO: FileText,
+  JUDICIAL: Scale,
   PREVIDENCIARIO: Building2,
   JUDICIAL_CIVEL: Scale,
   ADMINISTRATIVO_SEGURADORA: FileText,
+  RAFAEL_PROTOCOLAR: FileText,
+  INSS: Building2,
 };
 
 export function ClientProtocoloTags({ protocoloCounts, className }: ClientProtocoloTagsProps) {
