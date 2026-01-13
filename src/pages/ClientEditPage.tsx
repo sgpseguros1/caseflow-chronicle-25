@@ -780,12 +780,12 @@ Responda de forma objetiva e profissional.`,
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="advogado_id">Advogado Responsável</Label>
-                    <Select value={formData.advogado_id || ''} onValueChange={(v) => handleChange('advogado_id', v || null)}>
+                    <Select value={formData.advogado_id || '__none__'} onValueChange={(v) => handleChange('advogado_id', v === '__none__' ? null : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Nenhum</SelectItem>
+                        <SelectItem value="__none__">Nenhum</SelectItem>
                         {advogados.map(adv => (
                           <SelectItem key={adv.id} value={adv.id}>{adv.nome}</SelectItem>
                         ))}
@@ -794,12 +794,12 @@ Responda de forma objetiva e profissional.`,
                   </div>
                   <div>
                     <Label htmlFor="seguradora_id">Seguradora</Label>
-                    <Select value={formData.seguradora_id || ''} onValueChange={(v) => handleChange('seguradora_id', v || null)}>
+                    <Select value={formData.seguradora_id || '__none__'} onValueChange={(v) => handleChange('seguradora_id', v === '__none__' ? null : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Nenhuma</SelectItem>
+                        <SelectItem value="__none__">Nenhuma</SelectItem>
                         {seguradoras.map(seg => (
                           <SelectItem key={seg.id} value={seg.id}>{seg.razao_social}</SelectItem>
                         ))}
@@ -808,12 +808,12 @@ Responda de forma objetiva e profissional.`,
                   </div>
                   <div>
                     <Label htmlFor="responsavel_id">Funcionário Responsável</Label>
-                    <Select value={formData.responsavel_id || ''} onValueChange={(v) => handleChange('responsavel_id', v || null)}>
+                    <Select value={formData.responsavel_id || '__none__'} onValueChange={(v) => handleChange('responsavel_id', v === '__none__' ? null : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Nenhum</SelectItem>
+                        <SelectItem value="__none__">Nenhum</SelectItem>
                         {funcionarios.map(func => (
                           <SelectItem key={func.id} value={func.id}>{func.nome}</SelectItem>
                         ))}
