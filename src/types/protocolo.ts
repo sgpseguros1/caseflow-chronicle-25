@@ -71,7 +71,7 @@ export interface Protocolo {
   updated_at: string;
   // Campos calculados/relacionados
   dias_parado?: number;
-  cliente?: { name: string; cpf: string | null };
+  cliente?: { id: string; name: string; cpf: string | null };
   seguradora?: { razao_social: string };
   advogado?: { nome: string };
   funcionario?: { nome: string };
