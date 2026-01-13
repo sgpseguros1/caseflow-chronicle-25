@@ -34,6 +34,9 @@ import AlertasPage from "./pages/AlertasPage";
 import AlertasCriticosPage from "./pages/AlertasCriticosPage";
 import BauPainelPage from "./pages/BauPainelPage";
 import ComunicacaoPage from "./pages/ComunicacaoPage";
+import ComunicacaoEnviarPage from "./pages/ComunicacaoEnviarPage";
+import ComunicacaoMassaPage from "./pages/ComunicacaoMassaPage";
+import ComunicacaoTemplateFormPage from "./pages/ComunicacaoTemplateFormPage";
 import IAModulePage from "./pages/IAModulePage";
 import UsersAdminPage from "./pages/UsersAdminPage";
 import FinanceiroPainelPage from "./pages/FinanceiroPainelPage";
@@ -105,13 +108,13 @@ const App = () => (
           <Route path="/bau" element={<ProtectedRoute><BauPainelPage /></ProtectedRoute>} />
           <Route path="/controle-processos" element={<ProtectedRoute><ControleProcessosPage /></ProtectedRoute>} />
           <Route path="/comunicacao" element={<ProtectedRoute><ComunicacaoPage /></ProtectedRoute>} />
+          <Route path="/comunicacao/enviar" element={<ProtectedRoute><ComunicacaoEnviarPage /></ProtectedRoute>} />
+          <Route path="/comunicacao/massa" element={<ProtectedRoute><ComunicacaoMassaPage /></ProtectedRoute>} />
+          <Route path="/comunicacao/templates/novo" element={<ProtectedRoute><ComunicacaoTemplateFormPage /></ProtectedRoute>} />
           <Route path="/ia" element={<ProtectedRoute><IAModulePage /></ProtectedRoute>} />
           <Route path="/admin/usuarios" element={<ProtectedRoute><UsersAdminPage /></ProtectedRoute>} />
           <Route path="/financeiro" element={<ProtectedRoute><FinanceiroPainelPage /></ProtectedRoute>} />
           <Route path="/financeiro/novo" element={<ProtectedRoute><FinanceiroFormPage /></ProtectedRoute>} />
-          <Route path="/financeiro/:id" element={<ProtectedRoute><FinanceiroFormPage /></ProtectedRoute>} />
-          <Route path="/relatorios" element={<ProtectedRoute><div className="text-center py-12"><h1 className="text-2xl font-bold">Relatórios</h1><p className="text-muted-foreground">Acesso restrito a administradores</p></div></ProtectedRoute>} />
-          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
