@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Save, User, MapPin, Phone, Building2, Car, Stethoscope, Hospital, UserPlus, FileText, Upload, Trash2, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save, User, MapPin, Phone, Building2, Car, Stethoscope, Hospital, UserPlus, FileText, Upload, Loader2, Sparkles, FileStack } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,7 @@ import { ptBR } from 'date-fns/locale';
 import { ACCIDENT_TYPES, INJURY_SEVERITIES, BODY_PARTS, REFERRAL_TYPES, DOCUMENT_CATEGORIES } from '@/types/client';
 import type { ExtendedClient } from '@/types/client';
 import { supabase } from '@/integrations/supabase/client';
+import { ClientProtocolosTab } from '@/components/client/ClientProtocolosTab';
 
 const UF_OPTIONS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 
@@ -210,12 +211,16 @@ Responda de forma objetiva e profissional.`,
       </div>
 
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="dados">Dados Pessoais</TabsTrigger>
           <TabsTrigger value="acidente">Acidente</TabsTrigger>
           <TabsTrigger value="medico">Médico</TabsTrigger>
           <TabsTrigger value="vinculos">Vínculos</TabsTrigger>
           <TabsTrigger value="documentos">Documentos</TabsTrigger>
+          <TabsTrigger value="protocolos" className="gap-1">
+            <FileStack className="h-4 w-4" />
+            Protocolos
+          </TabsTrigger>
         </TabsList>
 
         <form onSubmit={handleSubmit}>
@@ -905,7 +910,7 @@ Responda de forma objetiva e profissional.`,
             </Card>
           </TabsContent>
 
-          {/* Actions */}
+          {/* Actions - dentro do form */}
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => navigate(`/clientes/${id}`)}>
               Cancelar
@@ -916,6 +921,17 @@ Responda de forma objetiva e profissional.`,
             </Button>
           </div>
         </form>
+
+        {/* Aba de Protocolos - fora do form para não conflitar com submit */}
+        <TabsContent value="protocolos" className="space-y-4">
+          {id && client && (
+            <ClientProtocolosTab 
+              clienteId={id} 
+              clienteName={client.name} 
+              canEdit={canEdit} 
+            />
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,10 +24,34 @@ import {
   TipoBeneficio,
 } from '@/types/protocolo';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ClientProtocoloFormProps {
   clienteId: string;
   onSuccess: () => void;
+}
+
+interface FormData {
+  natureza: NaturezaProtocolo;
+  prioridade: PrioridadeProtocolo;
+  status: StatusProtocolo;
+  funcionario_id: string;
+  advogado_id: string;
+  seguradora_id: string;
+  observacoes: string;
+  sla_dias: number;
+  prazo_estimado: string;
+  data_acidente: string;
+  data_requerimento: string;
+  numero_protocolo_inss: string;
+  tipo_beneficio: TipoBeneficio | '';
+  situacao_atual: string;
+  pericia_realizada: boolean;
+  data_pericia: string;
+  resultado_pericia: string;
+  judicializado: boolean;
+  numero_processo_judicial: string;
+  valor_estimado: number;
 }
 
 export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFormProps) {
@@ -42,29 +66,27 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
   const { data: advogados = [] } = useAdvogados();
   const { data: seguradoras = [] } = useSeguradoras();
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, watch, control, formState: { errors } } = useForm<FormData>({
     defaultValues: {
-      natureza: 'ADMINISTRATIVO' as NaturezaProtocolo,
-      prioridade: 'normal' as PrioridadeProtocolo,
-      status: 'novo' as StatusProtocolo,
+      natureza: 'ADMINISTRATIVO',
+      prioridade: 'normal',
+      status: 'novo',
       funcionario_id: '',
       advogado_id: '',
       seguradora_id: '',
       observacoes: '',
       sla_dias: 30,
       prazo_estimado: '',
-      // Campos Auxílio-Acidente
       data_acidente: '',
       data_requerimento: '',
       numero_protocolo_inss: '',
-      tipo_beneficio: '' as TipoBeneficio | '',
+      tipo_beneficio: '',
       situacao_atual: '',
       pericia_realizada: false,
       data_pericia: '',
       resultado_pericia: '',
       judicializado: false,
       numero_processo_judicial: '',
-      // Campos Financeiro
       valor_estimado: 0,
     }
   });
@@ -72,7 +94,7 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
   const periciaRealizada = watch('pericia_realizada');
   const judicializado = watch('judicializado');
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FormData) => {
     try {
       // 1. Criar protocolo principal
       const result = await createProtocolo.mutateAsync({
@@ -114,9 +136,11 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
         });
       }
 
+      toast.success('Protocolo criado com sucesso!');
       onSuccess();
     } catch (error) {
       console.error('Erro ao criar protocolo:', error);
+      toast.error('Erro ao criar protocolo. Tente novamente.');
     }
   };
 
@@ -126,6 +150,11 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
   };
 
   const isLoading = createProtocolo.isPending || upsertAuxilio.isPending || upsertFinanceiro.isPending;
+
+  // Filtrar apenas funcionários e advogados ativos
+  const funcionariosAtivos = funcionarios.filter(f => f.status === 'ativo' && !f.deleted_at);
+  const advogadosAtivos = advogados.filter(a => a.status === 'ativo');
+  const seguradorasAtivas = seguradoras.filter(s => s.status === 'ativo');
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -153,100 +182,127 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
           {/* Natureza */}
           <div className="space-y-2">
             <Label>Natureza *</Label>
-            <Select 
-              defaultValue="ADMINISTRATIVO" 
-              onValueChange={(v) => setValue('natureza', v as NaturezaProtocolo)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(NATUREZA_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="natureza"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(NATUREZA_LABELS).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           {/* Prioridade */}
           <div className="space-y-2">
             <Label>Prioridade</Label>
-            <Select 
-              defaultValue="normal" 
-              onValueChange={(v) => setValue('prioridade', v as PrioridadeProtocolo)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(PRIORIDADE_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="prioridade"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PRIORIDADE_LABELS).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           {/* Status Inicial */}
           <div className="space-y-2">
             <Label>Status Inicial</Label>
-            <Select 
-              defaultValue="novo" 
-              onValueChange={(v) => setValue('status', v as StatusProtocolo)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(STATUS_PROTOCOLO_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(STATUS_PROTOCOLO_LABELS).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           {/* Funcionário Responsável */}
           <div className="space-y-2">
             <Label>Funcionário Responsável</Label>
-            <Select onValueChange={(v) => setValue('funcionario_id', v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecionar..." />
-              </SelectTrigger>
-              <SelectContent>
-                {funcionarios.filter(f => f.status === 'ativo').map((f) => (
-                  <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="funcionario_id"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value || ''} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {funcionariosAtivos.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           {/* Advogado */}
           <div className="space-y-2">
             <Label>Advogado</Label>
-            <Select onValueChange={(v) => setValue('advogado_id', v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecionar..." />
-              </SelectTrigger>
-              <SelectContent>
-                {advogados.filter(a => a.status === 'ativo').map((a) => (
-                  <SelectItem key={a.id} value={a.id}>{a.nome} - OAB {a.oab}/{a.uf}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="advogado_id"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value || ''} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {advogadosAtivos.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.nome} - OAB {a.oab}/{a.uf}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           {/* Seguradora */}
           <div className="space-y-2">
             <Label>Seguradora</Label>
-            <Select onValueChange={(v) => setValue('seguradora_id', v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecionar..." />
-              </SelectTrigger>
-              <SelectContent>
-                {seguradoras.filter(s => s.status === 'ativo').map((s) => (
-                  <SelectItem key={s.id} value={s.id}>{s.razao_social}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="seguradora_id"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value || ''} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seguradorasAtivas.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.razao_social}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           {/* SLA */}
@@ -299,16 +355,22 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
 
             <div className="space-y-2">
               <Label>Tipo de Benefício</Label>
-              <Select onValueChange={(v) => setValue('tipo_beneficio', v as TipoBeneficio)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(TIPO_BENEFICIO_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Controller
+                name="tipo_beneficio"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value || ''} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(TIPO_BENEFICIO_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
 
             <div className="space-y-2 md:col-span-2">
@@ -317,9 +379,15 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
             </div>
 
             <div className="flex items-center gap-3">
-              <Switch 
-                checked={periciaRealizada}
-                onCheckedChange={(v) => setValue('pericia_realizada', v)}
+              <Controller
+                name="pericia_realizada"
+                control={control}
+                render={({ field }) => (
+                  <Switch 
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
               />
               <Label>Perícia Realizada</Label>
             </div>
@@ -338,9 +406,15 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
             )}
 
             <div className="flex items-center gap-3">
-              <Switch 
-                checked={judicializado}
-                onCheckedChange={(v) => setValue('judicializado', v)}
+              <Controller
+                name="judicializado"
+                control={control}
+                render={({ field }) => (
+                  <Switch 
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
               />
               <Label>Judicializado</Label>
             </div>
