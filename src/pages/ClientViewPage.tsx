@@ -15,6 +15,7 @@ import { useClientPermissions } from '@/hooks/useClientPermissions';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientProtocolosTab } from '@/components/client/ClientProtocolosTab';
+import { formatDateOnly } from '@/lib/dateUtils';
 
 export default function ClientViewPage() {
   const { id } = useParams<{ id: string }>();
@@ -215,7 +216,7 @@ export default function ClientViewPage() {
                 <InfoRow label="Nome Completo" value={client.name} />
                 <InfoRow label="CPF" value={client.cpf} />
                 <InfoRow label="RG" value={client.rg} />
-                <InfoRow label="Data de Nascimento" value={client.birth_date ? format(new Date(client.birth_date), 'dd/MM/yyyy', { locale: ptBR }) : null} />
+                <InfoRow label="Data de Nascimento" value={formatDateOnly(client.birth_date)} />
                 <InfoRow label="Estado Civil" value={client.civil_status} />
                 <InfoRow label="Profissão" value={client.profession} />
                 <InfoRow label="Trabalha CLT" value={client.is_clt ? 'Sim' : 'Não'} />
@@ -327,7 +328,7 @@ export default function ClientViewPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-1">
-                <InfoRow label="Data do Acidente" value={client.accident_date ? format(new Date(client.accident_date), 'dd/MM/yyyy', { locale: ptBR }) : null} />
+                <InfoRow label="Data do Acidente" value={formatDateOnly(client.accident_date)} />
                 <InfoRow label="Tipo de Acidente" value={client.accident_type} />
                 <InfoRow label="Local do Acidente" value={client.accident_location} />
                 <InfoRow label="Possui B.O." value={client.has_police_report ? 'Sim' : 'Não'} />
@@ -365,9 +366,9 @@ export default function ClientViewPage() {
               </CardHeader>
               <CardContent className="space-y-1">
                 <InfoRow label="Hospital de Entrada" value={client.admission_hospital} />
-                <InfoRow label="Data da Entrada" value={client.admission_date ? format(new Date(client.admission_date), 'dd/MM/yyyy', { locale: ptBR }) : null} />
+                <InfoRow label="Data da Entrada" value={formatDateOnly(client.admission_date)} />
                 <InfoRow label="Hospital de Transferência" value={client.transfer_hospital} />
-                <InfoRow label="Data da Transferência" value={client.transfer_date ? format(new Date(client.transfer_date), 'dd/MM/yyyy', { locale: ptBR }) : null} />
+                <InfoRow label="Data da Transferência" value={formatDateOnly(client.transfer_date)} />
                 <InfoRow label="Realizou Cirurgia" value={client.had_surgery ? 'Sim' : 'Não'} />
                 <InfoRow label="Foi Internado" value={client.was_hospitalized ? 'Sim' : 'Não'} />
                 {client.was_hospitalized && <InfoRow label="Dias de Internação" value={client.hospitalization_days?.toString()} />}
