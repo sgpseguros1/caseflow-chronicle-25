@@ -62,9 +62,14 @@ const TIPO_COLORS: Record<TipoProtocolo, string> = {
   AUXILIO_ACIDENTE: '#8b5cf6',
   DPVAT: '#3b82f6',
   SEGURO_VIDA: '#10b981',
+  SEGURO_VIDA_EMPRESARIAL: '#059669',
+  DANOS_ADMINISTRATIVO: '#f97316',
+  JUDICIAL: '#e11d48',
   PREVIDENCIARIO: '#f59e0b',
   JUDICIAL_CIVEL: '#ef4444',
   ADMINISTRATIVO_SEGURADORA: '#06b6d4',
+  RAFAEL_PROTOCOLAR: '#4f46e5',
+  INSS: '#14b8a6',
 };
 
 export function useDashboardProtocolos() {

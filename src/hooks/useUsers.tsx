@@ -9,18 +9,27 @@ interface UserWithRoles {
   role: string;
   is_active: boolean;
   created_at: string;
+  deleted_at: string | null;
+  deleted_by: string | null;
   roles: Array<{ role: 'admin' | 'gestor' | 'funcionario' }>;
 }
 
-export function useUsers() {
+export function useUsers(includeDeleted = false) {
   return useQuery({
-    queryKey: ['users'],
+    queryKey: ['users', includeDeleted],
     queryFn: async () => {
       // Fetch profiles
-      const { data: profiles, error: profilesError } = await supabase
+      let query = supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
+      
+      // Only filter by deleted_at if not including deleted users
+      if (!includeDeleted) {
+        query = query.is('deleted_at', null);
+      }
+      
+      const { data: profiles, error: profilesError } = await query;
       
       if (profilesError) throw profilesError;
 
@@ -138,6 +147,73 @@ export function useToggleUserActive() {
     },
     onError: (error: Error) => {
       toast({ title: 'Erro', description: 'Não foi possível atualizar o status.', variant: 'destructive' });
+    },
+  });
+}
+
+export function useSoftDeleteUser() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ userId, deletedBy }: { userId: string; deletedBy: string }) => {
+      // First delete user roles
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      // Then soft-delete the profile
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          deleted_by: deletedBy,
+          is_active: false
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({ title: 'Sucesso', description: 'Usuário excluído com sucesso.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erro', description: 'Não foi possível excluir o usuário.', variant: 'destructive' });
+    },
+  });
+}
+
+export function useRestoreUser() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ 
+          deleted_at: null,
+          deleted_by: null,
+          is_active: true
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({ title: 'Sucesso', description: 'Usuário restaurado com sucesso.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erro', description: 'Não foi possível restaurar o usuário.', variant: 'destructive' });
     },
   });
 }
