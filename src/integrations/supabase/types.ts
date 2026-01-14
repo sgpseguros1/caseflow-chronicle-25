@@ -1025,6 +1025,36 @@ export type Database = {
           },
         ]
       }
+      mensagens_chat: {
+        Row: {
+          conteudo: string
+          created_at: string | null
+          destinatario_id: string
+          id: string
+          lida: boolean | null
+          lida_em: string | null
+          remetente_id: string
+        }
+        Insert: {
+          conteudo: string
+          created_at?: string | null
+          destinatario_id: string
+          id?: string
+          lida?: boolean | null
+          lida_em?: string | null
+          remetente_id: string
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string | null
+          destinatario_id?: string
+          id?: string
+          lida?: boolean | null
+          lida_em?: string | null
+          remetente_id?: string
+        }
+        Relationships: []
+      }
       metricas_diarias: {
         Row: {
           clientes_atendidos: number | null
@@ -1068,6 +1098,101 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      movimentacoes_processo: {
+        Row: {
+          codigo_movimento: number | null
+          complemento: string | null
+          created_at: string | null
+          data_movimento: string
+          decisao_teor: string | null
+          descricao: string
+          id: string
+          lido: boolean | null
+          lido_em: string | null
+          lido_por: string | null
+          prazo_dias: number | null
+          prazo_fatal: string | null
+          processo_id: string | null
+          urgente: boolean | null
+        }
+        Insert: {
+          codigo_movimento?: number | null
+          complemento?: string | null
+          created_at?: string | null
+          data_movimento: string
+          decisao_teor?: string | null
+          descricao: string
+          id?: string
+          lido?: boolean | null
+          lido_em?: string | null
+          lido_por?: string | null
+          prazo_dias?: number | null
+          prazo_fatal?: string | null
+          processo_id?: string | null
+          urgente?: boolean | null
+        }
+        Update: {
+          codigo_movimento?: number | null
+          complemento?: string | null
+          created_at?: string | null
+          data_movimento?: string
+          decisao_teor?: string | null
+          descricao?: string
+          id?: string
+          lido?: boolean | null
+          lido_em?: string | null
+          lido_por?: string | null
+          prazo_dias?: number | null
+          prazo_fatal?: string | null
+          processo_id?: string | null
+          urgente?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_processo_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos_sincronizados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oab_monitoradas: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          criado_por: string | null
+          id: string
+          nome_advogado: string | null
+          numero_oab: string
+          uf: string
+          ultima_sincronizacao: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          criado_por?: string | null
+          id?: string
+          nome_advogado?: string | null
+          numero_oab: string
+          uf: string
+          ultima_sincronizacao?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          criado_por?: string | null
+          id?: string
+          nome_advogado?: string | null
+          numero_oab?: string
+          uf?: string
+          ultima_sincronizacao?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       peritos: {
         Row: {
@@ -1228,6 +1353,71 @@ export type Database = {
             columns: ["seguradora_id"]
             isOneToOne: false
             referencedRelation: "seguradoras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processos_sincronizados: {
+        Row: {
+          assunto: string | null
+          classe_processual: string | null
+          created_at: string | null
+          dados_completos: Json | null
+          data_ajuizamento: string | null
+          data_ultimo_movimento: string | null
+          id: string
+          link_externo: string | null
+          nivel_sigilo: string | null
+          numero_processo: string
+          oab_id: string | null
+          orgao_julgador: string | null
+          situacao: string | null
+          tribunal: string | null
+          ultimo_movimento: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assunto?: string | null
+          classe_processual?: string | null
+          created_at?: string | null
+          dados_completos?: Json | null
+          data_ajuizamento?: string | null
+          data_ultimo_movimento?: string | null
+          id?: string
+          link_externo?: string | null
+          nivel_sigilo?: string | null
+          numero_processo: string
+          oab_id?: string | null
+          orgao_julgador?: string | null
+          situacao?: string | null
+          tribunal?: string | null
+          ultimo_movimento?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assunto?: string | null
+          classe_processual?: string | null
+          created_at?: string | null
+          dados_completos?: Json | null
+          data_ajuizamento?: string | null
+          data_ultimo_movimento?: string | null
+          id?: string
+          link_externo?: string | null
+          nivel_sigilo?: string | null
+          numero_processo?: string
+          oab_id?: string | null
+          orgao_julgador?: string | null
+          situacao?: string | null
+          tribunal?: string | null
+          ultimo_movimento?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processos_sincronizados_oab_id_fkey"
+            columns: ["oab_id"]
+            isOneToOne: false
+            referencedRelation: "oab_monitoradas"
             referencedColumns: ["id"]
           },
         ]
@@ -1829,6 +2019,79 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      tarefas_rafael: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          descricao: string | null
+          enviado_por: string
+          id: string
+          prazo: string | null
+          prioridade: string | null
+          processo_id: string | null
+          protocolo_id: string | null
+          respondido_em: string | null
+          resposta: string | null
+          status: string | null
+          titulo: string
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          enviado_por: string
+          id?: string
+          prazo?: string | null
+          prioridade?: string | null
+          processo_id?: string | null
+          protocolo_id?: string | null
+          respondido_em?: string | null
+          resposta?: string | null
+          status?: string | null
+          titulo: string
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          enviado_por?: string
+          id?: string
+          prazo?: string | null
+          prioridade?: string | null
+          processo_id?: string | null
+          protocolo_id?: string | null
+          respondido_em?: string | null
+          resposta?: string | null
+          status?: string | null
+          titulo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarefas_rafael_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_rafael_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_rafael_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
