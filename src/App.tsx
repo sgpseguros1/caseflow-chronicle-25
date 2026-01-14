@@ -46,6 +46,7 @@ import MonitoramentoOABPage from "./pages/MonitoramentoOABPage";
 import PainelRafaelPage from "./pages/PainelRafaelPage";
 import ChatInternoPage from "./pages/ChatInternoPage";
 import SolicitacoesPage from "./pages/SolicitacoesPage";
+import ProcessosJudiciaisPage from "./pages/ProcessosJudiciaisPage";
 import NotFound from "./pages/NotFound";
 import CalendarioPage from "./pages/CalendarioPage";
 import { Loader2 } from "lucide-react";
@@ -127,6 +128,8 @@ const App = () => (
           <Route path="/chat" element={<ProtectedRoute><ChatInternoPage /></ProtectedRoute>} />
           {/* Solicitações */}
           <Route path="/solicitacoes" element={<ProtectedRoute><SolicitacoesPage /></ProtectedRoute>} />
+          {/* Processos Judiciais do Escritório */}
+          <Route path="/processos-judiciais" element={<ProtectedRoute><ProcessosJudiciaisPage /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
