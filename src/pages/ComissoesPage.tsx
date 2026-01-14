@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -14,6 +14,9 @@ import {
   DollarSign,
   User,
   Calendar,
+  TrendingUp,
+  Users,
+  BarChart2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,12 +63,15 @@ import {
   Comissao,
 } from '@/hooks/useComissoes';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
 const COLORS = ['#eab308', '#22c55e', '#ef4444', '#3b82f6', '#8b5cf6'];
 
 export default function ComissoesPage() {
-  const { isAdmin, isAdminOrGestor } = useAuth();
+  const { isAdmin, isAdminOrGestor, user } = useAuth();
+  const queryClient = useQueryClient();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -99,20 +105,45 @@ export default function ComissoesPage() {
   const deleteComissao = useDeleteComissao();
   const pagarComissao = usePagarComissao();
 
-  // Verificar permissão - apenas Admin e Gestor podem acessar o conteúdo
-  // Esta verificação deve vir DEPOIS de todos os hooks
-  if (!isAdminOrGestor) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
-        <AlertTriangle className="h-16 w-16 text-yellow-500 mb-4" />
-        <h1 className="text-2xl font-bold text-foreground mb-2">Acesso Restrito</h1>
-        <p className="text-muted-foreground max-w-md">
-          Você não possui permissão para acessar este módulo. 
-          Entre em contato com o administrador se precisar de acesso.
-        </p>
-      </div>
-    );
-  }
+  // ============================================
+  // REALTIME - Atualização em tempo real
+  // ============================================
+  useEffect(() => {
+    const channel = supabase
+      .channel('comissoes-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'comissoes',
+        },
+        () => {
+          // Invalidar queries para atualizar dados
+          queryClient.invalidateQueries({ queryKey: ['comissoes'] });
+          queryClient.invalidateQueries({ queryKey: ['comissoes-stats'] });
+          queryClient.invalidateQueries({ queryKey: ['comissoes-pagas'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  // ============================================
+  // PERMISSÕES GRANULARES
+  // ============================================
+  // Todos podem ver e cadastrar
+  const canView = true;
+  const canCadastrar = true;
+  // Apenas Admin/Gestor podem editar, marcar como paga, excluir
+  const canEdit = isAdminOrGestor;
+  const canMarcarPaga = isAdminOrGestor;
+  // Apenas Admin/Gestor podem excluir comissões PENDENTES/BLOQUEADAS
+  // Comissões PAGAS NUNCA podem ser excluídas
+  const canDelete = isAdminOrGestor;
 
   // Filter comissões by search term
   const filteredComissoes = comissoes?.filter((c) => {
@@ -157,6 +188,10 @@ export default function ComissoesPage() {
   };
 
   const handleUpdateStatus = async (comissao: Comissao, newStatus: 'pendente' | 'paga' | 'bloqueada') => {
+    if (!canEdit) {
+      return;
+    }
+    
     if (newStatus === 'paga') {
       setSelectedComissao(comissao);
       setBeneficiarioNome(comissao.clients?.name || '');
@@ -171,6 +206,11 @@ export default function ComissoesPage() {
 
   const handleDelete = async () => {
     if (!selectedComissao || !deleteMotivo) return;
+    
+    // REGRA: Comissões PAGAS NUNCA podem ser excluídas
+    if (selectedComissao.status === 'paga') {
+      return;
+    }
 
     await deleteComissao.mutateAsync({
       id: selectedComissao.id,
@@ -202,22 +242,9 @@ export default function ComissoesPage() {
     }).format(value);
   };
 
-  if (!isAdminOrGestor) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Card className="max-w-md">
-          <CardContent className="pt-6 text-center">
-            <AlertTriangle className="h-12 w-12 mx-auto text-destructive mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Acesso Restrito</h2>
-            <p className="text-muted-foreground">
-              Você não tem permissão para acessar este módulo.
-              Apenas Administradores e Gestores podem visualizar Comissões.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Separar comissões pendentes
+  const comissoesPendentes = filteredComissoes?.filter(c => c.status === 'pendente') || [];
+  const comissoesBloqueadas = filteredComissoes?.filter(c => c.status === 'bloqueada') || [];
 
   return (
     <div className="space-y-6">
@@ -232,23 +259,33 @@ export default function ComissoesPage() {
             Gestão de comissões e pagamentos
           </p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Comissão
-        </Button>
+        {canCadastrar && (
+          <Button onClick={() => setShowNewDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Comissão
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="listagem">Listagem</TabsTrigger>
-          <TabsTrigger value="pagas">
-            <CheckCircle className="h-4 w-4 mr-1" />
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+          <TabsTrigger value="dashboard" className="flex items-center gap-1">
+            <BarChart2 className="h-4 w-4" />
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="pendentes" className="flex items-center gap-1">
+            <Clock className="h-4 w-4" />
+            Pendentes ({comissoesPendentes.length})
+          </TabsTrigger>
+          <TabsTrigger value="pagas" className="flex items-center gap-1">
+            <CheckCircle className="h-4 w-4" />
             Pagas
           </TabsTrigger>
         </TabsList>
 
-        {/* Dashboard Tab */}
+        {/* ============================================ */}
+        {/* Dashboard Tab - VISÍVEL PARA TODOS */}
+        {/* ============================================ */}
         <TabsContent value="dashboard" className="space-y-4">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -302,7 +339,10 @@ export default function ComissoesPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Comissões por Status</CardTitle>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Comissões por Status
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[250px]">
@@ -335,7 +375,10 @@ export default function ComissoesPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Por Funcionário (Quem Cadastrou)</CardTitle>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Produção por Funcionário
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[250px]">
@@ -352,48 +395,81 @@ export default function ComissoesPage() {
             </Card>
           </div>
 
-          {/* Pendentes List */}
+          {/* Por Tipo de Indenização */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Comissões Pendentes
-              </CardTitle>
+              <CardTitle className="text-sm">Comissões por Tipo de Indenização</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {filteredComissoes?.filter(c => c.status === 'pendente').slice(0, 5).map((comissao) => (
-                  <div key={comissao.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {stats?.porTipo?.map((item, index) => (
+                  <div key={item.tipo} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    />
                     <div>
-                      <p className="font-medium">{comissao.clients?.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {comissao.tipo_indenizacao} • {format(new Date(comissao.data_acidente), 'dd/MM/yyyy')}
-                      </p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        Cadastrado por: {comissao.created_by_profile?.name || 'Desconhecido'}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">{formatCurrency(comissao.valor)}</p>
-                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
-                        Pendente
-                      </Badge>
+                      <p className="text-sm font-medium">{item.tipo}</p>
+                      <p className="text-lg font-bold">{item.count}</p>
                     </div>
                   </div>
                 ))}
-                {(!filteredComissoes || filteredComissoes.filter(c => c.status === 'pendente').length === 0) && (
-                  <p className="text-center text-muted-foreground py-4">
-                    Nenhuma comissão pendente
-                  </p>
-                )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Produção detalhada por pessoa */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Produção Detalhada por Funcionário
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Funcionário</TableHead>
+                    <TableHead className="text-center">Total Cadastradas</TableHead>
+                    <TableHead className="text-center">Pendentes</TableHead>
+                    <TableHead className="text-center">Pagas</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stats?.porUsuario?.map((usuario) => (
+                    <TableRow key={usuario.usuario_id}>
+                      <TableCell className="font-medium">{usuario.nome}</TableCell>
+                      <TableCell className="text-center">{usuario.count}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                          {comissoes?.filter(c => c.created_by === usuario.usuario_id && c.status === 'pendente').length || 0}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="bg-green-100 text-green-800">
+                          {comissoes?.filter(c => c.created_by === usuario.usuario_id && c.status === 'paga').length || 0}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!stats?.porUsuario || stats.porUsuario.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-4">
+                        Nenhum dado disponível
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Listagem Tab */}
-        <TabsContent value="listagem" className="space-y-4">
+        {/* ============================================ */}
+        {/* Pendentes Tab */}
+        {/* ============================================ */}
+        <TabsContent value="pendentes" className="space-y-4">
           {/* Filters */}
           <Card>
             <CardContent className="pt-4">
@@ -407,17 +483,6 @@ export default function ComissoesPage() {
                     className="pl-9"
                   />
                 </div>
-                <Select value={statusFilter || "__all__"} onValueChange={(v) => setStatusFilter(v === "__all__" ? "" : v)}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Todos os Status</SelectItem>
-                    <SelectItem value="pendente">Pendente</SelectItem>
-                    <SelectItem value="paga">Paga</SelectItem>
-                    <SelectItem value="bloqueada">Bloqueada</SelectItem>
-                  </SelectContent>
-                </Select>
                 <Select value={tipoFilter || "__all__"} onValueChange={(v) => setTipoFilter(v === "__all__" ? "" : v)}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Tipo" />
@@ -437,6 +502,12 @@ export default function ComissoesPage() {
 
           {/* Table */}
           <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4 text-yellow-500" />
+                Comissões Pendentes
+              </CardTitle>
+            </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -446,25 +517,26 @@ export default function ComissoesPage() {
                     <TableHead>Data Acidente</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Cadastrado por</TableHead>
+                    <TableHead>Data Cadastro</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    {canEdit && <TableHead className="text-right">Ações</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
+                      <TableCell colSpan={canEdit ? 8 : 7} className="text-center py-8">
                         Carregando...
                       </TableCell>
                     </TableRow>
-                  ) : filteredComissoes?.length === 0 ? (
+                  ) : comissoesPendentes.length === 0 && comissoesBloqueadas.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        Nenhuma comissão encontrada
+                      <TableCell colSpan={canEdit ? 8 : 7} className="text-center py-8 text-muted-foreground">
+                        Nenhuma comissão pendente encontrada
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredComissoes?.map((comissao) => (
+                    [...comissoesPendentes, ...comissoesBloqueadas].map((comissao) => (
                       <TableRow key={comissao.id}>
                         <TableCell>
                           <div>
@@ -484,58 +556,79 @@ export default function ComissoesPage() {
                           </div>
                         </TableCell>
                         <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">
+                              {format(new Date(comissao.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
                           <Badge className={STATUS_COMISSAO[comissao.status].color}>
                             {STATUS_COMISSAO[comissao.status].label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {comissao.status === 'pendente' && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleUpdateStatus(comissao, 'paga')}
-                                title="Marcar como paga"
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                              </Button>
-                            )}
-                            {comissao.status !== 'bloqueada' && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleUpdateStatus(comissao, 'bloqueada')}
-                                title="Bloquear"
-                              >
-                                <XCircle className="h-4 w-4 text-red-500" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setSelectedComissao(comissao);
-                                setShowHistoricoDialog(true);
-                              }}
-                              title="Ver histórico"
-                            >
-                              <History className="h-4 w-4" />
-                            </Button>
-                            {isAdmin && (
+                        {canEdit && (
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {comissao.status === 'pendente' && canMarcarPaga && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleUpdateStatus(comissao, 'paga')}
+                                  title="Marcar como paga"
+                                >
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                </Button>
+                              )}
+                              {comissao.status !== 'bloqueada' && canEdit && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleUpdateStatus(comissao, 'bloqueada')}
+                                  title="Bloquear"
+                                >
+                                  <XCircle className="h-4 w-4 text-red-500" />
+                                </Button>
+                              )}
+                              {comissao.status === 'bloqueada' && canEdit && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleUpdateStatus(comissao, 'pendente')}
+                                  title="Desbloquear"
+                                >
+                                  <Clock className="h-4 w-4 text-yellow-500" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => {
                                   setSelectedComissao(comissao);
-                                  setShowDeleteDialog(true);
+                                  setShowHistoricoDialog(true);
                                 }}
-                                title="Excluir"
+                                title="Ver histórico"
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <History className="h-4 w-4" />
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
+                              {/* Apenas Admin/Gestor podem excluir, e NUNCA comissões pagas */}
+                              {canDelete && comissao.status !== 'paga' && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setSelectedComissao(comissao);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))
                   )}
@@ -545,13 +638,16 @@ export default function ComissoesPage() {
           </Card>
         </TabsContent>
 
-        {/* Pagas Tab */}
+        {/* ============================================ */}
+        {/* Pagas Tab - SOMENTE LEITURA */}
+        {/* ============================================ */}
         <TabsContent value="pagas" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-green-500" />
                 Comissões Pagas
+                <Badge variant="outline" className="ml-2">Somente leitura</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -657,7 +753,9 @@ export default function ComissoesPage() {
         </TabsContent>
       </Tabs>
 
-      {/* New Comissao Dialog */}
+      {/* ============================================ */}
+      {/* New Comissao Dialog - TODOS podem cadastrar */}
+      {/* ============================================ */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -682,6 +780,9 @@ export default function ComissoesPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Somente clientes cadastrados no sistema
+              </p>
             </div>
             <div>
               <Label>Tipo de Indenização *</Label>
@@ -740,7 +841,7 @@ export default function ComissoesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Pagar Comissao Dialog */}
+      {/* Pagar Comissao Dialog - Apenas Admin/Gestor */}
       <Dialog open={showPagarDialog} onOpenChange={setShowPagarDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -818,35 +919,49 @@ export default function ComissoesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
+      {/* Delete Dialog - Apenas Admin/Gestor, e NUNCA para comissões pagas */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Excluir Comissão</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Excluir Comissão
+            </DialogTitle>
             <DialogDescription>
               Esta ação irá marcar a comissão como excluída. Informe o motivo.
             </DialogDescription>
           </DialogHeader>
-          <div>
-            <Label>Motivo da exclusão *</Label>
-            <Textarea
-              placeholder="Informe o motivo da exclusão..."
-              value={deleteMotivo}
-              onChange={(e) => setDeleteMotivo(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={!deleteMotivo || deleteComissao.isPending}
-            >
-              {deleteComissao.isPending ? 'Excluindo...' : 'Confirmar Exclusão'}
-            </Button>
-          </DialogFooter>
+          {selectedComissao?.status === 'paga' ? (
+            <div className="py-4 text-center">
+              <AlertTriangle className="h-12 w-12 mx-auto text-destructive mb-2" />
+              <p className="text-destructive font-medium">
+                Comissões PAGAS não podem ser excluídas!
+              </p>
+            </div>
+          ) : (
+            <>
+              <div>
+                <Label>Motivo da exclusão *</Label>
+                <Textarea
+                  placeholder="Informe o motivo da exclusão..."
+                  value={deleteMotivo}
+                  onChange={(e) => setDeleteMotivo(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={!deleteMotivo || deleteComissao.isPending}
+                >
+                  {deleteComissao.isPending ? 'Excluindo...' : 'Confirmar Exclusão'}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
