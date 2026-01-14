@@ -42,6 +42,9 @@ import UsersAdminPage from "./pages/UsersAdminPage";
 import FinanceiroPainelPage from "./pages/FinanceiroPainelPage";
 import FinanceiroFormPage from "./pages/FinanceiroFormPage";
 import ControleProcessosPage from "./pages/ControleProcessosPage";
+import MonitoramentoOABPage from "./pages/MonitoramentoOABPage";
+import PainelRafaelPage from "./pages/PainelRafaelPage";
+import ChatInternoPage from "./pages/ChatInternoPage";
 import NotFound from "./pages/NotFound";
 import CalendarioPage from "./pages/CalendarioPage";
 import { Loader2 } from "lucide-react";
@@ -115,6 +118,12 @@ const App = () => (
           <Route path="/admin/usuarios" element={<ProtectedRoute><UsersAdminPage /></ProtectedRoute>} />
           <Route path="/financeiro" element={<ProtectedRoute><FinanceiroPainelPage /></ProtectedRoute>} />
           <Route path="/financeiro/novo" element={<ProtectedRoute><FinanceiroFormPage /></ProtectedRoute>} />
+          {/* Monitoramento OAB / Processos Judiciais */}
+          <Route path="/monitoramento-oab" element={<ProtectedRoute><MonitoramentoOABPage /></ProtectedRoute>} />
+          {/* Painel Rafael */}
+          <Route path="/painel-rafael" element={<ProtectedRoute><PainelRafaelPage /></ProtectedRoute>} />
+          {/* Chat Interno */}
+          <Route path="/chat" element={<ProtectedRoute><ChatInternoPage /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

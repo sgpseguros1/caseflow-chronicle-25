@@ -24,6 +24,9 @@ import {
   AlertTriangle,
   DollarSign,
   ClipboardList,
+  Search,
+  ListTodo,
+  MessagesSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,6 +47,9 @@ const menuItems: MenuItem[] = [
   { icon: AlertTriangle, label: 'Alertas Críticos', path: '/alertas-criticos' },
   { icon: Building2, label: 'BAU (Hospitais)', path: '/bau' },
   { icon: ClipboardList, label: 'Controle Processos', path: '/controle-processos' },
+  { icon: Search, label: 'Monitoramento OAB', path: '/monitoramento-oab' },
+  { icon: ListTodo, label: 'Painel Rafael', path: '/painel-rafael' },
+  { icon: MessagesSquare, label: 'Chat Interno', path: '/chat' },
   {
     icon: Users,
     label: 'Cadastros',
