@@ -48,6 +48,7 @@ import ChatInternoPage from "./pages/ChatInternoPage";
 import SolicitacoesPage from "./pages/SolicitacoesPage";
 import ProcessosJudiciaisPage from "./pages/ProcessosJudiciaisPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
+import ComissoesPage from "./pages/ComissoesPage";
 import NotFound from "./pages/NotFound";
 import CalendarioPage from "./pages/CalendarioPage";
 import { Loader2 } from "lucide-react";
@@ -133,6 +134,8 @@ const App = () => (
           <Route path="/processos-judiciais" element={<ProtectedRoute><ProcessosJudiciaisPage /></ProtectedRoute>} />
           {/* Relatórios */}
           <Route path="/relatorios" element={<ProtectedRoute><RelatoriosPage /></ProtectedRoute>} />
+          {/* Comissões */}
+          <Route path="/comissoes" element={<ProtectedRoute><ComissoesPage /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

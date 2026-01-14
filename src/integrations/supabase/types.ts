@@ -881,6 +881,106 @@ export type Database = {
           },
         ]
       }
+      comissoes: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          data_acidente: string
+          deleted_at: string | null
+          deleted_by: string | null
+          deletion_reason: string | null
+          id: string
+          motivo_bloqueio: string | null
+          observacoes: string | null
+          status: string
+          tipo_indenizacao: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          data_acidente: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
+          id?: string
+          motivo_bloqueio?: string | null
+          observacoes?: string | null
+          status?: string
+          tipo_indenizacao: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          data_acidente?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
+          id?: string
+          motivo_bloqueio?: string | null
+          observacoes?: string | null
+          status?: string
+          tipo_indenizacao?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comissoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comissoes_historico: {
+        Row: {
+          acao: string
+          campo_alterado: string | null
+          comissao_id: string
+          created_at: string
+          id: string
+          usuario_id: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          acao: string
+          campo_alterado?: string | null
+          comissao_id: string
+          created_at?: string
+          id?: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          acao?: string
+          campo_alterado?: string | null
+          comissao_id?: string
+          created_at?: string
+          id?: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comissoes_historico_comissao_id_fkey"
+            columns: ["comissao_id"]
+            isOneToOne: false
+            referencedRelation: "comissoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comunicacao_historico: {
         Row: {
           assunto: string | null

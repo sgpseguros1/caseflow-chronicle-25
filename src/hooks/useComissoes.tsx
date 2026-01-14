@@ -1,0 +1,354 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+export interface Comissao {
+  id: string;
+  cliente_id: string;
+  tipo_indenizacao: string;
+  data_acidente: string;
+  valor: number | null;
+  status: 'pendente' | 'paga' | 'bloqueada';
+  observacoes: string | null;
+  motivo_bloqueio: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  deletion_reason: string | null;
+  // Joined data
+  clients?: {
+    id: string;
+    name: string;
+    cpf: string | null;
+    accident_date: string | null;
+    accident_type: string | null;
+  };
+}
+
+export interface ComissaoHistorico {
+  id: string;
+  comissao_id: string;
+  acao: string;
+  campo_alterado: string | null;
+  valor_anterior: string | null;
+  valor_novo: string | null;
+  usuario_id: string | null;
+  created_at: string;
+}
+
+export interface ComissoesStats {
+  total: number;
+  pendentes: number;
+  pagas: number;
+  bloqueadas: number;
+  valorTotalPago: number;
+  valorTotalPendente: number;
+  porUsuario: { usuario_id: string; count: number }[];
+  porTipo: { tipo: string; count: number }[];
+}
+
+export const TIPOS_INDENIZACAO = [
+  'Auxílio-Acidente',
+  'DPVAT',
+  'Seguro de Vida',
+  'Seguro Vida Empresarial',
+  'Judicial',
+  'Administrativo',
+  'Previdenciário',
+  'Danos Materiais',
+  'Danos Morais',
+  'Outro',
+] as const;
+
+export const STATUS_COMISSAO = {
+  pendente: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800' },
+  paga: { label: 'Paga', color: 'bg-green-100 text-green-800' },
+  bloqueada: { label: 'Bloqueada', color: 'bg-red-100 text-red-800' },
+} as const;
+
+// Hook para listar comissões (com filtros)
+export function useComissoes(filters?: {
+  status?: string;
+  tipo?: string;
+  periodo?: { inicio: string; fim: string };
+}) {
+  return useQuery({
+    queryKey: ['comissoes', filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('comissoes')
+        .select(`
+          *,
+          clients (id, name, cpf, accident_date, accident_type)
+        `)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+
+      if (filters?.status) {
+        query = query.eq('status', filters.status);
+      }
+      if (filters?.tipo) {
+        query = query.eq('tipo_indenizacao', filters.tipo);
+      }
+      if (filters?.periodo) {
+        query = query
+          .gte('created_at', filters.periodo.inicio)
+          .lte('created_at', filters.periodo.fim);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as Comissao[];
+    },
+  });
+}
+
+// Hook para buscar comissão por ID
+export function useComissao(id: string | undefined) {
+  return useQuery({
+    queryKey: ['comissao', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from('comissoes')
+        .select(`
+          *,
+          clients (id, name, cpf, accident_date, accident_type)
+        `)
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data as Comissao;
+    },
+    enabled: !!id,
+  });
+}
+
+// Hook para verificar duplicidade
+export function useVerificarDuplicidade() {
+  return useMutation({
+    mutationFn: async ({
+      cliente_id,
+      data_acidente,
+      tipo_indenizacao,
+    }: {
+      cliente_id: string;
+      data_acidente: string;
+      tipo_indenizacao: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('comissoes')
+        .select('id, status')
+        .eq('cliente_id', cliente_id)
+        .eq('data_acidente', data_acidente)
+        .eq('tipo_indenizacao', tipo_indenizacao)
+        .is('deleted_at', null);
+
+      if (error) throw error;
+      return data && data.length > 0;
+    },
+  });
+}
+
+// Hook para criar comissão
+export function useCreateComissao() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (comissao: {
+      cliente_id: string;
+      tipo_indenizacao: string;
+      data_acidente: string;
+      valor?: number;
+      observacoes?: string;
+    }) => {
+      // Verificar duplicidade antes de criar
+      const { data: existente, error: checkError } = await supabase
+        .from('comissoes')
+        .select('id, status')
+        .eq('cliente_id', comissao.cliente_id)
+        .eq('data_acidente', comissao.data_acidente)
+        .eq('tipo_indenizacao', comissao.tipo_indenizacao)
+        .is('deleted_at', null);
+
+      if (checkError) throw checkError;
+
+      if (existente && existente.length > 0) {
+        throw new Error('Comissão já registrada ou já paga para este cliente e este acidente.');
+      }
+
+      const { data, error } = await supabase
+        .from('comissoes')
+        .insert({
+          cliente_id: comissao.cliente_id,
+          tipo_indenizacao: comissao.tipo_indenizacao,
+          data_acidente: comissao.data_acidente,
+          valor: comissao.valor || null,
+          observacoes: comissao.observacoes || null,
+          status: 'pendente',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comissoes'] });
+      toast.success('Comissão cadastrada com sucesso!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+}
+
+// Hook para atualizar status da comissão
+export function useUpdateComissaoStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      status,
+      motivo_bloqueio,
+    }: {
+      id: string;
+      status: 'pendente' | 'paga' | 'bloqueada';
+      motivo_bloqueio?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('comissoes')
+        .update({
+          status,
+          motivo_bloqueio: motivo_bloqueio || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comissoes'] });
+      toast.success('Status da comissão atualizado!');
+    },
+    onError: () => {
+      toast.error('Erro ao atualizar status da comissão');
+    },
+  });
+}
+
+// Hook para soft delete (apenas admin/gestor)
+export function useDeleteComissao() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, motivo }: { id: string; motivo: string }) => {
+      const { data, error } = await supabase
+        .from('comissoes')
+        .update({
+          deleted_at: new Date().toISOString(),
+          deletion_reason: motivo,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comissoes'] });
+      toast.success('Comissão excluída com sucesso!');
+    },
+    onError: () => {
+      toast.error('Erro ao excluir comissão');
+    },
+  });
+}
+
+// Hook para histórico de comissão
+export function useComissaoHistorico(comissaoId: string | undefined) {
+  return useQuery({
+    queryKey: ['comissao-historico', comissaoId],
+    queryFn: async () => {
+      if (!comissaoId) return [];
+      const { data, error } = await supabase
+        .from('comissoes_historico')
+        .select('*')
+        .eq('comissao_id', comissaoId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as ComissaoHistorico[];
+    },
+    enabled: !!comissaoId,
+  });
+}
+
+// Hook para estatísticas do dashboard
+export function useComissoesStats(periodo?: { inicio: string; fim: string }) {
+  return useQuery({
+    queryKey: ['comissoes-stats', periodo],
+    queryFn: async () => {
+      let query = supabase
+        .from('comissoes')
+        .select('*')
+        .is('deleted_at', null);
+
+      if (periodo) {
+        query = query
+          .gte('created_at', periodo.inicio)
+          .lte('created_at', periodo.fim);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const comissoes = data || [];
+
+      const stats: ComissoesStats = {
+        total: comissoes.length,
+        pendentes: comissoes.filter((c) => c.status === 'pendente').length,
+        pagas: comissoes.filter((c) => c.status === 'paga').length,
+        bloqueadas: comissoes.filter((c) => c.status === 'bloqueada').length,
+        valorTotalPago: comissoes
+          .filter((c) => c.status === 'paga')
+          .reduce((acc, c) => acc + (c.valor || 0), 0),
+        valorTotalPendente: comissoes
+          .filter((c) => c.status === 'pendente')
+          .reduce((acc, c) => acc + (c.valor || 0), 0),
+        porUsuario: [],
+        porTipo: [],
+      };
+
+      // Agrupar por usuário
+      const porUsuario = comissoes.reduce((acc, c) => {
+        const key = c.created_by || 'desconhecido';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      stats.porUsuario = Object.entries(porUsuario).map(([usuario_id, count]) => ({
+        usuario_id,
+        count,
+      }));
+
+      // Agrupar por tipo
+      const porTipo = comissoes.reduce((acc, c) => {
+        acc[c.tipo_indenizacao] = (acc[c.tipo_indenizacao] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      stats.porTipo = Object.entries(porTipo).map(([tipo, count]) => ({
+        tipo,
+        count,
+      }));
+
+      return stats;
+    },
+  });
+}

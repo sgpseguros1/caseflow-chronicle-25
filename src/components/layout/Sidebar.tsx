@@ -28,6 +28,7 @@ import {
   ListTodo,
   MessagesSquare,
   Send,
+  Coins,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -72,8 +73,9 @@ const menuItems: MenuItem[] = [
   { icon: MessageSquare, label: 'Comunicação', path: '/comunicacao' },
   { icon: Bot, label: 'Módulo IA', path: '/ia' },
   { icon: DollarSign, label: 'Financeiro', path: '/financeiro', gestorOnly: true },
+  { icon: Scale, label: 'Relatórios', path: '/relatorios', gestorOnly: true },
+  { icon: Coins, label: 'Comissões', path: '/comissoes', gestorOnly: true },
   { icon: Shield, label: 'Usuários', path: '/admin/usuarios', adminOnly: true },
-  { icon: Scale, label: 'Relatórios', path: '/relatorios', adminOnly: true },
 ];
 
 export function Sidebar() {
