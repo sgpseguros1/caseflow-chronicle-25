@@ -27,6 +27,7 @@ import {
   Search,
   ListTodo,
   MessagesSquare,
+  Send,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,6 +50,7 @@ const menuItems: MenuItem[] = [
   { icon: ClipboardList, label: 'Controle Processos', path: '/controle-processos' },
   { icon: Search, label: 'Monitoramento OAB', path: '/monitoramento-oab' },
   { icon: ListTodo, label: 'Painel Rafael', path: '/painel-rafael' },
+  { icon: Send, label: 'Solicitações', path: '/solicitacoes' },
   { icon: MessagesSquare, label: 'Chat Interno', path: '/chat' },
   {
     icon: Users,
