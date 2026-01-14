@@ -329,6 +329,126 @@ export type Database = {
           },
         ]
       }
+      bau_documentos_faltantes: {
+        Row: {
+          bau_id: string
+          created_at: string
+          data_recebimento: string | null
+          documento_nome: string
+          id: string
+          obrigatorio: boolean | null
+          observacoes: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          bau_id: string
+          created_at?: string
+          data_recebimento?: string | null
+          documento_nome: string
+          id?: string
+          obrigatorio?: boolean | null
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bau_id?: string
+          created_at?: string
+          data_recebimento?: string | null
+          documento_nome?: string
+          id?: string
+          obrigatorio?: boolean | null
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_documentos_faltantes_bau_id_fkey"
+            columns: ["bau_id"]
+            isOneToOne: false
+            referencedRelation: "client_baus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bau_etiquetas: {
+        Row: {
+          ativo: boolean | null
+          bau_id: string
+          cor: string | null
+          created_at: string
+          id: string
+          nome: string
+          tipo: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          bau_id: string
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          tipo?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          bau_id?: string
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_etiquetas_bau_id_fkey"
+            columns: ["bau_id"]
+            isOneToOne: false
+            referencedRelation: "client_baus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bau_historico: {
+        Row: {
+          bau_id: string
+          campo_alterado: string
+          created_at: string
+          id: string
+          usuario_id: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          bau_id: string
+          campo_alterado: string
+          created_at?: string
+          id?: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          bau_id?: string
+          campo_alterado?: string
+          created_at?: string
+          id?: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bau_historico_bau_id_fkey"
+            columns: ["bau_id"]
+            isOneToOne: false
+            referencedRelation: "client_baus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_alerts: {
         Row: {
           client_id: string
@@ -824,6 +944,92 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "comunicacao_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comunicacao_registros: {
+        Row: {
+          assunto: string | null
+          bau_id: string | null
+          canal: string
+          cliente_id: string | null
+          conteudo: string
+          created_at: string
+          data_leitura: string | null
+          destinatario_id: string | null
+          direcao: string
+          id: string
+          metadados: Json | null
+          processo_id: string | null
+          protocolo_id: string | null
+          remetente_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assunto?: string | null
+          bau_id?: string | null
+          canal: string
+          cliente_id?: string | null
+          conteudo: string
+          created_at?: string
+          data_leitura?: string | null
+          destinatario_id?: string | null
+          direcao?: string
+          id?: string
+          metadados?: Json | null
+          processo_id?: string | null
+          protocolo_id?: string | null
+          remetente_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assunto?: string | null
+          bau_id?: string | null
+          canal?: string
+          cliente_id?: string | null
+          conteudo?: string
+          created_at?: string
+          data_leitura?: string | null
+          destinatario_id?: string | null
+          direcao?: string
+          id?: string
+          metadados?: Json | null
+          processo_id?: string | null
+          protocolo_id?: string | null
+          remetente_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicacao_registros_bau_id_fkey"
+            columns: ["bau_id"]
+            isOneToOne: false
+            referencedRelation: "client_baus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicacao_registros_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicacao_registros_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos_judiciais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicacao_registros_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
             referencedColumns: ["id"]
           },
         ]

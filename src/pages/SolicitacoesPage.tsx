@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Clock, AlertTriangle, CheckCircle, XCircle, MessageSquare, User, Calendar, Send } from 'lucide-react';
+import { Plus, Clock, AlertTriangle, CheckCircle, XCircle, MessageSquare, User, Calendar, Send, RefreshCw } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from '@/hooks/use-toast';
 import { 
   useSolicitacoesRecebidas, 
   useSolicitacoesEnviadas, 
@@ -24,14 +25,14 @@ import {
 import { useClients } from '@/hooks/useClients';
 import { useAuth } from '@/hooks/useAuth';
 
-const PRIORIDADE_CONFIG = {
+const PRIORIDADE_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   baixa: { label: 'Baixa', color: 'bg-gray-100 text-gray-700', icon: Clock },
   normal: { label: 'Normal', color: 'bg-blue-100 text-blue-700', icon: Clock },
   alta: { label: 'Alta', color: 'bg-orange-100 text-orange-700', icon: AlertTriangle },
   urgente: { label: 'Urgente', color: 'bg-red-100 text-red-700', icon: AlertTriangle },
 };
 
-const STATUS_CONFIG = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   pendente: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
   em_andamento: { label: 'Em Andamento', color: 'bg-blue-100 text-blue-700', icon: AlertTriangle },
   concluida: { label: 'Concluída', color: 'bg-green-100 text-green-700', icon: CheckCircle },
@@ -44,6 +45,12 @@ export default function SolicitacoesPage() {
   const [isRespondOpen, setIsRespondOpen] = useState(false);
   const [selectedSolicitacao, setSelectedSolicitacao] = useState<Solicitacao | null>(null);
   const [activeTab, setActiveTab] = useState('recebidas');
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're in browser before rendering
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Form state
   const [titulo, setTitulo] = useState('');
@@ -117,8 +124,8 @@ export default function SolicitacoesPage() {
   const urgentesRecebidas = recebidas.filter(s => s.prioridade === 'urgente' && s.status === 'pendente').length;
 
   const renderSolicitacaoCard = (sol: Solicitacao, isRecebida: boolean) => {
-    const prioConfig = PRIORIDADE_CONFIG[sol.prioridade];
-    const statusConfig = STATUS_CONFIG[sol.status];
+    const prioConfig = PRIORIDADE_CONFIG[sol.prioridade] || PRIORIDADE_CONFIG.normal;
+    const statusConfig = STATUS_CONFIG[sol.status] || STATUS_CONFIG.pendente;
     const PrioIcon = prioConfig.icon;
     const StatusIcon = statusConfig.icon;
 
@@ -152,11 +159,11 @@ export default function SolicitacoesPage() {
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
             <div className="flex items-center gap-1">
               <User className="w-4 h-4" />
-              <span>{isRecebida ? `De: ${sol.remetente?.name}` : `Para: ${sol.destinatario?.name}`}</span>
+              <span>{isRecebida ? `De: ${sol.remetente?.name || 'Desconhecido'}` : `Para: ${sol.destinatario?.name || 'Desconhecido'}`}</span>
             </div>
             <div className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
-              <span>{format(new Date(sol.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+              <span>{sol.created_at ? format(new Date(sol.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '-'}</span>
             </div>
             {sol.prazo && (
               <div className="flex items-center gap-1">
@@ -187,6 +194,17 @@ export default function SolicitacoesPage() {
       </Card>
     );
   };
+
+  // Show loading while not in client
+  if (!isClient) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
