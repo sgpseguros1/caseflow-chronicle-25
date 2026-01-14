@@ -214,6 +214,12 @@ export function useCreateComissao() {
       valor?: number;
       observacoes?: string;
     }) => {
+      // Obter usuário logado
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        throw new Error('Usuário não autenticado');
+      }
+
       // Verificar duplicidade antes de criar
       const { data: existente, error: checkError } = await supabase
         .from('comissoes')
@@ -238,6 +244,7 @@ export function useCreateComissao() {
           valor: comissao.valor || null,
           observacoes: comissao.observacoes || null,
           status: 'pendente',
+          created_by: userData.user.id,
         })
         .select()
         .single();
