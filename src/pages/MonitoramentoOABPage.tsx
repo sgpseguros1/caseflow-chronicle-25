@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOABMonitoradas, useCreateOABMonitorada, useDeleteOABMonitorada } from '@/hooks/useOABMonitoradas';
 import { useProcessosSincronizados, useMovimentacoesPendentes, useMarcarMovimentacaoLida } from '@/hooks/useProcessosSincronizados';
-import { Plus, Scale, ExternalLink, AlertTriangle, CheckCircle, Clock, Trash2, RefreshCw, Eye, Bell } from 'lucide-react';
+import { useSyncDataJud, useCheckProcessAlerts } from '@/hooks/useSyncDataJud';
+import { Plus, Scale, ExternalLink, AlertTriangle, CheckCircle, Clock, Trash2, RefreshCw, Eye, Bell, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatDateOnly } from '@/lib/dateUtils';
@@ -31,6 +32,8 @@ export default function MonitoramentoOABPage() {
   const createOAB = useCreateOABMonitorada();
   const deleteOAB = useDeleteOABMonitorada();
   const marcarLida = useMarcarMovimentacaoLida();
+  const syncDataJud = useSyncDataJud();
+  const checkAlerts = useCheckProcessAlerts();
 
   const handleAddOAB = async () => {
     if (!novaOAB.numero_oab || !novaOAB.uf) return;
@@ -94,7 +97,36 @@ export default function MonitoramentoOABPage() {
               </Button>
             </div>
           </DialogContent>
-        </Dialog>
+      </Dialog>
+      </div>
+
+      {/* Ações Rápidas */}
+      <div className="flex flex-wrap gap-3">
+        <Button 
+          onClick={() => syncDataJud.mutate({})}
+          disabled={syncDataJud.isPending}
+          className="gap-2"
+        >
+          {syncDataJud.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
+          Sincronizar Processos (DataJud)
+        </Button>
+        <Button 
+          variant="outline"
+          onClick={() => checkAlerts.mutate({})}
+          disabled={checkAlerts.isPending}
+          className="gap-2"
+        >
+          {checkAlerts.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Bell className="w-4 h-4" />
+          )}
+          Verificar Alertas
+        </Button>
       </div>
 
       {/* Alerta de Integrações */}
@@ -105,15 +137,12 @@ export default function MonitoramentoOABPage() {
             <div>
               <h3 className="font-semibold text-amber-700 dark:text-amber-400">Integração com DataJud (CNJ)</h3>
               <p className="text-sm text-amber-600 dark:text-amber-300 mt-1">
-                Para sincronizar processos automaticamente, é necessário configurar a API do DataJud.
-                Acesse <a href="https://datajud-wiki.cnj.jus.br/" target="_blank" rel="noopener noreferrer" className="underline font-medium">
-                  https://datajud-wiki.cnj.jus.br/
-                </a> para solicitar uma chave de API.
+                A sincronização automática está configurada. Clique em "Sincronizar Processos" para buscar os processos das OABs cadastradas.
               </p>
               <p className="text-sm text-amber-600 dark:text-amber-300 mt-2">
-                Alternativamente, use o <a href="https://www.jusbrasil.com.br" target="_blank" rel="noopener noreferrer" className="underline font-medium">
+                Para consulta manual, use o <a href="https://www.jusbrasil.com.br" target="_blank" rel="noopener noreferrer" className="underline font-medium">
                   JusBrasil
-                </a> para consulta manual de processos.
+                </a>.
               </p>
             </div>
           </div>
@@ -262,8 +291,18 @@ export default function MonitoramentoOABPage() {
                       Ver Todos
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" disabled>
-                    <RefreshCw className="w-4 h-4 mr-2" /> Sincronizar
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => syncDataJud.mutate(oabSelecionada ? { oab_id: oabSelecionada } : {})}
+                    disabled={syncDataJud.isPending}
+                  >
+                    {syncDataJud.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    Sincronizar
                   </Button>
                 </div>
               </div>

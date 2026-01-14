@@ -2,3 +2,6 @@ project_id = "godkshfqvslyxgwagkpc"
 
 [functions.sync-datajud]
 verify_jwt = false
+
+[functions.check-process-alerts]
+verify_jwt = false
