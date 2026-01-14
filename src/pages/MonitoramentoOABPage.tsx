@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,10 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOABMonitoradas, useCreateOABMonitorada, useDeleteOABMonitorada } from '@/hooks/useOABMonitoradas';
 import { useProcessosSincronizados, useMovimentacoesPendentes, useMarcarMovimentacaoLida } from '@/hooks/useProcessosSincronizados';
 import { useSyncDataJud, useCheckProcessAlerts } from '@/hooks/useSyncDataJud';
-import { Plus, Scale, ExternalLink, AlertTriangle, CheckCircle, Clock, Trash2, RefreshCw, Eye, Bell, Loader2 } from 'lucide-react';
+import { useAlertasPendentes } from '@/hooks/useAlertas';
+import { Plus, Scale, ExternalLink, AlertTriangle, CheckCircle, Clock, Trash2, RefreshCw, Eye, Bell, Loader2, Gavel, FileWarning, CalendarClock, Activity } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatDateOnly } from '@/lib/dateUtils';
+import { toast } from '@/hooks/use-toast';
 
 const UF_OPTIONS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 
@@ -25,21 +27,59 @@ export default function MonitoramentoOABPage() {
   const [novaOAB, setNovaOAB] = useState({ numero_oab: '', uf: '', nome_advogado: '' });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [oabSelecionada, setOabSelecionada] = useState<string | undefined>();
+  const syncTriggered = useRef(false);
 
   const { data: oabs, isLoading: loadingOabs } = useOABMonitoradas();
   const { data: processos, isLoading: loadingProcessos } = useProcessosSincronizados(oabSelecionada);
+  const { data: allProcessos } = useProcessosSincronizados(); // Todos os processos para stats
   const { data: movimentacoesPendentes } = useMovimentacoesPendentes();
+  const { data: alertasPendentes } = useAlertasPendentes();
   const createOAB = useCreateOABMonitorada();
   const deleteOAB = useDeleteOABMonitorada();
   const marcarLida = useMarcarMovimentacaoLida();
   const syncDataJud = useSyncDataJud();
   const checkAlerts = useCheckProcessAlerts();
 
+  // Sincronização automática ao carregar a página (apenas uma vez)
+  useEffect(() => {
+    if (!syncTriggered.current && oabs && oabs.length > 0 && !loadingOabs) {
+      syncTriggered.current = true;
+      
+      // Verificar se alguma OAB nunca foi sincronizada
+      const nuncaSincronizadas = oabs.filter(oab => !oab.ultima_sincronizacao);
+      
+      if (nuncaSincronizadas.length > 0) {
+        toast({
+          title: 'Iniciando sincronização automática...',
+          description: `Buscando processos de ${oabs.length} OAB(s) no DataJud`,
+        });
+        
+        // Sincronizar todas as OABs
+        syncDataJud.mutate({}, {
+          onSuccess: () => {
+            // Após sincronizar, verificar alertas
+            checkAlerts.mutate({});
+          }
+        });
+      }
+    }
+  }, [oabs, loadingOabs]);
+
   const handleAddOAB = async () => {
     if (!novaOAB.numero_oab || !novaOAB.uf) return;
     await createOAB.mutateAsync(novaOAB);
     setNovaOAB({ numero_oab: '', uf: '', nome_advogado: '' });
     setDialogOpen(false);
+  };
+
+  // Estatísticas do dashboard
+  const stats = {
+    totalProcessos: allProcessos?.length || 0,
+    totalOabs: oabs?.length || 0,
+    movimentacoesPendentes: movimentacoesPendentes?.length || 0,
+    alertasPendentes: alertasPendentes?.length || 0,
+    prazosProximos: movimentacoesPendentes?.filter((m: any) => m.prazo_fatal)?.length || 0,
+    processosUrgentes: movimentacoesPendentes?.filter((m: any) => m.urgente)?.length || 0,
   };
 
   return (
@@ -97,7 +137,94 @@ export default function MonitoramentoOABPage() {
               </Button>
             </div>
           </DialogContent>
-      </Dialog>
+        </Dialog>
+      </div>
+
+      {/* Dashboard de Estatísticas */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-200 dark:border-blue-800">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase">OABs</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalOabs}</p>
+              </div>
+              <div className="p-2 bg-blue-500/20 rounded-full">
+                <Scale className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-200 dark:border-purple-800">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase">Processos</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.totalProcessos}</p>
+              </div>
+              <div className="p-2 bg-purple-500/20 rounded-full">
+                <Gavel className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-200 dark:border-amber-800">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase">Pendentes</p>
+                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.movimentacoesPendentes}</p>
+              </div>
+              <div className="p-2 bg-amber-500/20 rounded-full">
+                <Activity className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-200 dark:border-red-800">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase">Urgentes</p>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.processosUrgentes}</p>
+              </div>
+              <div className="p-2 bg-red-500/20 rounded-full">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-200 dark:border-orange-800">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase">Prazos</p>
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.prazosProximos}</p>
+              </div>
+              <div className="p-2 bg-orange-500/20 rounded-full">
+                <CalendarClock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-rose-500/10 to-rose-600/5 border-rose-200 dark:border-rose-800">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase">Alertas</p>
+                <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">{stats.alertasPendentes}</p>
+              </div>
+              <div className="p-2 bg-rose-500/20 rounded-full">
+                <Bell className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Ações Rápidas */}
@@ -112,7 +239,7 @@ export default function MonitoramentoOABPage() {
           ) : (
             <RefreshCw className="w-4 h-4" />
           )}
-          Sincronizar Processos (DataJud)
+          {syncDataJud.isPending ? 'Sincronizando...' : 'Sincronizar Processos (DataJud)'}
         </Button>
         <Button 
           variant="outline"
@@ -129,25 +256,22 @@ export default function MonitoramentoOABPage() {
         </Button>
       </div>
 
-      {/* Alerta de Integrações */}
-      <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-4">
-            <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold text-amber-700 dark:text-amber-400">Integração com DataJud (CNJ)</h3>
-              <p className="text-sm text-amber-600 dark:text-amber-300 mt-1">
-                A sincronização automática está configurada. Clique em "Sincronizar Processos" para buscar os processos das OABs cadastradas.
-              </p>
-              <p className="text-sm text-amber-600 dark:text-amber-300 mt-2">
-                Para consulta manual, use o <a href="https://www.jusbrasil.com.br" target="_blank" rel="noopener noreferrer" className="underline font-medium">
-                  JusBrasil
-                </a>.
-              </p>
+      {/* Status da Sincronização */}
+      {syncDataJud.isPending && (
+        <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+              <div>
+                <h3 className="font-semibold text-blue-700 dark:text-blue-400">Sincronizando processos...</h3>
+                <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">
+                  Buscando processos de todas as OABs cadastradas no DataJud. Isso pode levar alguns minutos.
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="oabs" className="space-y-4">
         <TabsList>
@@ -157,8 +281,8 @@ export default function MonitoramentoOABPage() {
           <TabsTrigger value="pendentes" className="gap-2">
             <Bell className="w-4 h-4" /> 
             Movimentações Pendentes
-            {(movimentacoesPendentes?.length || 0) > 0 && (
-              <Badge variant="destructive" className="ml-1">{movimentacoesPendentes?.length}</Badge>
+            {stats.movimentacoesPendentes > 0 && (
+              <Badge variant="destructive" className="ml-1">{stats.movimentacoesPendentes}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="processos" className="gap-2">
@@ -169,7 +293,10 @@ export default function MonitoramentoOABPage() {
         <TabsContent value="oabs" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {loadingOabs ? (
-              <p className="text-muted-foreground col-span-full">Carregando...</p>
+              <div className="col-span-full flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-muted-foreground">Carregando...</span>
+              </div>
             ) : oabs?.length === 0 ? (
               <Card className="col-span-full">
                 <CardContent className="pt-6 text-center">
@@ -182,7 +309,7 @@ export default function MonitoramentoOABPage() {
               </Card>
             ) : (
               oabs?.map((oab) => (
-                <Card key={oab.id} className={`cursor-pointer transition-colors ${oabSelecionada === oab.id ? 'ring-2 ring-primary' : 'hover:bg-muted/50'}`}>
+                <Card key={oab.id} className={`cursor-pointer transition-all hover:shadow-md ${oabSelecionada === oab.id ? 'ring-2 ring-primary shadow-md' : 'hover:bg-muted/50'}`}>
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <div>
@@ -210,6 +337,21 @@ export default function MonitoramentoOABPage() {
                           onClick={(e) => { e.stopPropagation(); setOabSelecionada(oab.id); }}
                         >
                           <Eye className="w-3 h-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            syncDataJud.mutate({ oab_id: oab.id });
+                          }}
+                          disabled={syncDataJud.isPending}
+                        >
+                          {syncDataJud.isPending ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="w-3 h-3" />
+                          )}
                         </Button>
                         <Button 
                           size="sm" 
@@ -281,7 +423,7 @@ export default function MonitoramentoOABPage() {
                   <CardDescription>
                     {oabSelecionada 
                       ? `Processos da OAB ${oabs?.find(o => o.id === oabSelecionada)?.numero_oab}/${oabs?.find(o => o.id === oabSelecionada)?.uf}`
-                      : 'Selecione uma OAB para filtrar os processos'
+                      : 'Todos os processos monitorados'
                     }
                   </CardDescription>
                 </div>
@@ -309,14 +451,29 @@ export default function MonitoramentoOABPage() {
             </CardHeader>
             <CardContent>
               {loadingProcessos ? (
-                <p className="text-center py-8 text-muted-foreground">Carregando processos...</p>
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-muted-foreground">Carregando processos...</span>
+                </div>
               ) : !processos?.length ? (
                 <div className="text-center py-8">
                   <Scale className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">Nenhum processo sincronizado</p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Configure a API do DataJud para sincronizar processos automaticamente
+                    Clique em "Sincronizar Processos" para buscar no DataJud
                   </p>
+                  <Button 
+                    className="mt-4" 
+                    onClick={() => syncDataJud.mutate({})}
+                    disabled={syncDataJud.isPending}
+                  >
+                    {syncDataJud.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    Sincronizar Agora
+                  </Button>
                 </div>
               ) : (
                 <Table>
