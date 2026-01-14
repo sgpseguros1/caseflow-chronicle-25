@@ -67,20 +67,6 @@ const COLORS = ['#eab308', '#22c55e', '#ef4444', '#3b82f6', '#8b5cf6'];
 export default function ComissoesPage() {
   const { isAdmin, isAdminOrGestor } = useAuth();
 
-  // Verificar permissão - apenas Admin e Gestor podem acessar o conteúdo
-  if (!isAdminOrGestor) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
-        <AlertTriangle className="h-16 w-16 text-yellow-500 mb-4" />
-        <h1 className="text-2xl font-bold text-foreground mb-2">Acesso Restrito</h1>
-        <p className="text-muted-foreground max-w-md">
-          Você não possui permissão para acessar este módulo. 
-          Entre em contato com o administrador se precisar de acesso.
-        </p>
-      </div>
-    );
-  }
-
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [tipoFilter, setTipoFilter] = useState<string>('');
@@ -112,6 +98,21 @@ export default function ComissoesPage() {
   const updateStatus = useUpdateComissaoStatus();
   const deleteComissao = useDeleteComissao();
   const pagarComissao = usePagarComissao();
+
+  // Verificar permissão - apenas Admin e Gestor podem acessar o conteúdo
+  // Esta verificação deve vir DEPOIS de todos os hooks
+  if (!isAdminOrGestor) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
+        <AlertTriangle className="h-16 w-16 text-yellow-500 mb-4" />
+        <h1 className="text-2xl font-bold text-foreground mb-2">Acesso Restrito</h1>
+        <p className="text-muted-foreground max-w-md">
+          Você não possui permissão para acessar este módulo. 
+          Entre em contato com o administrador se precisar de acesso.
+        </p>
+      </div>
+    );
+  }
 
   // Filter comissões by search term
   const filteredComissoes = comissoes?.filter((c) => {
