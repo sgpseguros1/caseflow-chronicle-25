@@ -47,6 +47,9 @@ interface DataJudResponse {
     hits?: Array<{
       _source?: DataJudProcesso;
     }>;
+    total?: {
+      value?: number;
+    };
   };
 }
 
@@ -73,7 +76,7 @@ serve(async (req) => {
 
     // Parse request body
     const body = await req.json().catch(() => ({}));
-    const { oab_id, numero_oab, uf, force_sync = false } = body;
+    const { oab_id, numero_oab, uf, force_sync = false, max_pages = 50 } = body;
 
     // Se OAB específica foi passada, sincroniza apenas ela
     let oabsToSync: Array<{ id: string; numero_oab: string; uf: string }> = [];
@@ -113,78 +116,118 @@ serve(async (req) => {
     }
 
     let totalSynced = 0;
+    let totalProcessos = 0;
     const errors: string[] = [];
 
     for (const oab of oabsToSync) {
       try {
+        console.log(`Iniciando sincronização para OAB ${oab.numero_oab}/${oab.uf}`);
+        
         // Consulta API DataJud por processos do advogado
         const tribunais = getTribunaisPorUF(oab.uf);
         
         for (const tribunal of tribunais) {
-          const processos = await consultarDataJud(
-            DATAJUD_API_KEY,
-            oab.numero_oab,
-            oab.uf,
-            tribunal
-          );
+          // Busca todos os processos com paginação
+          let page = 0;
+          let hasMore = true;
+          const pageSize = 1000; // Máximo permitido pelo DataJud
+          
+          while (hasMore && page < max_pages) {
+            const from = page * pageSize;
+            
+            console.log(`Buscando página ${page + 1} do tribunal ${tribunal} (from: ${from})`);
+            
+            const result = await consultarDataJudPaginado(
+              DATAJUD_API_KEY,
+              oab.numero_oab,
+              oab.uf,
+              tribunal,
+              pageSize,
+              from
+            );
+            
+            const processos = result.processos;
+            const total = result.total;
+            
+            console.log(`Página ${page + 1}: ${processos.length} processos de ${total} total`);
+            
+            for (const processo of processos) {
+              try {
+                // Formata datas do DataJud para ISO
+                const dataAjuizamento = formatarDataDataJud(processo.dataAjuizamento);
+                const dataUltimoMovimento = formatarDataDataJud(processo.movimentos?.[0]?.dataHora);
 
-          for (const processo of processos) {
-            // Formata datas do DataJud para ISO
-            const dataAjuizamento = formatarDataDataJud(processo.dataAjuizamento);
-            const dataUltimoMovimento = formatarDataDataJud(processo.movimentos?.[0]?.dataHora);
-
-            // Upsert processo no banco
-            const { error: upsertError } = await supabase
-              .from('processos_sincronizados')
-              .upsert({
-                numero_processo: processo.numeroProcesso,
-                oab_id: oab.id || null,
-                tribunal: tribunal,
-                classe_processual: processo.classe?.nome || null,
-                orgao_julgador: processo.orgaoJulgador?.nome || null,
-                data_ajuizamento: dataAjuizamento,
-                assunto: processo.assuntos?.[0]?.nome || null,
-                situacao: processo.formato?.nome || null,
-                nivel_sigilo: processo.nivelSigilo?.toString() || null,
-                ultimo_movimento: processo.movimentos?.[0]?.nome || null,
-                data_ultimo_movimento: dataUltimoMovimento,
-                dados_completos: processo,
-                link_externo: gerarLinkExterno(processo.numeroProcesso, tribunal),
-                updated_at: new Date().toISOString(),
-              }, {
-                onConflict: 'numero_processo'
-              });
-
-            if (upsertError) {
-              console.error(`Erro ao salvar processo ${processo.numeroProcesso}:`, upsertError);
-              errors.push(`Processo ${processo.numeroProcesso}: ${upsertError.message}`);
-            } else {
-              totalSynced++;
-
-              // Salvar movimentações
-              if (processo.movimentos && processo.movimentos.length > 0) {
-                const { data: processoDb } = await supabase
+                // Upsert processo no banco
+                const { error: upsertError } = await supabase
                   .from('processos_sincronizados')
-                  .select('id')
-                  .eq('numero_processo', processo.numeroProcesso)
-                  .single();
+                  .upsert({
+                    numero_processo: processo.numeroProcesso,
+                    oab_id: oab.id || null,
+                    tribunal: tribunal,
+                    classe_processual: processo.classe?.nome || null,
+                    orgao_julgador: processo.orgaoJulgador?.nome || null,
+                    data_ajuizamento: dataAjuizamento,
+                    assunto: processo.assuntos?.[0]?.nome || null,
+                    situacao: processo.formato?.nome || null,
+                    nivel_sigilo: processo.nivelSigilo?.toString() || null,
+                    ultimo_movimento: processo.movimentos?.[0]?.nome || null,
+                    data_ultimo_movimento: dataUltimoMovimento,
+                    dados_completos: processo,
+                    link_externo: gerarLinkExterno(processo.numeroProcesso, tribunal),
+                    updated_at: new Date().toISOString(),
+                  }, {
+                    onConflict: 'numero_processo'
+                  });
 
-                if (processoDb) {
-                  for (const mov of processo.movimentos.slice(0, 20)) { // Limita a 20 movimentações
-                    await supabase
-                      .from('movimentacoes_processo')
-                      .upsert({
-                        processo_id: processoDb.id,
-                        data_movimento: mov.dataHora || new Date().toISOString(),
-                        descricao: mov.nome || 'Movimentação',
-                        codigo_movimento: mov.codigo || null,
-                        complemento: mov.complementosTabelados?.map(c => c.descricao || c.valor).join('; ') || null,
-                      }, {
-                        onConflict: 'processo_id,data_movimento,descricao'
-                      });
+                if (upsertError) {
+                  console.error(`Erro ao salvar processo ${processo.numeroProcesso}:`, upsertError);
+                  errors.push(`Processo ${processo.numeroProcesso}: ${upsertError.message}`);
+                } else {
+                  totalSynced++;
+
+                  // Salvar movimentações - sem limite
+                  if (processo.movimentos && processo.movimentos.length > 0) {
+                    const { data: processoDb } = await supabase
+                      .from('processos_sincronizados')
+                      .select('id')
+                      .eq('numero_processo', processo.numeroProcesso)
+                      .single();
+
+                    if (processoDb) {
+                      // Salva TODAS as movimentações, sem limite
+                      for (const mov of processo.movimentos) {
+                        const dataMovimento = formatarDataDataJud(mov.dataHora);
+                        await supabase
+                          .from('movimentacoes_processo')
+                          .upsert({
+                            processo_id: processoDb.id,
+                            data_movimento: dataMovimento || new Date().toISOString(),
+                            descricao: mov.nome || 'Movimentação',
+                            codigo_movimento: mov.codigo || null,
+                            complemento: mov.complementosTabelados?.map(c => c.descricao || c.valor).join('; ') || null,
+                          }, {
+                            onConflict: 'processo_id,data_movimento,descricao'
+                          });
+                      }
+                    }
                   }
                 }
+              } catch (procError: unknown) {
+                const errorMsg = procError instanceof Error ? procError.message : 'Erro desconhecido';
+                console.error(`Erro ao processar ${processo.numeroProcesso}:`, procError);
+                errors.push(`${processo.numeroProcesso}: ${errorMsg}`);
               }
+            }
+            
+            totalProcessos += processos.length;
+            
+            // Verifica se há mais páginas
+            hasMore = processos.length >= pageSize && (from + processos.length) < total;
+            page++;
+            
+            // Pequena pausa para não sobrecarregar a API
+            if (hasMore) {
+              await new Promise(resolve => setTimeout(resolve, 500));
             }
           }
         }
@@ -196,6 +239,9 @@ serve(async (req) => {
             .update({ ultima_sincronizacao: new Date().toISOString() })
             .eq('id', oab.id);
         }
+        
+        console.log(`OAB ${oab.numero_oab}/${oab.uf} sincronizada: ${totalSynced} processos`);
+        
       } catch (oabError: unknown) {
         const errorMessage = oabError instanceof Error ? oabError.message : 'Erro desconhecido';
         console.error(`Erro ao sincronizar OAB ${oab.numero_oab}/${oab.uf}:`, oabError);
@@ -207,8 +253,10 @@ serve(async (req) => {
       JSON.stringify({
         message: `Sincronização concluída`,
         synced: totalSynced,
+        total_encontrados: totalProcessos,
         oabs_processed: oabsToSync.length,
-        errors: errors.length > 0 ? errors : undefined,
+        errors: errors.length > 0 ? errors.slice(0, 50) : undefined, // Limita erros no response
+        has_more_errors: errors.length > 50,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -225,46 +273,20 @@ serve(async (req) => {
   }
 });
 
-async function consultarDataJud(
+async function consultarDataJudPaginado(
   apiKey: string,
   numeroOab: string,
   uf: string,
-  tribunal: string
-): Promise<DataJudProcesso[]> {
+  tribunal: string,
+  size: number = 1000,
+  from: number = 0
+): Promise<{ processos: DataJudProcesso[]; total: number }> {
   const baseUrl = `https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal.toLowerCase()}/_search`;
 
-  // Formata OAB para busca - remove caracteres não numéricos
-  const oabFormatada = numeroOab.replace(/\D/g, '');
-
-  // Query correta para API DataJud - usa match simples
+  // Query otimizada com paginação
   const query = {
-    size: 100,
-    query: {
-      bool: {
-        must: [
-          {
-            wildcard: {
-              "numeroProcesso": "*"
-            }
-          }
-        ],
-        filter: [
-          {
-            match: {
-              "advogados.nome": `*OAB*${oabFormatada}*`
-            }
-          }
-        ]
-      }
-    },
-    sort: [
-      { "dataAjuizamento": { "order": "desc" } }
-    ]
-  };
-
-  // Query alternativa mais simples para DataJud
-  const querySimples = {
-    size: 100,
+    size: size,
+    from: from,
     query: {
       match_all: {}
     },
@@ -273,17 +295,16 @@ async function consultarDataJud(
     ]
   };
 
-  console.log(`Consultando DataJud - Tribunal: ${tribunal}, OAB: ${oabFormatada}/${uf}`);
+  console.log(`Consultando DataJud - Tribunal: ${tribunal}, Size: ${size}, From: ${from}`);
 
   try {
-    // Primeiro tenta buscar todos os processos recentes e filtrar
     const response = await fetch(baseUrl, {
       method: 'POST',
       headers: {
         'Authorization': `APIKey ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(querySimples),
+      body: JSON.stringify(query),
     });
 
     console.log(`DataJud response status (${tribunal}):`, response.status);
@@ -291,20 +312,19 @@ async function consultarDataJud(
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`DataJud API error (${tribunal}):`, response.status, errorText);
-      return [];
+      return { processos: [], total: 0 };
     }
 
     const data: DataJudResponse = await response.json();
-    const todosProcessos = data.hits?.hits?.map(hit => hit._source).filter(Boolean) as DataJudProcesso[] || [];
+    const processos = data.hits?.hits?.map(hit => hit._source).filter(Boolean) as DataJudProcesso[] || [];
+    const total = data.hits?.total?.value || processos.length;
     
-    console.log(`DataJud retornou ${todosProcessos.length} processos do ${tribunal}`);
+    console.log(`DataJud retornou ${processos.length} processos do ${tribunal} (total: ${total})`);
     
-    // Retorna todos os processos encontrados para demonstração
-    // Em produção, você pode filtrar por OAB específica se os dados permitirem
-    return todosProcessos;
+    return { processos, total };
   } catch (error) {
     console.error(`Erro ao consultar DataJud (${tribunal}):`, error);
-    return [];
+    return { processos: [], total: 0 };
   }
 }
 
