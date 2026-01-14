@@ -271,12 +271,12 @@ export default function SolicitacoesPage() {
                 </div>
                 <div>
                   <Label>Cliente (opcional)</Label>
-                  <Select value={clienteId} onValueChange={setClienteId}>
+                  <Select value={clienteId || "__none__"} onValueChange={(val) => setClienteId(val === "__none__" ? "" : val)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um cliente" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
                       {clientes.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
