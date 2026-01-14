@@ -5,16 +5,15 @@ import {
   Coins,
   Plus,
   Search,
-  Filter,
   Clock,
   CheckCircle,
   XCircle,
-  Eye,
   Trash2,
   History,
   AlertTriangle,
-  Users,
-  TrendingUp,
+  DollarSign,
+  User,
+  Calendar,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,6 +53,8 @@ import {
   useDeleteComissao,
   useComissoesStats,
   useComissaoHistorico,
+  useComissoesPagas,
+  usePagarComissao,
   TIPOS_INDENIZACAO,
   STATUS_COMISSAO,
   Comissao,
@@ -64,15 +65,17 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 const COLORS = ['#eab308', '#22c55e', '#ef4444', '#3b82f6', '#8b5cf6'];
 
 export default function ComissoesPage() {
-  const { isAdmin, isAdminOrGestor, profile } = useAuth();
+  const { isAdmin, isAdminOrGestor } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [tipoFilter, setTipoFilter] = useState<string>('');
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [showHistoricoDialog, setShowHistoricoDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPagarDialog, setShowPagarDialog] = useState(false);
   const [selectedComissao, setSelectedComissao] = useState<Comissao | null>(null);
   const [deleteMotivo, setDeleteMotivo] = useState('');
+  const [beneficiarioNome, setBeneficiarioNome] = useState('');
 
   // Form state
   const [formClienteId, setFormClienteId] = useState('');
@@ -88,23 +91,24 @@ export default function ComissoesPage() {
   const { data: clients } = useClients();
   const { data: stats } = useComissoesStats();
   const { data: historico } = useComissaoHistorico(selectedComissao?.id);
+  const { data: comissoesPagas } = useComissoesPagas();
 
   const createComissao = useCreateComissao();
   const updateStatus = useUpdateComissaoStatus();
   const deleteComissao = useDeleteComissao();
+  const pagarComissao = usePagarComissao();
 
   // Filter comissões by search term
   const filteredComissoes = comissoes?.filter((c) => {
     const clientName = c.clients?.name?.toLowerCase() || '';
     const tipo = c.tipo_indenizacao?.toLowerCase() || '';
+    const cadastradoPor = c.created_by_profile?.name?.toLowerCase() || '';
     return (
       clientName.includes(searchTerm.toLowerCase()) ||
-      tipo.includes(searchTerm.toLowerCase())
+      tipo.includes(searchTerm.toLowerCase()) ||
+      cadastradoPor.includes(searchTerm.toLowerCase())
     );
   });
-
-  // Get cliente data for form
-  const selectedCliente = clients?.find((c) => c.id === formClienteId);
 
   const handleCreateComissao = async () => {
     if (!formClienteId || !formTipo || !formDataAcidente) {
@@ -123,7 +127,26 @@ export default function ComissoesPage() {
     resetForm();
   };
 
+  const handlePagarComissao = async () => {
+    if (!selectedComissao || !beneficiarioNome.trim()) return;
+
+    await pagarComissao.mutateAsync({
+      id: selectedComissao.id,
+      beneficiario_nome: beneficiarioNome.trim(),
+    });
+
+    setShowPagarDialog(false);
+    setSelectedComissao(null);
+    setBeneficiarioNome('');
+  };
+
   const handleUpdateStatus = async (comissao: Comissao, newStatus: 'pendente' | 'paga' | 'bloqueada') => {
+    if (newStatus === 'paga') {
+      setSelectedComissao(comissao);
+      setBeneficiarioNome(comissao.clients?.name || '');
+      setShowPagarDialog(true);
+      return;
+    }
     await updateStatus.mutateAsync({
       id: comissao.id,
       status: newStatus,
@@ -151,10 +174,8 @@ export default function ComissoesPage() {
     setFormObservacoes('');
   };
 
-  // Auto-fill data do acidente quando cliente é selecionado
   const handleClienteSelect = (clienteId: string) => {
     setFormClienteId(clienteId);
-    // Data do acidente será preenchida manualmente
   };
 
   const formatCurrency = (value: number | null) => {
@@ -205,6 +226,10 @@ export default function ComissoesPage() {
         <TabsList>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="listagem">Listagem</TabsTrigger>
+          <TabsTrigger value="pagas">
+            <CheckCircle className="h-4 w-4 mr-1" />
+            Pagas
+          </TabsTrigger>
         </TabsList>
 
         {/* Dashboard Tab */}
@@ -294,16 +319,16 @@ export default function ComissoesPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Por Tipo de Indenização</CardTitle>
+                <CardTitle className="text-sm">Por Funcionário (Quem Cadastrou)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats?.porTipo || []}>
-                      <XAxis dataKey="tipo" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={80} />
+                    <BarChart data={stats?.porUsuario || []}>
+                      <XAxis dataKey="nome" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={80} />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="count" fill="hsl(var(--primary))" />
+                      <Bar dataKey="count" fill="hsl(var(--primary))" name="Comissões" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -327,6 +352,10 @@ export default function ComissoesPage() {
                       <p className="font-medium">{comissao.clients?.name}</p>
                       <p className="text-sm text-muted-foreground">
                         {comissao.tipo_indenizacao} • {format(new Date(comissao.data_acidente), 'dd/MM/yyyy')}
+                      </p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        Cadastrado por: {comissao.created_by_profile?.name || 'Desconhecido'}
                       </p>
                     </div>
                     <div className="text-right">
@@ -356,7 +385,7 @@ export default function ComissoesPage() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar por cliente ou tipo..."
+                    placeholder="Buscar por cliente, tipo ou funcionário..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9"
@@ -400,8 +429,8 @@ export default function ComissoesPage() {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Data Acidente</TableHead>
                     <TableHead>Valor</TableHead>
+                    <TableHead>Cadastrado por</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Data Cadastro</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -433,12 +462,15 @@ export default function ComissoesPage() {
                         </TableCell>
                         <TableCell>{formatCurrency(comissao.valor)}</TableCell>
                         <TableCell>
+                          <div className="flex items-center gap-1">
+                            <User className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{comissao.created_by_profile?.name || 'Desconhecido'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
                           <Badge className={STATUS_COMISSAO[comissao.status].color}>
                             {STATUS_COMISSAO[comissao.status].label}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(comissao.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
@@ -496,6 +528,117 @@ export default function ComissoesPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Pagas Tab */}
+        <TabsContent value="pagas" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-green-500" />
+                Comissões Pagas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Beneficiário</TableHead>
+                    <TableHead>Pago por</TableHead>
+                    <TableHead>Data Pagamento</TableHead>
+                    <TableHead>Cadastrado por</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {comissoesPagas?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        Nenhuma comissão paga encontrada
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    comissoesPagas?.map((comissao) => (
+                      <TableRow key={comissao.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{comissao.clients?.name}</p>
+                            <p className="text-xs text-muted-foreground">{comissao.clients?.cpf}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{comissao.tipo_indenizacao}</TableCell>
+                        <TableCell className="font-medium text-green-600">
+                          {formatCurrency(comissao.valor)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-green-50 text-green-700">
+                            {comissao.beneficiario_nome || '-'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <User className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{comissao.pago_por_profile?.name || '-'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">
+                              {comissao.pago_em 
+                                ? format(new Date(comissao.pago_em), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+                                : '-'
+                              }
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {comissao.created_by_profile?.name || '-'}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Resumo mensal */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Fluxo Mensal (Meta: R$ 600,00)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Total pago este mês</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {formatCurrency(stats?.valorTotalPago || 0)}
+                  </p>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Meta mensal</p>
+                  <p className="text-2xl font-bold">R$ 600,00</p>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Progresso</p>
+                  <div className="w-full bg-muted rounded-full h-2.5 mt-2">
+                    <div 
+                      className="bg-green-500 h-2.5 rounded-full transition-all"
+                      style={{ width: `${Math.min(((stats?.valorTotalPago || 0) / 600) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {Math.round(((stats?.valorTotalPago || 0) / 600) * 100)}%
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* New Comissao Dialog */}
@@ -516,7 +659,7 @@ export default function ComissoesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Selecione um cliente</SelectItem>
-                  {clients?.map((cliente) => (
+                  {clients?.sort((a, b) => a.name.localeCompare(b.name)).map((cliente) => (
                     <SelectItem key={cliente.id} value={cliente.id}>
                       {cliente.name} {cliente.cpf ? `(${cliente.cpf})` : ''}
                     </SelectItem>
@@ -581,6 +724,48 @@ export default function ComissoesPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Pagar Comissao Dialog */}
+      <Dialog open={showPagarDialog} onOpenChange={setShowPagarDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pagar Comissão</DialogTitle>
+            <DialogDescription>
+              Informe o nome da pessoa que recebeu a comissão
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Cliente</Label>
+              <Input value={selectedComissao?.clients?.name || ''} disabled />
+            </div>
+            <div>
+              <Label>Valor</Label>
+              <Input value={formatCurrency(selectedComissao?.valor || 0)} disabled />
+            </div>
+            <div>
+              <Label>Nome do Beneficiário (quem recebeu) *</Label>
+              <Input
+                placeholder="Nome de quem recebeu a comissão..."
+                value={beneficiarioNome}
+                onChange={(e) => setBeneficiarioNome(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPagarDialog(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handlePagarComissao}
+              disabled={!beneficiarioNome.trim() || pagarComissao.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {pagarComissao.isPending ? 'Processando...' : 'Confirmar Pagamento'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Historico Dialog */}
       <Dialog open={showHistoricoDialog} onOpenChange={setShowHistoricoDialog}>
         <DialogContent className="max-w-lg">
@@ -602,6 +787,7 @@ export default function ComissoesPage() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
+                    {item.profiles?.name && <span>Por: {item.profiles.name} • </span>}
                     {format(new Date(item.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                   </p>
                 </div>

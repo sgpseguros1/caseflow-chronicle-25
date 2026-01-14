@@ -883,6 +883,7 @@ export type Database = {
       }
       comissoes: {
         Row: {
+          beneficiario_nome: string | null
           cliente_id: string
           created_at: string
           created_by: string | null
@@ -893,12 +894,15 @@ export type Database = {
           id: string
           motivo_bloqueio: string | null
           observacoes: string | null
+          pago_em: string | null
+          pago_por: string | null
           status: string
           tipo_indenizacao: string
           updated_at: string
           valor: number | null
         }
         Insert: {
+          beneficiario_nome?: string | null
           cliente_id: string
           created_at?: string
           created_by?: string | null
@@ -909,12 +913,15 @@ export type Database = {
           id?: string
           motivo_bloqueio?: string | null
           observacoes?: string | null
+          pago_em?: string | null
+          pago_por?: string | null
           status?: string
           tipo_indenizacao: string
           updated_at?: string
           valor?: number | null
         }
         Update: {
+          beneficiario_nome?: string | null
           cliente_id?: string
           created_at?: string
           created_by?: string | null
@@ -925,6 +932,8 @@ export type Database = {
           id?: string
           motivo_bloqueio?: string | null
           observacoes?: string | null
+          pago_em?: string | null
+          pago_por?: string | null
           status?: string
           tipo_indenizacao?: string
           updated_at?: string
