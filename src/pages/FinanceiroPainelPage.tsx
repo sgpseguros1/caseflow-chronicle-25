@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   DollarSign, TrendingUp, TrendingDown, Clock, FileText, AlertTriangle, 
-  Calendar, Users, PieChart, BarChart3, Lock, Eye, Plus, ChevronDown,
-  ArrowUpRight, ArrowDownRight, Receipt, CheckCircle2
+  Calendar, Users, PieChart, BarChart3, Lock, Eye, Plus,
+  ArrowUpRight, ArrowDownRight, Receipt, CheckCircle2, Trash2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,45 +14,45 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { 
   useFinanceiroStats, 
   useLancamentosFinanceiros, 
   useFechamentosMensais,
   useFecharMes,
-  useAuditoriaFinanceira
+  useAuditoriaFinanceira,
+  useMarcarRecebido,
+  useDeleteLancamento,
+  TIPO_RECEITA_LABELS
 } from '@/hooks/useFinanceiro';
 import { useAuth } from '@/hooks/useAuth';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, LineChart, Line, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell } from 'recharts';
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280'];
+const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280', '#ec4899', '#14b8a6'];
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   recebido: { label: 'Recebido', color: 'bg-green-500' },
   parcial: { label: 'Parcial', color: 'bg-yellow-500' },
-  em_aberto: { label: 'Em Aberto', color: 'bg-blue-500' },
+  em_aberto: { label: 'A Receber', color: 'bg-blue-500' },
   em_atraso: { label: 'Em Atraso', color: 'bg-red-500' },
   negociado: { label: 'Negociado', color: 'bg-purple-500' },
   cancelado: { label: 'Cancelado', color: 'bg-gray-500' }
 };
 
-const TIPO_LABELS: Record<string, string> = {
-  seguro_vida: 'Seguro de Vida',
-  judicial: 'Judicial',
-  danos: 'Danos',
-  dpvat: 'DPVAT',
-  previdenciario: 'Previdenciário',
-  outros: 'Outros'
-};
-
 export default function FinanceiroPainelPage() {
   const navigate = useNavigate();
-  const { isAdmin, isGestor, loading: authLoading } = useAuth();
+  const { isAdmin, isGestor, profile, loading: authLoading } = useAuth();
   const [periodoSelecionado, setPeriodoSelecionado] = useState('mes_atual');
   const [fechamentoObs, setFechamentoObs] = useState('');
   const [fechamentoDialogOpen, setFechamentoDialogOpen] = useState(false);
+  const [marcarRecebidoDialogOpen, setMarcarRecebidoDialogOpen] = useState(false);
+  const [lancamentoSelecionado, setLancamentoSelecionado] = useState<string | null>(null);
+  const [dataRecebimento, setDataRecebimento] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [lancamentoParaExcluir, setLancamentoParaExcluir] = useState<string | null>(null);
 
   const periodo = useMemo(() => {
     const hoje = new Date();
@@ -96,9 +96,14 @@ export default function FinanceiroPainelPage() {
   const { data: fechamentos } = useFechamentosMensais();
   const { data: auditoria } = useAuditoriaFinanceira();
   const fecharMes = useFecharMes();
+  const marcarRecebido = useMarcarRecebido();
+  const deleteLancamento = useDeleteLancamento();
 
   // Verificar permissão - apenas admin e gestor
   const temPermissao = isAdmin || isGestor;
+  
+  // Verificar se é o usuário Rafael (único que pode excluir)
+  const isRafael = profile?.name?.toLowerCase().includes('rafael') || profile?.email?.toLowerCase().includes('rafael');
 
   if (authLoading) {
     return (
@@ -129,6 +134,11 @@ export default function FinanceiroPainelPage() {
   const mesAtual = new Date().getMonth() + 1;
   const anoAtual = new Date().getFullYear();
   const mesFechado = fechamentos?.some(f => f.ano === anoAtual && f.mes === mesAtual);
+  
+  // Verificar se é o último dia do mês
+  const hoje = new Date();
+  const ultimoDiaMes = new Date(anoAtual, mesAtual, 0).getDate();
+  const podeFecharMes = hoje.getDate() === ultimoDiaMes && !mesFechado;
 
   const handleFecharMes = () => {
     fecharMes.mutate({ ano: anoAtual, mes: mesAtual, observacoes: fechamentoObs }, {
@@ -137,6 +147,38 @@ export default function FinanceiroPainelPage() {
         setFechamentoObs('');
       }
     });
+  };
+
+  const handleMarcarRecebido = () => {
+    if (lancamentoSelecionado) {
+      marcarRecebido.mutate({ id: lancamentoSelecionado, dataRecebimento }, {
+        onSuccess: () => {
+          setMarcarRecebidoDialogOpen(false);
+          setLancamentoSelecionado(null);
+        }
+      });
+    }
+  };
+
+  const handleExcluir = () => {
+    if (lancamentoParaExcluir && isRafael) {
+      deleteLancamento.mutate({ id: lancamentoParaExcluir, isRafael: true }, {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setLancamentoParaExcluir(null);
+        }
+      });
+    }
+  };
+
+  const openMarcarRecebido = (id: string) => {
+    setLancamentoSelecionado(id);
+    setMarcarRecebidoDialogOpen(true);
+  };
+
+  const openDeleteDialog = (id: string) => {
+    setLancamentoParaExcluir(id);
+    setDeleteDialogOpen(true);
   };
 
   return (
@@ -174,7 +216,11 @@ export default function FinanceiroPainelPage() {
 
       {/* Cards Executivos */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Card className="border-l-4 border-l-green-500">
+        {/* Total Recebido - VERDE */}
+        <Card 
+          className="border-l-4 border-l-green-500 cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigate('/financeiro/novo')}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
@@ -194,6 +240,7 @@ export default function FinanceiroPainelPage() {
           </CardContent>
         </Card>
 
+        {/* A Receber - AZUL */}
         <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -205,10 +252,13 @@ export default function FinanceiroPainelPage() {
             <div className="text-2xl font-bold text-blue-600">
               {statsLoading ? '...' : formatCurrency(stats?.totalAReceber || 0)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Valores pendentes</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats?.contasAReceber?.length || 0} lançamentos pendentes
+            </p>
           </CardContent>
         </Card>
 
+        {/* Em Atraso - VERMELHO */}
         <Card className="border-l-4 border-l-red-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -220,10 +270,13 @@ export default function FinanceiroPainelPage() {
             <div className="text-2xl font-bold text-red-600">
               {statsLoading ? '...' : formatCurrency(stats?.totalEmAtraso || 0)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Requer atenção</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats?.contasEmAtraso?.length || 0} em atraso
+            </p>
           </CardContent>
         </Card>
 
+        {/* Receita Média - ROXO */}
         <Card className="border-l-4 border-l-purple-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -235,11 +288,12 @@ export default function FinanceiroPainelPage() {
             <div className="text-2xl font-bold text-purple-600">
               {statsLoading ? '...' : formatCurrency(stats?.receitaMedia || 0)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Por mês</p>
+            <p className="text-xs text-muted-foreground mt-1">Últimos 3 meses fechados</p>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-amber-500">
+        {/* Lançamentos - CINZA */}
+        <Card className="border-l-4 border-l-gray-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -247,14 +301,21 @@ export default function FinanceiroPainelPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600">
+            <div className="text-2xl font-bold text-gray-600">
               {statsLoading ? '...' : stats?.numeroLancamentos || 0}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">No período</p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {stats?.lancamentosPorStatus?.map(s => (
+                <Badge key={s.status} variant="outline" className="text-xs">
+                  {STATUS_CONFIG[s.status]?.label || s.status}: {s.quantidade}
+                </Badge>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-gray-500">
+        {/* Status do Mês */}
+        <Card className="border-l-4 border-l-amber-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
@@ -265,38 +326,46 @@ export default function FinanceiroPainelPage() {
             {mesFechado ? (
               <Badge className="bg-green-500">Fechado</Badge>
             ) : (
-              <Dialog open={fechamentoDialogOpen} onOpenChange={setFechamentoDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="outline" className="gap-2">
-                    <Lock className="h-4 w-4" />
-                    Fechar Mês
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Fechar Mês {mesAtual}/{anoAtual}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <p className="text-sm text-muted-foreground">
-                      Ao fechar o mês, os dados serão consolidados e não poderão mais ser editados.
-                    </p>
-                    <div>
-                      <Label>Observações (opcional)</Label>
-                      <Textarea 
-                        value={fechamentoObs} 
-                        onChange={(e) => setFechamentoObs(e.target.value)}
-                        placeholder="Adicione observações sobre o fechamento..."
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setFechamentoDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleFecharMes} disabled={fecharMes.isPending}>
-                      {fecharMes.isPending ? 'Fechando...' : 'Confirmar Fechamento'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <div className="space-y-2">
+                <Badge variant="outline" className="border-amber-500 text-amber-600">Aberto</Badge>
+                {podeFecharMes && (
+                  <Dialog open={fechamentoDialogOpen} onOpenChange={setFechamentoDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="gap-2 w-full">
+                        <Lock className="h-4 w-4" />
+                        Fechar Mês
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Fechar Mês {mesAtual}/{anoAtual}</DialogTitle>
+                        <DialogDescription>
+                          Ao fechar o mês, os dados serão consolidados e não poderão mais ser editados.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div>
+                          <Label>Observações (opcional)</Label>
+                          <Textarea 
+                            value={fechamentoObs} 
+                            onChange={(e) => setFechamentoObs(e.target.value)}
+                            placeholder="Adicione observações sobre o fechamento..."
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setFechamentoDialogOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleFecharMes} disabled={fecharMes.isPending}>
+                          {fecharMes.isPending ? 'Fechando...' : 'Confirmar Fechamento'}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                )}
+                {!podeFecharMes && !mesFechado && (
+                  <p className="text-xs text-muted-foreground">Fechamento apenas no dia {ultimoDiaMes}</p>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -315,7 +384,11 @@ export default function FinanceiroPainelPage() {
           </TabsTrigger>
           <TabsTrigger value="contas_receber" className="gap-2">
             <Clock className="h-4 w-4" />
-            Contas a Receber
+            A Receber
+          </TabsTrigger>
+          <TabsTrigger value="em_atraso" className="gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Em Atraso
           </TabsTrigger>
           <TabsTrigger value="clientes" className="gap-2">
             <Users className="h-4 w-4" />
@@ -332,7 +405,7 @@ export default function FinanceiroPainelPage() {
         {/* Visão Geral */}
         <TabsContent value="visao_geral" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {/* Receita por Tipo */}
+            {/* Receita por Tipo de Indenização */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -382,7 +455,7 @@ export default function FinanceiroPainelPage() {
               </CardContent>
             </Card>
 
-            {/* Caixa Diário */}
+            {/* Fluxo de Caixa Diário */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -476,20 +549,19 @@ export default function FinanceiroPainelPage() {
                     <TableRow>
                       <TableHead>Cliente</TableHead>
                       <TableHead>Tipo</TableHead>
-                      <TableHead>Protocolo</TableHead>
                       <TableHead>Valor Bruto</TableHead>
                       <TableHead>Valor Pago</TableHead>
                       <TableHead>Pendente</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Data</TableHead>
+                      <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {lancamentos.map((l) => (
-                      <TableRow key={l.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/financeiro/${l.id}`)}>
+                      <TableRow key={l.id}>
                         <TableCell className="font-medium">{l.cliente?.name || 'N/A'}</TableCell>
-                        <TableCell>{TIPO_LABELS[l.tipo_receita] || l.tipo_receita}</TableCell>
-                        <TableCell>{l.protocolo?.codigo || '-'}</TableCell>
+                        <TableCell>{TIPO_RECEITA_LABELS[l.tipo_receita] || l.tipo_receita}</TableCell>
                         <TableCell>{formatCurrency(l.valor_bruto)}</TableCell>
                         <TableCell className="text-green-600">{formatCurrency(l.valor_pago)}</TableCell>
                         <TableCell className={l.valor_pendente > 0 ? 'text-red-600' : ''}>{formatCurrency(l.valor_pendente)}</TableCell>
@@ -499,6 +571,37 @@ export default function FinanceiroPainelPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>{l.data_recebimento ? format(new Date(l.data_recebimento), 'dd/MM/yyyy') : '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => navigate(`/financeiro/${l.id}`)}
+                            >
+                              Editar
+                            </Button>
+                            {l.status !== 'recebido' && (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="text-green-600"
+                                onClick={() => openMarcarRecebido(l.id)}
+                              >
+                                Receber
+                              </Button>
+                            )}
+                            {isRafael && (
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                className="text-red-600"
+                                onClick={() => openDeleteDialog(l.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -515,10 +618,10 @@ export default function FinanceiroPainelPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
+                <Clock className="h-5 w-5 text-blue-500" />
                 Contas a Receber
               </CardTitle>
-              <CardDescription>Valores pendentes e em atraso</CardDescription>
+              <CardDescription>Valores pendentes de recebimento</CardDescription>
             </CardHeader>
             <CardContent>
               {stats?.contasAReceber && stats.contasAReceber.length > 0 ? (
@@ -531,22 +634,27 @@ export default function FinanceiroPainelPage() {
                       <TableHead>Valor Pago</TableHead>
                       <TableHead>Pendente</TableHead>
                       <TableHead>Vencimento</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {stats.contasAReceber.map((l) => (
-                      <TableRow key={l.id} className={l.status === 'em_atraso' ? 'bg-red-50 dark:bg-red-900/10' : ''}>
+                      <TableRow key={l.id}>
                         <TableCell className="font-medium">{l.cliente?.name || 'N/A'}</TableCell>
-                        <TableCell>{TIPO_LABELS[l.tipo_receita] || l.tipo_receita}</TableCell>
+                        <TableCell>{TIPO_RECEITA_LABELS[l.tipo_receita] || l.tipo_receita}</TableCell>
                         <TableCell>{formatCurrency(l.valor_bruto)}</TableCell>
                         <TableCell className="text-green-600">{formatCurrency(l.valor_pago)}</TableCell>
-                        <TableCell className="text-red-600 font-medium">{formatCurrency(l.valor_pendente)}</TableCell>
+                        <TableCell className="text-blue-600 font-medium">{formatCurrency(l.valor_pendente)}</TableCell>
                         <TableCell>{l.data_vencimento ? format(new Date(l.data_vencimento), 'dd/MM/yyyy') : '-'}</TableCell>
                         <TableCell>
-                          <Badge className={STATUS_CONFIG[l.status]?.color || 'bg-gray-500'}>
-                            {STATUS_CONFIG[l.status]?.label || l.status}
-                          </Badge>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-green-600"
+                            onClick={() => openMarcarRecebido(l.id)}
+                          >
+                            Marcar Recebido
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -554,6 +662,68 @@ export default function FinanceiroPainelPage() {
                 </Table>
               ) : (
                 <p className="text-muted-foreground text-center py-8">Nenhuma conta a receber</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Em Atraso */}
+        <TabsContent value="em_atraso" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                Contas em Atraso
+              </CardTitle>
+              <CardDescription>Valores com data de vencimento ultrapassada</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {stats?.contasEmAtraso && stats.contasEmAtraso.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Valor Pendente</TableHead>
+                      <TableHead>Vencimento</TableHead>
+                      <TableHead>Dias em Atraso</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stats.contasEmAtraso.map((l) => {
+                      const diasAtraso = l.data_vencimento 
+                        ? differenceInDays(new Date(), new Date(l.data_vencimento))
+                        : 0;
+                      return (
+                        <TableRow key={l.id} className="bg-red-50 dark:bg-red-900/10">
+                          <TableCell className="font-medium">{l.cliente?.name || 'N/A'}</TableCell>
+                          <TableCell>{TIPO_RECEITA_LABELS[l.tipo_receita] || l.tipo_receita}</TableCell>
+                          <TableCell className="text-red-600 font-bold">{formatCurrency(l.valor_pendente)}</TableCell>
+                          <TableCell>{l.data_vencimento ? format(new Date(l.data_vencimento), 'dd/MM/yyyy') : '-'}</TableCell>
+                          <TableCell>
+                            <Badge variant="destructive">{diasAtraso} dias</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="text-green-600"
+                              onClick={() => openMarcarRecebido(l.id)}
+                            >
+                              Marcar Recebido
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8">
+                  <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                  <p className="text-muted-foreground">Nenhuma conta em atraso!</p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -642,6 +812,50 @@ export default function FinanceiroPainelPage() {
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Dialog Marcar Recebido */}
+      <Dialog open={marcarRecebidoDialogOpen} onOpenChange={setMarcarRecebidoDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Recebimento</DialogTitle>
+            <DialogDescription>
+              Informe a data em que o valor foi recebido.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label>Data de Recebimento</Label>
+            <Input 
+              type="date" 
+              value={dataRecebimento}
+              onChange={(e) => setDataRecebimento(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMarcarRecebidoDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleMarcarRecebido} disabled={marcarRecebido.isPending} className="bg-green-600 hover:bg-green-700">
+              {marcarRecebido.isPending ? 'Salvando...' : 'Confirmar Recebimento'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Excluir */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir Lançamento</DialogTitle>
+            <DialogDescription>
+              Esta ação é irreversível. O lançamento será removido permanentemente, mas ficará registrado na auditoria.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleExcluir} disabled={deleteLancamento.isPending}>
+              {deleteLancamento.isPending ? 'Excluindo...' : 'Excluir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
