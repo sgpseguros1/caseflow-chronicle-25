@@ -74,7 +74,7 @@ const menuItems: MenuItem[] = [
   { icon: Bot, label: 'Módulo IA', path: '/ia' },
   { icon: DollarSign, label: 'Financeiro', path: '/financeiro', gestorOnly: true },
   { icon: Scale, label: 'Relatórios', path: '/relatorios', gestorOnly: true },
-  { icon: Coins, label: 'Comissões', path: '/comissoes', gestorOnly: true },
+  { icon: Coins, label: 'Comissões', path: '/comissoes' },
   { icon: Shield, label: 'Usuários', path: '/admin/usuarios', adminOnly: true },
 ];
 
