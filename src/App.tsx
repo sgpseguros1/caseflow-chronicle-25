@@ -43,7 +43,7 @@ import FinanceiroPainelPage from "./pages/FinanceiroPainelPage";
 import FinanceiroFormPage from "./pages/FinanceiroFormPage";
 import ControleProcessosPage from "./pages/ControleProcessosPage";
 import MonitoramentoOABPage from "./pages/MonitoramentoOABPage";
-import PainelRafaelPage from "./pages/PainelRafaelPage";
+import PainelTarefasUsuarioPage from "./pages/PainelTarefasUsuarioPage";
 import ChatInternoPage from "./pages/ChatInternoPage";
 import SolicitacoesPage from "./pages/SolicitacoesPage";
 import ProcessosJudiciaisPage from "./pages/ProcessosJudiciaisPage";
@@ -124,8 +124,8 @@ const App = () => (
           <Route path="/financeiro/novo" element={<ProtectedRoute><FinanceiroFormPage /></ProtectedRoute>} />
           {/* Monitoramento OAB / Processos Judiciais */}
           <Route path="/monitoramento-oab" element={<ProtectedRoute><MonitoramentoOABPage /></ProtectedRoute>} />
-          {/* Painel Rafael */}
-          <Route path="/painel-rafael" element={<ProtectedRoute><PainelRafaelPage /></ProtectedRoute>} />
+          {/* Painel de Tarefas do Usuário */}
+          <Route path="/painel-tarefas" element={<ProtectedRoute><PainelTarefasUsuarioPage /></ProtectedRoute>} />
           {/* Chat Interno */}
           <Route path="/chat" element={<ProtectedRoute><ChatInternoPage /></ProtectedRoute>} />
           {/* Solicitações */}

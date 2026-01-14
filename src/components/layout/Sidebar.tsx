@@ -51,7 +51,7 @@ const menuItems: MenuItem[] = [
   { icon: ClipboardList, label: 'Controle Processos', path: '/controle-processos' },
   { icon: Scale, label: 'Processos Judiciais', path: '/processos-judiciais' },
   { icon: Search, label: 'Monitoramento OAB', path: '/monitoramento-oab' },
-  { icon: ListTodo, label: 'Painel Rafael', path: '/painel-rafael' },
+  { icon: ListTodo, label: 'Painel de Tarefas', path: '/painel-tarefas' },
   { icon: Send, label: 'Solicitações', path: '/solicitacoes' },
   { icon: MessagesSquare, label: 'Chat Interno', path: '/chat' },
   {
