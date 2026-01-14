@@ -2763,52 +2763,194 @@ export type Database = {
           },
         ]
       }
+      tarefa_mensagens: {
+        Row: {
+          conteudo: string
+          created_at: string | null
+          id: string
+          tarefa_id: string
+          usuario_id: string
+        }
+        Insert: {
+          conteudo: string
+          created_at?: string | null
+          id?: string
+          tarefa_id: string
+          usuario_id: string
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string | null
+          id?: string
+          tarefa_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarefa_mensagens_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "tarefas_rafael"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tarefas_historico: {
+        Row: {
+          acao: string
+          created_at: string | null
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          descricao: string | null
+          id: string
+          tarefa_id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          descricao?: string | null
+          id?: string
+          tarefa_id: string
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          descricao?: string | null
+          id?: string
+          tarefa_id?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarefas_historico_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "tarefas_rafael"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tarefas_metricas_usuario: {
+        Row: {
+          ano: number
+          created_at: string | null
+          feedback_gerado: string | null
+          id: string
+          mes: number
+          percentual_em_5_minutos: number | null
+          tempo_medio_resolucao_segundos: number | null
+          total_concluidas: number | null
+          total_pendentes: number | null
+          total_recebidas: number | null
+          total_urgentes: number | null
+          updated_at: string | null
+          usuario_id: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string | null
+          feedback_gerado?: string | null
+          id?: string
+          mes: number
+          percentual_em_5_minutos?: number | null
+          tempo_medio_resolucao_segundos?: number | null
+          total_concluidas?: number | null
+          total_pendentes?: number | null
+          total_recebidas?: number | null
+          total_urgentes?: number | null
+          updated_at?: string | null
+          usuario_id: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string | null
+          feedback_gerado?: string | null
+          id?: string
+          mes?: number
+          percentual_em_5_minutos?: number | null
+          tempo_medio_resolucao_segundos?: number | null
+          total_concluidas?: number | null
+          total_pendentes?: number | null
+          total_recebidas?: number | null
+          total_urgentes?: number | null
+          updated_at?: string | null
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       tarefas_rafael: {
         Row: {
+          atrasada: boolean | null
           cliente_id: string | null
+          concluido_em: string | null
           created_at: string | null
           descricao: string | null
           enviado_por: string
+          feedback_exibido: boolean | null
           id: string
+          iniciado_em: string | null
           prazo: string | null
           prioridade: string | null
           processo_id: string | null
           protocolo_id: string | null
           respondido_em: string | null
+          responsavel_id: string | null
           resposta: string | null
           status: string | null
+          tempo_resolucao_segundos: number | null
+          tipo_solicitacao: string | null
           titulo: string
           updated_at: string | null
         }
         Insert: {
+          atrasada?: boolean | null
           cliente_id?: string | null
+          concluido_em?: string | null
           created_at?: string | null
           descricao?: string | null
           enviado_por: string
+          feedback_exibido?: boolean | null
           id?: string
+          iniciado_em?: string | null
           prazo?: string | null
           prioridade?: string | null
           processo_id?: string | null
           protocolo_id?: string | null
           respondido_em?: string | null
+          responsavel_id?: string | null
           resposta?: string | null
           status?: string | null
+          tempo_resolucao_segundos?: number | null
+          tipo_solicitacao?: string | null
           titulo: string
           updated_at?: string | null
         }
         Update: {
+          atrasada?: boolean | null
           cliente_id?: string | null
+          concluido_em?: string | null
           created_at?: string | null
           descricao?: string | null
           enviado_por?: string
+          feedback_exibido?: boolean | null
           id?: string
+          iniciado_em?: string | null
           prazo?: string | null
           prioridade?: string | null
           processo_id?: string | null
           protocolo_id?: string | null
           respondido_em?: string | null
+          responsavel_id?: string | null
           resposta?: string | null
           status?: string | null
+          tempo_resolucao_segundos?: number | null
+          tipo_solicitacao?: string | null
           titulo?: string
           updated_at?: string | null
         }
