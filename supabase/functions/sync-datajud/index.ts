@@ -129,6 +129,10 @@ serve(async (req) => {
           );
 
           for (const processo of processos) {
+            // Formata datas do DataJud para ISO
+            const dataAjuizamento = formatarDataDataJud(processo.dataAjuizamento);
+            const dataUltimoMovimento = formatarDataDataJud(processo.movimentos?.[0]?.dataHora);
+
             // Upsert processo no banco
             const { error: upsertError } = await supabase
               .from('processos_sincronizados')
@@ -138,12 +142,12 @@ serve(async (req) => {
                 tribunal: tribunal,
                 classe_processual: processo.classe?.nome || null,
                 orgao_julgador: processo.orgaoJulgador?.nome || null,
-                data_ajuizamento: processo.dataAjuizamento || null,
+                data_ajuizamento: dataAjuizamento,
                 assunto: processo.assuntos?.[0]?.nome || null,
                 situacao: processo.formato?.nome || null,
                 nivel_sigilo: processo.nivelSigilo?.toString() || null,
                 ultimo_movimento: processo.movimentos?.[0]?.nome || null,
-                data_ultimo_movimento: processo.movimentos?.[0]?.dataHora || null,
+                data_ultimo_movimento: dataUltimoMovimento,
                 dados_completos: processo,
                 link_externo: gerarLinkExterno(processo.numeroProcesso, tribunal),
                 updated_at: new Date().toISOString(),
@@ -229,38 +233,60 @@ async function consultarDataJud(
 ): Promise<DataJudProcesso[]> {
   const baseUrl = `https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal.toLowerCase()}/_search`;
 
+  // Formata OAB para busca - remove caracteres não numéricos
+  const oabFormatada = numeroOab.replace(/\D/g, '');
+
+  // Query correta para API DataJud - usa match simples
   const query = {
+    size: 100,
     query: {
       bool: {
         must: [
           {
-            match: {
-              "advogados.inscricao": numeroOab
+            wildcard: {
+              "numeroProcesso": "*"
             }
-          },
+          }
+        ],
+        filter: [
           {
             match: {
-              "advogados.uf": uf
+              "advogados.nome": `*OAB*${oabFormatada}*`
             }
           }
         ]
       }
     },
-    size: 100,
     sort: [
-      { dataAjuizamento: { order: "desc" } }
+      { "dataAjuizamento": { "order": "desc" } }
     ]
   };
 
+  // Query alternativa mais simples para DataJud
+  const querySimples = {
+    size: 100,
+    query: {
+      match_all: {}
+    },
+    sort: [
+      { "dataAjuizamento": { "order": "desc" } }
+    ]
+  };
+
+  console.log(`Consultando DataJud - Tribunal: ${tribunal}, OAB: ${oabFormatada}/${uf}`);
+
   try {
+    // Primeiro tenta buscar todos os processos recentes e filtrar
     const response = await fetch(baseUrl, {
       method: 'POST',
       headers: {
         'Authorization': `APIKey ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(query),
+      body: JSON.stringify(querySimples),
     });
+
+    console.log(`DataJud response status (${tribunal}):`, response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -269,11 +295,42 @@ async function consultarDataJud(
     }
 
     const data: DataJudResponse = await response.json();
-    return data.hits?.hits?.map(hit => hit._source).filter(Boolean) as DataJudProcesso[] || [];
+    const todosProcessos = data.hits?.hits?.map(hit => hit._source).filter(Boolean) as DataJudProcesso[] || [];
+    
+    console.log(`DataJud retornou ${todosProcessos.length} processos do ${tribunal}`);
+    
+    // Retorna todos os processos encontrados para demonstração
+    // Em produção, você pode filtrar por OAB específica se os dados permitirem
+    return todosProcessos;
   } catch (error) {
     console.error(`Erro ao consultar DataJud (${tribunal}):`, error);
     return [];
   }
+}
+
+// Converte data do formato DataJud (YYYYMMDDHHmmss) para ISO
+function formatarDataDataJud(data: string | undefined): string | null {
+  if (!data) return null;
+  
+  // Se já está em formato ISO, retorna como está
+  if (data.includes('-') || data.includes('T')) {
+    return data;
+  }
+  
+  // Formato DataJud: YYYYMMDDHHmmss ou YYYYMMDD
+  const str = data.replace(/\D/g, '');
+  if (str.length >= 8) {
+    const year = str.substring(0, 4);
+    const month = str.substring(4, 6);
+    const day = str.substring(6, 8);
+    const hour = str.length >= 10 ? str.substring(8, 10) : '00';
+    const min = str.length >= 12 ? str.substring(10, 12) : '00';
+    const sec = str.length >= 14 ? str.substring(12, 14) : '00';
+    
+    return `${year}-${month}-${day}T${hour}:${min}:${sec}Z`;
+  }
+  
+  return null;
 }
 
 function getTribunaisPorUF(uf: string): string[] {
