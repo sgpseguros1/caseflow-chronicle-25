@@ -2020,6 +2020,82 @@ export type Database = {
         }
         Relationships: []
       }
+      solicitacoes: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          descricao: string | null
+          destinatario_id: string
+          id: string
+          prazo: string | null
+          prioridade: string | null
+          processo_id: string | null
+          protocolo_id: string | null
+          remetente_id: string
+          respondido_em: string | null
+          resposta: string | null
+          status: string | null
+          titulo: string
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          destinatario_id: string
+          id?: string
+          prazo?: string | null
+          prioridade?: string | null
+          processo_id?: string | null
+          protocolo_id?: string | null
+          remetente_id: string
+          respondido_em?: string | null
+          resposta?: string | null
+          status?: string | null
+          titulo: string
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          destinatario_id?: string
+          id?: string
+          prazo?: string | null
+          prioridade?: string | null
+          processo_id?: string | null
+          protocolo_id?: string | null
+          remetente_id?: string
+          respondido_em?: string | null
+          resposta?: string | null
+          status?: string | null
+          titulo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitacoes_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tarefas_rafael: {
         Row: {
           cliente_id: string | null
