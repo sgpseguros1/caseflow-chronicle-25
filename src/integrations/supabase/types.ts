@@ -176,6 +176,109 @@ export type Database = {
           },
         ]
       }
+      alertas_prazo: {
+        Row: {
+          created_at: string
+          data_prazo: string
+          descricao: string | null
+          dias_restantes: number | null
+          id: string
+          lido_em: string | null
+          processo_id: string
+          status: string | null
+          tipo: string
+          titulo: string
+          usuario_alvo_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_prazo: string
+          descricao?: string | null
+          dias_restantes?: number | null
+          id?: string
+          lido_em?: string | null
+          processo_id: string
+          status?: string | null
+          tipo: string
+          titulo: string
+          usuario_alvo_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_prazo?: string
+          descricao?: string | null
+          dias_restantes?: number | null
+          id?: string
+          lido_em?: string | null
+          processo_id?: string
+          status?: string | null
+          tipo?: string
+          titulo?: string
+          usuario_alvo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_prazo_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos_judiciais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      andamentos_processo: {
+        Row: {
+          codigo_movimento: number | null
+          complemento: string | null
+          created_at: string
+          data_andamento: string
+          descricao: string
+          destaque: boolean | null
+          id: string
+          lido: boolean | null
+          lido_em: string | null
+          lido_por: string | null
+          processo_id: string
+          tipo: string | null
+        }
+        Insert: {
+          codigo_movimento?: number | null
+          complemento?: string | null
+          created_at?: string
+          data_andamento: string
+          descricao: string
+          destaque?: boolean | null
+          id?: string
+          lido?: boolean | null
+          lido_em?: string | null
+          lido_por?: string | null
+          processo_id: string
+          tipo?: string | null
+        }
+        Update: {
+          codigo_movimento?: number | null
+          complemento?: string | null
+          created_at?: string
+          data_andamento?: string
+          descricao?: string
+          destaque?: boolean | null
+          id?: string
+          lido?: boolean | null
+          lido_em?: string | null
+          lido_por?: string | null
+          processo_id?: string
+          tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "andamentos_processo_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos_judiciais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auditoria_financeira: {
         Row: {
           acao: string
@@ -764,6 +867,56 @@ export type Database = {
         }
         Relationships: []
       }
+      documentos_processo: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          nome: string
+          processo_id: string
+          tipo_documento: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          nome: string
+          processo_id: string
+          tipo_documento: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          nome?: string
+          processo_id?: string
+          tipo_documento?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_processo_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos_judiciais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fechamentos_mensais: {
         Row: {
           ano: number
@@ -892,6 +1045,50 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      historico_processo: {
+        Row: {
+          acao: string
+          campo_alterado: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          processo_id: string
+          usuario_id: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          acao: string
+          campo_alterado?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          processo_id: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          acao?: string
+          campo_alterado?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          processo_id?: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_processo_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos_judiciais"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lancamentos_financeiros: {
         Row: {
@@ -1353,6 +1550,161 @@ export type Database = {
             columns: ["seguradora_id"]
             isOneToOne: false
             referencedRelation: "seguradoras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processos_judiciais: {
+        Row: {
+          alerta_prazo_dias: number | null
+          assunto_principal: string | null
+          assuntos_secundarios: string[] | null
+          autor_documento: string | null
+          autor_nome: string | null
+          autor_tipo: string | null
+          cadastrado_por: string | null
+          classe_processual: string | null
+          comarca: string | null
+          created_at: string
+          custas_iniciais: number | null
+          dados_completos: Json | null
+          data_audiencia: string | null
+          data_citacao: string | null
+          data_distribuicao: string | null
+          data_fato: string | null
+          data_pagamento: string | null
+          data_pericia: string | null
+          data_sentenca: string | null
+          data_ultima_movimentacao: string | null
+          diferenca_valores: number | null
+          etiquetas: string[] | null
+          grau: string | null
+          id: string
+          indenizacao_paga: number | null
+          indenizacao_pleiteada: number | null
+          juiz_responsavel: string | null
+          link_externo: string | null
+          numero_processo: string
+          observacoes_estrategicas: string | null
+          prazo_processual: string | null
+          prioridade: string | null
+          proxima_acao: string | null
+          responsavel_id: string | null
+          reu_documento: string | null
+          reu_nome: string | null
+          reu_tipo: string | null
+          sincronizado_em: string | null
+          status: string | null
+          status_detalhado: string | null
+          tribunal: string | null
+          ultima_movimentacao: string | null
+          updated_at: string
+          valor_atualizado: number | null
+          valor_causa: number | null
+          vara: string | null
+        }
+        Insert: {
+          alerta_prazo_dias?: number | null
+          assunto_principal?: string | null
+          assuntos_secundarios?: string[] | null
+          autor_documento?: string | null
+          autor_nome?: string | null
+          autor_tipo?: string | null
+          cadastrado_por?: string | null
+          classe_processual?: string | null
+          comarca?: string | null
+          created_at?: string
+          custas_iniciais?: number | null
+          dados_completos?: Json | null
+          data_audiencia?: string | null
+          data_citacao?: string | null
+          data_distribuicao?: string | null
+          data_fato?: string | null
+          data_pagamento?: string | null
+          data_pericia?: string | null
+          data_sentenca?: string | null
+          data_ultima_movimentacao?: string | null
+          diferenca_valores?: number | null
+          etiquetas?: string[] | null
+          grau?: string | null
+          id?: string
+          indenizacao_paga?: number | null
+          indenizacao_pleiteada?: number | null
+          juiz_responsavel?: string | null
+          link_externo?: string | null
+          numero_processo: string
+          observacoes_estrategicas?: string | null
+          prazo_processual?: string | null
+          prioridade?: string | null
+          proxima_acao?: string | null
+          responsavel_id?: string | null
+          reu_documento?: string | null
+          reu_nome?: string | null
+          reu_tipo?: string | null
+          sincronizado_em?: string | null
+          status?: string | null
+          status_detalhado?: string | null
+          tribunal?: string | null
+          ultima_movimentacao?: string | null
+          updated_at?: string
+          valor_atualizado?: number | null
+          valor_causa?: number | null
+          vara?: string | null
+        }
+        Update: {
+          alerta_prazo_dias?: number | null
+          assunto_principal?: string | null
+          assuntos_secundarios?: string[] | null
+          autor_documento?: string | null
+          autor_nome?: string | null
+          autor_tipo?: string | null
+          cadastrado_por?: string | null
+          classe_processual?: string | null
+          comarca?: string | null
+          created_at?: string
+          custas_iniciais?: number | null
+          dados_completos?: Json | null
+          data_audiencia?: string | null
+          data_citacao?: string | null
+          data_distribuicao?: string | null
+          data_fato?: string | null
+          data_pagamento?: string | null
+          data_pericia?: string | null
+          data_sentenca?: string | null
+          data_ultima_movimentacao?: string | null
+          diferenca_valores?: number | null
+          etiquetas?: string[] | null
+          grau?: string | null
+          id?: string
+          indenizacao_paga?: number | null
+          indenizacao_pleiteada?: number | null
+          juiz_responsavel?: string | null
+          link_externo?: string | null
+          numero_processo?: string
+          observacoes_estrategicas?: string | null
+          prazo_processual?: string | null
+          prioridade?: string | null
+          proxima_acao?: string | null
+          responsavel_id?: string | null
+          reu_documento?: string | null
+          reu_nome?: string | null
+          reu_tipo?: string | null
+          sincronizado_em?: string | null
+          status?: string | null
+          status_detalhado?: string | null
+          tribunal?: string | null
+          ultima_movimentacao?: string | null
+          updated_at?: string
+          valor_atualizado?: number | null
+          valor_causa?: number | null
+          vara?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processos_judiciais_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
             referencedColumns: ["id"]
           },
         ]

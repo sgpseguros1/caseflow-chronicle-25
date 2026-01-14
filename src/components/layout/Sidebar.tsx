@@ -48,6 +48,7 @@ const menuItems: MenuItem[] = [
   { icon: AlertTriangle, label: 'Alertas Críticos', path: '/alertas-criticos' },
   { icon: Building2, label: 'BAU (Hospitais)', path: '/bau' },
   { icon: ClipboardList, label: 'Controle Processos', path: '/controle-processos' },
+  { icon: Scale, label: 'Processos Judiciais', path: '/processos-judiciais' },
   { icon: Search, label: 'Monitoramento OAB', path: '/monitoramento-oab' },
   { icon: ListTodo, label: 'Painel Rafael', path: '/painel-rafael' },
   { icon: Send, label: 'Solicitações', path: '/solicitacoes' },
