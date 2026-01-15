@@ -483,7 +483,7 @@ Responda de forma objetiva e profissional.`,
               </CardContent>
             </Card>
 
-            {/* Notes */}
+            {/* Notes + IA Análise Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -491,48 +491,48 @@ Responda de forma objetiva e profissional.`,
                   <Bot className="h-4 w-4 text-primary" />
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <Textarea
                   value={formData.notes || ''}
                   onChange={(e) => handleChange('notes', e.target.value)}
                   rows={4}
                   placeholder="Digite observações sobre o cliente..."
                 />
+                
+                {/* IA Análise Section - Integrada */}
+                {id && client && (
+                  <ClientIAAnaliseSection
+                    clienteId={id}
+                    cliente={{
+                      id: client.id,
+                      name: client.name,
+                      cpf: client.cpf,
+                      birth_date: client.birth_date,
+                      phone1: client.phone1,
+                      email: client.email,
+                      accident_date: client.accident_date,
+                      accident_type: client.accident_type,
+                      accident_location: client.accident_location,
+                      injuries: client.injuries,
+                      cid_code: client.cid_code,
+                      body_part_affected: client.body_part_affected,
+                      injury_severity: client.injury_severity,
+                      has_sequelae: client.has_sequelae,
+                      disability_percentage: client.disability_percentage,
+                      admission_hospital: client.admission_hospital,
+                      was_hospitalized: client.was_hospitalized,
+                      hospitalization_days: client.hospitalization_days,
+                      had_surgery: client.had_surgery,
+                      has_police_report: client.has_police_report,
+                      is_clt: client.is_clt,
+                      company_name: client.company_name,
+                      notes: formData.notes || client.notes
+                    } as ClienteContexto}
+                    observacaoAtual={formData.notes || ''}
+                  />
+                )}
               </CardContent>
             </Card>
-
-            {/* IA Análise Section */}
-            {id && client && (
-              <ClientIAAnaliseSection
-                clienteId={id}
-                cliente={{
-                  id: client.id,
-                  name: client.name,
-                  cpf: client.cpf,
-                  birth_date: client.birth_date,
-                  phone1: client.phone1,
-                  email: client.email,
-                  accident_date: client.accident_date,
-                  accident_type: client.accident_type,
-                  accident_location: client.accident_location,
-                  injuries: client.injuries,
-                  cid_code: client.cid_code,
-                  body_part_affected: client.body_part_affected,
-                  injury_severity: client.injury_severity,
-                  has_sequelae: client.has_sequelae,
-                  disability_percentage: client.disability_percentage,
-                  admission_hospital: client.admission_hospital,
-                  was_hospitalized: client.was_hospitalized,
-                  hospitalization_days: client.hospitalization_days,
-                  had_surgery: client.had_surgery,
-                  has_police_report: client.has_police_report,
-                  is_clt: client.is_clt,
-                  company_name: client.company_name,
-                  notes: formData.notes || client.notes
-                } as ClienteContexto}
-                observacaoAtual={formData.notes || ''}
-              />
-            )}
           </TabsContent>
 
           <TabsContent value="acidente" className="space-y-4">
