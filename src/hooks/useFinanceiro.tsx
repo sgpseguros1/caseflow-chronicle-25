@@ -153,17 +153,16 @@ export function useCreateLancamento() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (lancamento: Omit<LancamentoFinanceiro, 'id' | 'created_at' | 'updated_at' | 'cliente' | 'protocolo' | 'seguradora' | 'processo'>) => {
+    mutationFn: async (lancamento: Omit<LancamentoFinanceiro, 'id' | 'created_at' | 'updated_at' | 'cliente' | 'protocolo' | 'seguradora' | 'processo' | 'valor_pendente'>) => {
       const { data: user } = await supabase.auth.getUser();
       
-      // Calcular valor pendente
-      const valorPendente = (lancamento.valor_bruto || 0) - (lancamento.valor_pago || 0);
+      // Remover valor_pendente do objeto pois é coluna GENERATED
+      const { valor_pendente, ...lancamentoData } = lancamento as any;
       
       const { data, error } = await supabase
         .from('lancamentos_financeiros')
         .insert({ 
-          ...lancamento, 
-          valor_pendente: valorPendente,
+          ...lancamentoData, 
           created_by: user.user?.id 
         })
         .select()
@@ -208,16 +207,12 @@ export function useUpdateLancamento() {
         .eq('id', id)
         .single();
       
-      // Calcular valor pendente se necessário
-      if (updates.valor_bruto !== undefined || updates.valor_pago !== undefined) {
-        const valorBruto = updates.valor_bruto ?? anterior?.valor_bruto ?? 0;
-        const valorPago = updates.valor_pago ?? anterior?.valor_pago ?? 0;
-        updates.valor_pendente = valorBruto - valorPago;
-      }
+      // Remover valor_pendente pois é coluna GENERATED
+      const { valor_pendente, cliente, protocolo, seguradora, processo, ...cleanUpdates } = updates as any;
       
       const { data, error } = await supabase
         .from('lancamentos_financeiros')
-        .update(updates)
+        .update(cleanUpdates)
         .eq('id', id)
         .select()
         .single();
