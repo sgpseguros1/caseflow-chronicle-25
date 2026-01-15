@@ -24,6 +24,9 @@ import type { ExtendedClient } from '@/types/client';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientProtocolosTab } from '@/components/client/ClientProtocolosTab';
 import { ClientIAAnaliseSection } from '@/components/client/ClientIAAnaliseSection';
+import { ClientChecklistTab } from '@/components/client/ClientChecklistTab';
+import { ClientSeguradorasTab } from '@/components/client/ClientSeguradorasTab';
+import { ClientWorkflowSection } from '@/components/client/ClientWorkflowSection';
 import type { ClienteContexto } from '@/hooks/useIAAnalise';
 
 const UF_OPTIONS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
@@ -212,17 +215,24 @@ Responda de forma objetiva e profissional.`,
         </div>
       </div>
 
+      {/* Workflow Section - Always visible at top */}
+      {id && (
+        <ClientWorkflowSection clientId={id} />
+      )}
+
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="dados">Dados Pessoais</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-8">
+          <TabsTrigger value="dados">Pessoais</TabsTrigger>
+          <TabsTrigger value="checklist" className="gap-1 text-primary font-semibold">
+            <Bot className="h-4 w-4" />
+            Checklist IA
+          </TabsTrigger>
+          <TabsTrigger value="seguradoras">Seguradoras</TabsTrigger>
           <TabsTrigger value="acidente">Acidente</TabsTrigger>
           <TabsTrigger value="medico">Médico</TabsTrigger>
           <TabsTrigger value="vinculos">Vínculos</TabsTrigger>
-          <TabsTrigger value="documentos">Documentos</TabsTrigger>
-          <TabsTrigger value="protocolos" className="gap-1">
-            <FileStack className="h-4 w-4" />
-            Protocolos
-          </TabsTrigger>
+          <TabsTrigger value="documentos">Docs</TabsTrigger>
+          <TabsTrigger value="protocolos">Protocolos</TabsTrigger>
         </TabsList>
 
         <form onSubmit={handleSubmit}>
@@ -533,6 +543,16 @@ Responda de forma objetiva e profissional.`,
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Checklist IA Tab */}
+          <TabsContent value="checklist">
+            {id && <ClientChecklistTab clientId={id} />}
+          </TabsContent>
+
+          {/* Seguradoras Tab */}
+          <TabsContent value="seguradoras">
+            {id && <ClientSeguradorasTab clientId={id} />}
           </TabsContent>
 
           <TabsContent value="acidente" className="space-y-4">
