@@ -23,6 +23,7 @@ import PericiasAgendadasPage from "./pages/PericiasAgendadasPage";
 import ProcessosPage from "./pages/ProcessosPage";
 import ProcessoFormPage from "./pages/ProcessoFormPage";
 import ProtocolosPage from "./pages/ProtocolosPage";
+import ProtocolosDashboardPage from "./pages/ProtocolosDashboardPage";
 import ProtocoloViewPage from "./pages/ProtocoloViewPage";
 import FuncionariosPage from "./pages/FuncionariosPage";
 import FuncionarioFormPage from "./pages/FuncionarioFormPage";
@@ -94,6 +95,7 @@ const App = () => (
           <Route path="/pericias" element={<ProtectedRoute><PericiasAgendadasPage /></ProtectedRoute>} />
           {/* Protocolos */}
           <Route path="/protocolos" element={<ProtectedRoute><ProtocolosPage /></ProtectedRoute>} />
+          <Route path="/protocolos/dashboard" element={<ProtectedRoute><ProtocolosDashboardPage /></ProtectedRoute>} />
           <Route path="/protocolos/:id" element={<ProtectedRoute><ProtocoloViewPage /></ProtectedRoute>} />
           {/* Processos (Legado) */}
           <Route path="/processos" element={<ProtectedRoute><ProcessosPage /></ProtectedRoute>} />
