@@ -71,11 +71,11 @@ export default function ProtocolosPage() {
         <div className="space-y-6">
           {/* KPIs Principais */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-200">
+            <Card className="border-primary/30 bg-primary/5">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/20">
-                    <FileText className="h-5 w-5 text-blue-600" />
+                  <div className="p-2 rounded-lg bg-primary/20">
+                    <FileText className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Total</p>
@@ -85,11 +85,11 @@ export default function ProtocolosPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-200">
+            <Card className="border-success/30 bg-success/5">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-green-500/20">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
+                  <div className="p-2 rounded-lg bg-success/20">
+                    <TrendingUp className="h-5 w-5 text-success" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Ativos</p>
@@ -99,11 +99,11 @@ export default function ProtocolosPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-200">
+            <Card className="border-info/30 bg-info/5">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-500/20">
-                    <CheckCircle2 className="h-5 w-5 text-purple-600" />
+                  <div className="p-2 rounded-lg bg-info/20">
+                    <CheckCircle2 className="h-5 w-5 text-info" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Encerrados</p>
@@ -113,11 +113,11 @@ export default function ProtocolosPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border-yellow-200">
+            <Card className="border-warning/30 bg-warning/5">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-yellow-500/20">
-                    <Clock className="h-5 w-5 text-yellow-600" />
+                  <div className="p-2 rounded-lg bg-warning/20">
+                    <Clock className="h-5 w-5 text-warning" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">+7 dias</p>
@@ -127,11 +127,11 @@ export default function ProtocolosPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-200">
+            <Card className="border-primary/30 bg-primary/5">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-orange-500/20">
-                    <AlertTriangle className="h-5 w-5 text-orange-600" />
+                  <div className="p-2 rounded-lg bg-primary/20">
+                    <AlertTriangle className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">+30 dias</p>
@@ -141,15 +141,74 @@ export default function ProtocolosPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-200">
+            <Card className="border-destructive/30 bg-destructive/5">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-red-500/20">
-                    <XCircle className="h-5 w-5 text-red-600" />
+                  <div className="p-2 rounded-lg bg-destructive/20">
+                    <XCircle className="h-5 w-5 text-destructive" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Em Risco (+45d)</p>
                     <p className="text-2xl font-bold">{stats.comRisco}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Métricas Financeiras */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-success/20">
+                    <DollarSign className="h-5 w-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Valor Estimado</p>
+                    <p className="text-lg font-bold text-success">{formatCurrency(stats.valorTotalEstimado)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/20">
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Valor Recebido</p>
+                    <p className="text-lg font-bold text-primary">{formatCurrency(stats.valorTotalRecebido)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-warning/20">
+                    <Clock className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Valor Pendente</p>
+                    <p className="text-lg font-bold text-warning">{formatCurrency(stats.valorPendente)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-destructive/20">
+                    <XCircle className="h-5 w-5 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Prejuízo</p>
+                    <p className="text-lg font-bold text-destructive">{formatCurrency(stats.prejuizoAcumulado)}</p>
                   </div>
                 </div>
               </CardContent>
