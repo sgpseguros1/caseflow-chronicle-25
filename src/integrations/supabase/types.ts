@@ -1405,6 +1405,88 @@ export type Database = {
           },
         ]
       }
+      junta_medicos: {
+        Row: {
+          created_at: string
+          crm: string
+          endereco_profissional: string | null
+          especialidade: string | null
+          id: string
+          junta_id: string
+          nome_medico: string
+          telefone: string | null
+        }
+        Insert: {
+          created_at?: string
+          crm: string
+          endereco_profissional?: string | null
+          especialidade?: string | null
+          id?: string
+          junta_id: string
+          nome_medico: string
+          telefone?: string | null
+        }
+        Update: {
+          created_at?: string
+          crm?: string
+          endereco_profissional?: string | null
+          especialidade?: string | null
+          id?: string
+          junta_id?: string
+          nome_medico?: string
+          telefone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "junta_medicos_junta_id_fkey"
+            columns: ["junta_id"]
+            isOneToOne: false
+            referencedRelation: "juntas_medicas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      juntas_medicas: {
+        Row: {
+          created_at: string
+          data_junta: string
+          endereco_junta: string | null
+          hora_junta: string | null
+          id: string
+          local_junta: string
+          observacoes: string | null
+          pericia_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_junta: string
+          endereco_junta?: string | null
+          hora_junta?: string | null
+          id?: string
+          local_junta: string
+          observacoes?: string | null
+          pericia_id: string
+        }
+        Update: {
+          created_at?: string
+          data_junta?: string
+          endereco_junta?: string | null
+          hora_junta?: string | null
+          id?: string
+          local_junta?: string
+          observacoes?: string | null
+          pericia_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "juntas_medicas_pericia_id_fkey"
+            columns: ["pericia_id"]
+            isOneToOne: false
+            referencedRelation: "pericias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lancamentos_financeiros: {
         Row: {
           cliente_id: string
@@ -1415,6 +1497,7 @@ export type Database = {
           forma_pagamento: string | null
           id: string
           observacoes: string | null
+          pericia_id: string | null
           protocolo_id: string | null
           status: string
           tipo_receita: string
@@ -1433,6 +1516,7 @@ export type Database = {
           forma_pagamento?: string | null
           id?: string
           observacoes?: string | null
+          pericia_id?: string | null
           protocolo_id?: string | null
           status?: string
           tipo_receita: string
@@ -1451,6 +1535,7 @@ export type Database = {
           forma_pagamento?: string | null
           id?: string
           observacoes?: string | null
+          pericia_id?: string | null
           protocolo_id?: string | null
           status?: string
           tipo_receita?: string
@@ -1466,6 +1551,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_financeiros_pericia_id_fkey"
+            columns: ["pericia_id"]
+            isOneToOne: false
+            referencedRelation: "pericias"
             referencedColumns: ["id"]
           },
           {
@@ -1705,6 +1797,127 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      pericia_logs: {
+        Row: {
+          acao: string
+          created_at: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          id: string
+          pericia_id: string
+          status_anterior: string | null
+          status_novo: string | null
+          usuario_id: string | null
+          usuario_nome: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          pericia_id: string
+          status_anterior?: string | null
+          status_novo?: string | null
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          pericia_id?: string
+          status_anterior?: string | null
+          status_novo?: string | null
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pericia_logs_pericia_id_fkey"
+            columns: ["pericia_id"]
+            isOneToOne: false
+            referencedRelation: "pericias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pericias: {
+        Row: {
+          cliente_id: string
+          clinica_bairro: string | null
+          clinica_cep: string | null
+          clinica_cidade: string | null
+          clinica_endereco: string | null
+          clinica_nome: string | null
+          clinica_numero: string | null
+          clinica_telefone: string | null
+          created_at: string
+          created_by: string | null
+          crm_medico: string | null
+          data_pericia: string
+          hora_pericia: string | null
+          id: string
+          medico_responsavel: string | null
+          observacoes: string | null
+          status: string
+          tipo_pericia: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          clinica_bairro?: string | null
+          clinica_cep?: string | null
+          clinica_cidade?: string | null
+          clinica_endereco?: string | null
+          clinica_nome?: string | null
+          clinica_numero?: string | null
+          clinica_telefone?: string | null
+          created_at?: string
+          created_by?: string | null
+          crm_medico?: string | null
+          data_pericia: string
+          hora_pericia?: string | null
+          id?: string
+          medico_responsavel?: string | null
+          observacoes?: string | null
+          status?: string
+          tipo_pericia: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          clinica_bairro?: string | null
+          clinica_cep?: string | null
+          clinica_cidade?: string | null
+          clinica_endereco?: string | null
+          clinica_nome?: string | null
+          clinica_numero?: string | null
+          clinica_telefone?: string | null
+          created_at?: string
+          created_by?: string | null
+          crm_medico?: string | null
+          data_pericia?: string
+          hora_pericia?: string | null
+          id?: string
+          medico_responsavel?: string | null
+          observacoes?: string | null
+          status?: string
+          tipo_pericia?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pericias_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       peritos: {
         Row: {

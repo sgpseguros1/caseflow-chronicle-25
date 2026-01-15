@@ -19,8 +19,7 @@ import AdvogadosPage from "./pages/AdvogadosPage";
 import AdvogadoFormPage from "./pages/AdvogadoFormPage";
 import SeguradorasPage from "./pages/SeguradorasPage";
 import SeguradoraFormPage from "./pages/SeguradoraFormPage";
-import PeritosPage from "./pages/PeritosPage";
-import PeritoFormPage from "./pages/PeritoFormPage";
+import PericiasAgendadasPage from "./pages/PericiasAgendadasPage";
 import ProcessosPage from "./pages/ProcessosPage";
 import ProcessoFormPage from "./pages/ProcessoFormPage";
 import ProtocolosPage from "./pages/ProtocolosPage";
@@ -91,9 +90,8 @@ const App = () => (
           <Route path="/cadastros/seguradoras" element={<ProtectedRoute><SeguradorasPage /></ProtectedRoute>} />
           <Route path="/cadastros/seguradoras/novo" element={<ProtectedRoute><SeguradoraFormPage /></ProtectedRoute>} />
           <Route path="/cadastros/seguradoras/:id/editar" element={<ProtectedRoute><SeguradoraFormPage /></ProtectedRoute>} />
-          <Route path="/cadastros/peritos" element={<ProtectedRoute><PeritosPage /></ProtectedRoute>} />
-          <Route path="/cadastros/peritos/novo" element={<ProtectedRoute><PeritoFormPage /></ProtectedRoute>} />
-          <Route path="/cadastros/peritos/:id/editar" element={<ProtectedRoute><PeritoFormPage /></ProtectedRoute>} />
+          {/* Perícias Agendadas */}
+          <Route path="/pericias" element={<ProtectedRoute><PericiasAgendadasPage /></ProtectedRoute>} />
           {/* Protocolos */}
           <Route path="/protocolos" element={<ProtectedRoute><ProtocolosPage /></ProtectedRoute>} />
           <Route path="/protocolos/:id" element={<ProtectedRoute><ProtocoloViewPage /></ProtectedRoute>} />
