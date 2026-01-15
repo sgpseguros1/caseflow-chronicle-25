@@ -1,6 +1,32 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { TipoProtocolo, StatusProtocolo } from '@/types/protocolo';
+import type { TipoProtocolo, StatusProtocolo, Protocolo } from '@/types/protocolo';
+
+// Type for protocol with computed metrics (simplified for dashboard)
+export interface ProtocoloComMetricas {
+  id: string;
+  codigo: number;
+  cliente_id: string;
+  tipo: TipoProtocolo;
+  natureza: string;
+  status: StatusProtocolo;
+  data_protocolo: string;
+  data_ultima_movimentacao: string | null;
+  funcionario_id: string | null;
+  seguradora_id: string | null;
+  advogado_id: string | null;
+  prioridade: string;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+  dias_parado: number;
+  // Joins
+  cliente?: { id: string; name: string; cpf: string | null } | null;
+  seguradora?: { razao_social: string } | null;
+  advogado?: { nome: string } | null;
+  funcionario?: { id: string; nome: string } | null;
+  etiquetas?: any[];
+}
 
 export interface DashboardProtocoloStats {
   // Totais
@@ -25,6 +51,8 @@ export interface DashboardProtocoloStats {
   pagos: number;
   
   // Tempo
+  paradosMais7Dias: number;
+  paradosMais15Dias: number;
   paradosMais30Dias: number;
   paradosMais45Dias: number;
   paradosMais60Dias: number;
@@ -56,6 +84,9 @@ export interface DashboardProtocoloStats {
   tempoMedioPorTipo: { tipo: string; dias: number }[];
   taxaJudicializacao: number;
   taxaSucesso: number;
+  
+  // Lista completa de protocolos com métricas
+  protocolos: ProtocoloComMetricas[];
 }
 
 const TIPO_COLORS: Record<TipoProtocolo, string> = {
@@ -81,11 +112,14 @@ export function useDashboardProtocolos() {
         .from('protocolos')
         .select(`
           *,
-          cliente:clients(name),
+          cliente:clients(id, name, cpf),
           seguradora:seguradoras(razao_social),
-          funcionario:funcionarios(nome),
+          funcionario:funcionarios(id, nome),
+          advogado:advogados(nome),
+          etiquetas:protocolo_etiquetas(*),
           financeiro:protocolo_financeiro(valor_estimado, valor_recebido, prejuizo_registrado)
-        `);
+        `)
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       
@@ -153,6 +187,12 @@ export function useDashboardProtocolos() {
       const pagos = statusCount['pago'] || 0;
       
       // Tempo parado
+      const paradosMais7Dias = protocolosComDias.filter(p => 
+        p.diasParado >= 7 && !statusEncerrados.includes(p.status)
+      ).length;
+      const paradosMais15Dias = protocolosComDias.filter(p => 
+        p.diasParado >= 15 && !statusEncerrados.includes(p.status)
+      ).length;
       const paradosMais30Dias = protocolosComDias.filter(p => 
         p.diasParado >= 30 && !statusEncerrados.includes(p.status)
       ).length;
@@ -163,6 +203,12 @@ export function useDashboardProtocolos() {
         p.diasParado >= 60 && !statusEncerrados.includes(p.status)
       ).length;
       const comRisco = paradosMais45Dias;
+      
+      // Mapear para tipo exportável
+      const protocolosComMetricas: ProtocoloComMetricas[] = protocolosComDias.map(p => ({
+        ...p,
+        dias_parado: p.diasParado,
+      })) as ProtocoloComMetricas[];
       
       // Financeiro
       let valorTotalEstimado = 0;
@@ -277,6 +323,8 @@ export function useDashboardProtocolos() {
         emAndamento,
         aguardandoPagamento,
         pagos,
+        paradosMais7Dias,
+        paradosMais15Dias,
         paradosMais30Dias,
         paradosMais45Dias,
         paradosMais60Dias,
@@ -294,6 +342,7 @@ export function useDashboardProtocolos() {
         tempoMedioPorTipo,
         taxaJudicializacao,
         taxaSucesso,
+        protocolos: protocolosComMetricas,
       };
     },
     refetchInterval: 30000,
