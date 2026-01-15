@@ -47,6 +47,7 @@ import PainelTarefasUsuarioPage from "./pages/PainelTarefasUsuarioPage";
 import ChatInternoPage from "./pages/ChatInternoPage";
 import SolicitacoesPage from "./pages/SolicitacoesPage";
 import ProcessosJudiciaisPage from "./pages/ProcessosJudiciaisPage";
+import ProcessoViewPage from "./pages/ProcessoViewPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
 import ComissoesPage from "./pages/ComissoesPage";
 import NotFound from "./pages/NotFound";
@@ -132,6 +133,7 @@ const App = () => (
           <Route path="/solicitacoes" element={<ProtectedRoute><SolicitacoesPage /></ProtectedRoute>} />
           {/* Processos Judiciais do Escritório */}
           <Route path="/processos-judiciais" element={<ProtectedRoute><ProcessosJudiciaisPage /></ProtectedRoute>} />
+          <Route path="/processos-judiciais/:id" element={<ProtectedRoute><ProcessoViewPage /></ProtectedRoute>} />
           {/* Relatórios */}
           <Route path="/relatorios" element={<ProtectedRoute><RelatoriosPage /></ProtectedRoute>} />
           {/* Comissões */}
