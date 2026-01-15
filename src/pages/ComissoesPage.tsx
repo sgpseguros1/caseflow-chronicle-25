@@ -17,6 +17,7 @@ import {
   TrendingUp,
   Users,
   BarChart2,
+  RotateCcw,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ import {
   useComissaoHistorico,
   useComissoesPagas,
   usePagarComissao,
+  useReverterComissao,
   TIPOS_INDENIZACAO,
   STATUS_COMISSAO,
   Comissao,
@@ -80,8 +82,10 @@ export default function ComissoesPage() {
   const [showHistoricoDialog, setShowHistoricoDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPagarDialog, setShowPagarDialog] = useState(false);
+  const [showReverterDialog, setShowReverterDialog] = useState(false);
   const [selectedComissao, setSelectedComissao] = useState<Comissao | null>(null);
   const [deleteMotivo, setDeleteMotivo] = useState('');
+  const [reverterMotivo, setReverterMotivo] = useState('');
   const [beneficiarioNome, setBeneficiarioNome] = useState('');
 
   // Form state
@@ -104,6 +108,7 @@ export default function ComissoesPage() {
   const updateStatus = useUpdateComissaoStatus();
   const deleteComissao = useDeleteComissao();
   const pagarComissao = usePagarComissao();
+  const reverterComissao = useReverterComissao();
 
   // ============================================
   // REALTIME - Atualização em tempo real
@@ -661,12 +666,13 @@ export default function ComissoesPage() {
                     <TableHead>Pago por</TableHead>
                     <TableHead>Data Pagamento</TableHead>
                     <TableHead>Cadastrado por</TableHead>
+                    {isAdminOrGestor && <TableHead className="text-right">Ações</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {comissoesPagas?.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={isAdminOrGestor ? 8 : 7} className="text-center py-8 text-muted-foreground">
                         Nenhuma comissão paga encontrada
                       </TableCell>
                     </TableRow>
@@ -710,6 +716,23 @@ export default function ComissoesPage() {
                             {comissao.created_by_profile?.name || '-'}
                           </span>
                         </TableCell>
+                        {isAdminOrGestor && (
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedComissao(comissao);
+                                setReverterMotivo('');
+                                setShowReverterDialog(true);
+                              }}
+                              title="Reverter para Pendente"
+                              className="text-orange-500 hover:text-orange-700"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))
                   )}
@@ -962,6 +985,63 @@ export default function ComissoesPage() {
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reverter Comissão Dialog - Apenas Admin/Gestor */}
+      <Dialog open={showReverterDialog} onOpenChange={setShowReverterDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-orange-500" />
+              Reverter Comissão para Pendente
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação irá reverter uma comissão PAGA para o status PENDENTE. 
+              Informe o motivo da reversão. Esta ação é auditada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200">
+              <p className="text-sm font-medium">Cliente: {selectedComissao?.clients?.name}</p>
+              <p className="text-xs text-muted-foreground">Tipo: {selectedComissao?.tipo_indenizacao}</p>
+              <p className="text-xs text-muted-foreground">Valor: {formatCurrency(selectedComissao?.valor || 0)}</p>
+            </div>
+            <div>
+              <Label>Motivo da reversão *</Label>
+              <Textarea
+                placeholder="Ex: Pagamento realizado por engano, cliente não tinha direito..."
+                value={reverterMotivo}
+                onChange={(e) => setReverterMotivo(e.target.value)}
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Este motivo ficará registrado no histórico da comissão.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReverterDialog(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="default"
+              onClick={async () => {
+                if (!selectedComissao || !reverterMotivo.trim()) return;
+                await reverterComissao.mutateAsync({
+                  id: selectedComissao.id,
+                  motivo: reverterMotivo.trim(),
+                });
+                setShowReverterDialog(false);
+                setSelectedComissao(null);
+                setReverterMotivo('');
+              }}
+              disabled={!reverterMotivo.trim() || reverterComissao.isPending}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              {reverterComissao.isPending ? 'Revertendo...' : 'Confirmar Reversão'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

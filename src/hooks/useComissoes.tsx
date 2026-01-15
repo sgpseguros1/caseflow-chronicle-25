@@ -386,6 +386,78 @@ export function useUpdateComissaoStatus() {
   });
 }
 
+// Hook para reverter comissão PAGA para PENDENTE (Admin+Gestor apenas)
+export function useReverterComissao() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      motivo,
+    }: {
+      id: string;
+      motivo: string;
+    }) => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Verificar se a comissão está paga
+      const { data: comissao, error: fetchError } = await supabase
+        .from('comissoes')
+        .select('status')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (comissao.status !== 'paga') {
+        throw new Error('Apenas comissões pagas podem ser revertidas');
+      }
+
+      // Atualizar comissão
+      const { data, error } = await supabase
+        .from('comissoes')
+        .update({
+          status: 'pendente',
+          revertido_em: new Date().toISOString(),
+          revertido_por: userData.user.id,
+          revertido_motivo: motivo,
+          pago_por: null,
+          pago_em: null,
+          beneficiario_nome: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Registrar no histórico
+      await supabase.from('comissoes_historico').insert({
+        comissao_id: id,
+        acao: 'reversao',
+        campo_alterado: 'status',
+        valor_anterior: 'paga',
+        valor_novo: 'pendente',
+        usuario_id: userData.user.id,
+      });
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comissoes'] });
+      queryClient.invalidateQueries({ queryKey: ['comissoes-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['comissoes-pagas'] });
+      toast.success('Comissão revertida para pendente com sucesso!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erro ao reverter comissão');
+    },
+  });
+}
+
 // Hook para soft delete (apenas admin/gestor)
 export function useDeleteComissao() {
   const queryClient = useQueryClient();

@@ -160,7 +160,8 @@ export default function PericiasAgendadasPage() {
       observacoes: formData.observacoes || null
     };
 
-    if (formData.status === 'junta_medica') {
+    // Junta Médica é um TIPO de perícia, não STATUS
+    if (formData.tipo_pericia === 'junta_medica') {
       payload.junta_medica = {
         local_junta: formData.junta_local,
         endereco_junta: formData.junta_endereco,
@@ -270,7 +271,7 @@ export default function PericiasAgendadasPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:border-purple-500 transition-colors" onClick={() => setStatusFilter('junta_medica')}>
+        <Card className="cursor-pointer hover:border-purple-500 transition-colors" onClick={() => setTipoFilter('junta_medica')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-purple-500" />
@@ -597,10 +598,10 @@ export default function PericiasAgendadasPage() {
               </div>
             </div>
 
-            {/* Junta Médica */}
-            {formData.status === 'junta_medica' && (
+            {/* Junta Médica - mostrar quando TIPO for junta_medica */}
+            {formData.tipo_pericia === 'junta_medica' && (
               <div className="space-y-4 p-4 border rounded-lg bg-purple-50 dark:bg-purple-950/20">
-                <h4 className="font-medium text-purple-700 dark:text-purple-300">Dados da Junta Médica</h4>
+                <h4 className="font-medium text-purple-700 dark:text-purple-300">Dados da Junta Médica (Obrigatório: 3 médicos)</h4>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
