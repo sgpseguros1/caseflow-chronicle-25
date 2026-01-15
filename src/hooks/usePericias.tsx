@@ -205,7 +205,9 @@ export function usePericiaStats() {
         if (p.status === 'agendada') stats.agendadas++;
         if (p.status === 'realizada_aguardando_pagamento') stats.aguardandoPagamento++;
         if (p.status === 'cliente_faltou') stats.clientesFaltosos++;
-        if (p.status === 'junta_medica') stats.juntasMedicas++;
+        
+        // Juntas Médicas é por TIPO, não status
+        if (p.tipo_pericia === 'junta_medica') stats.juntasMedicas++;
 
         // Próximos 3 dias
         const dataPericia = new Date(p.data_pericia);
