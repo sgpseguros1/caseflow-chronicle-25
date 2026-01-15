@@ -7,8 +7,8 @@ import { useEffect } from 'react';
 export interface Pericia {
   id: string;
   cliente_id: string;
-  tipo_pericia: 'inss' | 'auxilio_doenca' | 'auxilio_acidente' | 'dpvat' | 'seguro_vida' | 'judicial' | 'acidente_trabalho' | 'danos' | 'outros';
-  status: 'agendada' | 'realizada_aguardando_pagamento' | 'cliente_faltou' | 'junta_medica';
+  tipo_pericia: 'inss' | 'auxilio_doenca' | 'auxilio_acidente' | 'dpvat' | 'seguro_vida' | 'judicial' | 'acidente_trabalho' | 'danos' | 'junta_medica' | 'outros';
+  status: 'agendada' | 'realizada_aguardando_pagamento' | 'cliente_faltou';
   data_pericia: string;
   hora_pericia: string | null;
   medico_responsavel: string | null;
@@ -73,21 +73,20 @@ export const TIPO_PERICIA_LABELS: Record<string, string> = {
   judicial: 'Perícia Judicial',
   acidente_trabalho: 'Perícia de Acidente de Trabalho',
   danos: 'Perícia de Danos',
+  junta_medica: 'Perícia de Junta Médica',
   outros: 'Outros tipos de perícia'
 };
 
 export const STATUS_PERICIA_LABELS: Record<string, string> = {
   agendada: 'Perícia Agendada',
   realizada_aguardando_pagamento: 'Realizada - Aguardando Indenização',
-  cliente_faltou: 'Cliente Faltou',
-  junta_medica: 'Junta Médica'
+  cliente_faltou: 'Cliente Faltou'
 };
 
 export const STATUS_PERICIA_COLORS: Record<string, string> = {
   agendada: 'bg-blue-500',
   realizada_aguardando_pagamento: 'bg-green-500',
-  cliente_faltou: 'bg-red-500',
-  junta_medica: 'bg-purple-500'
+  cliente_faltou: 'bg-red-500'
 };
 
 export function usePericias() {
@@ -247,8 +246,8 @@ export function useCreatePericia() {
         .single();
       if (error) throw error;
 
-      // Se for junta médica, criar os registros
-      if (pericia.status === 'junta_medica' && junta_medica) {
+      // Se for tipo junta médica, criar os registros
+      if (pericia.tipo_pericia === 'junta_medica' && junta_medica) {
         const { data: junta, error: juntaError } = await supabase
           .from('juntas_medicas')
           .insert({
@@ -315,8 +314,8 @@ export function useUpdatePericia() {
         .single();
       if (error) throw error;
 
-      // Se mudou para junta médica, criar ou atualizar
-      if (pericia.status === 'junta_medica' && junta_medica) {
+      // Se mudou para tipo junta médica, criar ou atualizar
+      if (pericia.tipo_pericia === 'junta_medica' && junta_medica) {
         // Verificar se já existe junta
         const { data: existingJunta } = await supabase
           .from('juntas_medicas')
