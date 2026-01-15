@@ -492,9 +492,9 @@ export default function PericiasAgendadasPage() {
           <div className="space-y-6">
             {/* Cliente */}
             <div className="space-y-2">
-              <Label>Cliente *</Label>
+              <Label>Cliente <span className="text-red-500">*</span></Label>
               <Select value={formData.cliente_id} onValueChange={(v) => setFormData({ ...formData, cliente_id: v })}>
-                <SelectTrigger>
+                <SelectTrigger className={!formData.cliente_id ? 'border-red-300' : ''}>
                   <SelectValue placeholder="Selecione o cliente" />
                 </SelectTrigger>
                 <SelectContent>
@@ -508,9 +508,9 @@ export default function PericiasAgendadasPage() {
             {/* Tipo e Status */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Tipo de Perícia *</Label>
+                <Label>Tipo de Perícia <span className="text-red-500">*</span></Label>
                 <Select value={formData.tipo_pericia} onValueChange={(v) => setFormData({ ...formData, tipo_pericia: v })}>
-                  <SelectTrigger>
+                  <SelectTrigger className={!formData.tipo_pericia ? 'border-red-300' : ''}>
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -521,7 +521,7 @@ export default function PericiasAgendadasPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>Status <span className="text-red-500">*</span></Label>
                 <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
                   <SelectTrigger>
                     <SelectValue />
@@ -538,62 +538,121 @@ export default function PericiasAgendadasPage() {
             {/* Data e Hora */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Data da Perícia *</Label>
-                <Input type="date" value={formData.data_pericia} onChange={(e) => setFormData({ ...formData, data_pericia: e.target.value })} />
+                <Label>Data da Perícia <span className="text-red-500">*</span></Label>
+                <Input 
+                  type="date" 
+                  value={formData.data_pericia} 
+                  onChange={(e) => setFormData({ ...formData, data_pericia: e.target.value })} 
+                  className={!formData.data_pericia ? 'border-red-300' : ''}
+                  required
+                />
               </div>
               <div className="space-y-2">
-                <Label>Horário</Label>
-                <Input type="time" value={formData.hora_pericia} onChange={(e) => setFormData({ ...formData, hora_pericia: e.target.value })} />
+                <Label>Horário <span className="text-red-500">*</span></Label>
+                <Input 
+                  type="time" 
+                  value={formData.hora_pericia} 
+                  onChange={(e) => setFormData({ ...formData, hora_pericia: e.target.value })} 
+                  className={!formData.hora_pericia ? 'border-red-300' : ''}
+                  required
+                />
               </div>
             </div>
 
             {/* Médico */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Médico Responsável</Label>
-                <Input value={formData.medico_responsavel} onChange={(e) => setFormData({ ...formData, medico_responsavel: e.target.value })} placeholder="Nome do médico" />
+                <Label>Médico Responsável <span className="text-red-500">*</span></Label>
+                <Input 
+                  value={formData.medico_responsavel} 
+                  onChange={(e) => setFormData({ ...formData, medico_responsavel: e.target.value })} 
+                  placeholder="Nome do médico"
+                  className={!formData.medico_responsavel ? 'border-red-300' : ''}
+                  required
+                />
               </div>
               <div className="space-y-2">
-                <Label>CRM</Label>
-                <Input value={formData.crm_medico} onChange={(e) => setFormData({ ...formData, crm_medico: e.target.value })} placeholder="CRM do médico" />
+                <Label>CRM <span className="text-red-500">*</span></Label>
+                <Input 
+                  value={formData.crm_medico} 
+                  onChange={(e) => setFormData({ ...formData, crm_medico: e.target.value })} 
+                  placeholder="CRM do médico"
+                  className={!formData.crm_medico ? 'border-red-300' : ''}
+                  required
+                />
               </div>
             </div>
 
             {/* Clínica */}
             <div className="space-y-4">
-              <h4 className="font-medium">Dados da Clínica/Hospital</h4>
+              <h4 className="font-medium">Dados da Clínica/Hospital <span className="text-red-500">*</span></h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Nome da Clínica</Label>
-                  <Input value={formData.clinica_nome} onChange={(e) => setFormData({ ...formData, clinica_nome: e.target.value })} />
+                  <Label>Nome da Clínica <span className="text-red-500">*</span></Label>
+                  <Input 
+                    value={formData.clinica_nome} 
+                    onChange={(e) => setFormData({ ...formData, clinica_nome: e.target.value })} 
+                    className={!formData.clinica_nome ? 'border-red-300' : ''}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Telefone</Label>
-                  <Input value={formData.clinica_telefone} onChange={(e) => setFormData({ ...formData, clinica_telefone: e.target.value })} />
+                  <Label>Telefone <span className="text-red-500">*</span></Label>
+                  <Input 
+                    value={formData.clinica_telefone} 
+                    onChange={(e) => setFormData({ ...formData, clinica_telefone: e.target.value })} 
+                    className={!formData.clinica_telefone ? 'border-red-300' : ''}
+                    required
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="col-span-2 space-y-2">
-                  <Label>Endereço</Label>
-                  <Input value={formData.clinica_endereco} onChange={(e) => setFormData({ ...formData, clinica_endereco: e.target.value })} />
+                  <Label>Endereço <span className="text-red-500">*</span></Label>
+                  <Input 
+                    value={formData.clinica_endereco} 
+                    onChange={(e) => setFormData({ ...formData, clinica_endereco: e.target.value })} 
+                    className={!formData.clinica_endereco ? 'border-red-300' : ''}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Número</Label>
-                  <Input value={formData.clinica_numero} onChange={(e) => setFormData({ ...formData, clinica_numero: e.target.value })} />
+                  <Label>Número <span className="text-red-500">*</span></Label>
+                  <Input 
+                    value={formData.clinica_numero} 
+                    onChange={(e) => setFormData({ ...formData, clinica_numero: e.target.value })} 
+                    className={!formData.clinica_numero ? 'border-red-300' : ''}
+                    required
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Bairro</Label>
-                  <Input value={formData.clinica_bairro} onChange={(e) => setFormData({ ...formData, clinica_bairro: e.target.value })} />
+                  <Label>Bairro <span className="text-red-500">*</span></Label>
+                  <Input 
+                    value={formData.clinica_bairro} 
+                    onChange={(e) => setFormData({ ...formData, clinica_bairro: e.target.value })} 
+                    className={!formData.clinica_bairro ? 'border-red-300' : ''}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Cidade</Label>
-                  <Input value={formData.clinica_cidade} onChange={(e) => setFormData({ ...formData, clinica_cidade: e.target.value })} />
+                  <Label>Cidade <span className="text-red-500">*</span></Label>
+                  <Input 
+                    value={formData.clinica_cidade} 
+                    onChange={(e) => setFormData({ ...formData, clinica_cidade: e.target.value })} 
+                    className={!formData.clinica_cidade ? 'border-red-300' : ''}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>CEP</Label>
-                  <Input value={formData.clinica_cep} onChange={(e) => setFormData({ ...formData, clinica_cep: e.target.value })} />
+                  <Label>CEP <span className="text-red-500">*</span></Label>
+                  <Input 
+                    value={formData.clinica_cep} 
+                    onChange={(e) => setFormData({ ...formData, clinica_cep: e.target.value })} 
+                    className={!formData.clinica_cep ? 'border-red-300' : ''}
+                    required
+                  />
                 </div>
               </div>
             </div>
@@ -605,51 +664,97 @@ export default function PericiasAgendadasPage() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Local da Junta *</Label>
-                    <Input value={formData.junta_local} onChange={(e) => setFormData({ ...formData, junta_local: e.target.value })} />
+                    <Label>Local da Junta <span className="text-red-500">*</span></Label>
+                    <Input 
+                      value={formData.junta_local} 
+                      onChange={(e) => setFormData({ ...formData, junta_local: e.target.value })} 
+                      className={!formData.junta_local ? 'border-red-300' : ''}
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>Endereço</Label>
-                    <Input value={formData.junta_endereco} onChange={(e) => setFormData({ ...formData, junta_endereco: e.target.value })} />
+                    <Label>Endereço <span className="text-red-500">*</span></Label>
+                    <Input 
+                      value={formData.junta_endereco} 
+                      onChange={(e) => setFormData({ ...formData, junta_endereco: e.target.value })} 
+                      className={!formData.junta_endereco ? 'border-red-300' : ''}
+                      required
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Data da Junta</Label>
-                    <Input type="date" value={formData.junta_data} onChange={(e) => setFormData({ ...formData, junta_data: e.target.value })} />
+                    <Label>Data da Junta <span className="text-red-500">*</span></Label>
+                    <Input 
+                      type="date" 
+                      value={formData.junta_data} 
+                      onChange={(e) => setFormData({ ...formData, junta_data: e.target.value })} 
+                      className={!formData.junta_data ? 'border-red-300' : ''}
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>Horário</Label>
-                    <Input type="time" value={formData.junta_hora} onChange={(e) => setFormData({ ...formData, junta_hora: e.target.value })} />
+                    <Label>Horário <span className="text-red-500">*</span></Label>
+                    <Input 
+                      type="time" 
+                      value={formData.junta_hora} 
+                      onChange={(e) => setFormData({ ...formData, junta_hora: e.target.value })} 
+                      className={!formData.junta_hora ? 'border-red-300' : ''}
+                      required
+                    />
                   </div>
                 </div>
 
-                <h5 className="font-medium mt-4">Médicos da Junta (mínimo 3)</h5>
+                <h5 className="font-medium mt-4">Médicos da Junta (obrigatório 3 médicos com Nome e CRM)</h5>
                 {juntaMedicos.map((medico, idx) => (
                   <div key={idx} className="p-3 border rounded bg-background space-y-3">
-                    <p className="text-sm font-medium">Médico {idx + 1}</p>
+                    <p className="text-sm font-medium">Médico {idx + 1} <span className="text-red-500">*</span></p>
                     <div className="grid grid-cols-2 gap-3">
-                      <Input placeholder="Nome" value={medico.nome_medico} onChange={(e) => {
-                        const updated = [...juntaMedicos];
-                        updated[idx] = { ...updated[idx], nome_medico: e.target.value };
-                        setJuntaMedicos(updated);
-                      }} />
-                      <Input placeholder="CRM" value={medico.crm} onChange={(e) => {
-                        const updated = [...juntaMedicos];
-                        updated[idx] = { ...updated[idx], crm: e.target.value };
-                        setJuntaMedicos(updated);
-                      }} />
-                      <Input placeholder="Especialidade" value={medico.especialidade} onChange={(e) => {
-                        const updated = [...juntaMedicos];
-                        updated[idx] = { ...updated[idx], especialidade: e.target.value };
-                        setJuntaMedicos(updated);
-                      }} />
-                      <Input placeholder="Telefone" value={medico.telefone} onChange={(e) => {
-                        const updated = [...juntaMedicos];
-                        updated[idx] = { ...updated[idx], telefone: e.target.value };
-                        setJuntaMedicos(updated);
-                      }} />
+                      <Input 
+                        placeholder="Nome *" 
+                        value={medico.nome_medico} 
+                        onChange={(e) => {
+                          const updated = [...juntaMedicos];
+                          updated[idx] = { ...updated[idx], nome_medico: e.target.value };
+                          setJuntaMedicos(updated);
+                        }} 
+                        className={!medico.nome_medico ? 'border-red-300' : ''}
+                        required
+                      />
+                      <Input 
+                        placeholder="CRM *" 
+                        value={medico.crm} 
+                        onChange={(e) => {
+                          const updated = [...juntaMedicos];
+                          updated[idx] = { ...updated[idx], crm: e.target.value };
+                          setJuntaMedicos(updated);
+                        }} 
+                        className={!medico.crm ? 'border-red-300' : ''}
+                        required
+                      />
+                      <Input 
+                        placeholder="Especialidade *" 
+                        value={medico.especialidade} 
+                        onChange={(e) => {
+                          const updated = [...juntaMedicos];
+                          updated[idx] = { ...updated[idx], especialidade: e.target.value };
+                          setJuntaMedicos(updated);
+                        }} 
+                        className={!medico.especialidade ? 'border-red-300' : ''}
+                        required
+                      />
+                      <Input 
+                        placeholder="Telefone *" 
+                        value={medico.telefone} 
+                        onChange={(e) => {
+                          const updated = [...juntaMedicos];
+                          updated[idx] = { ...updated[idx], telefone: e.target.value };
+                          setJuntaMedicos(updated);
+                        }} 
+                        className={!medico.telefone ? 'border-red-300' : ''}
+                        required
+                      />
                     </div>
                   </div>
                 ))}
@@ -667,7 +772,30 @@ export default function PericiasAgendadasPage() {
             <Button variant="outline" onClick={() => setShowFormDialog(false)}>Cancelar</Button>
             <Button 
               onClick={handleSavePericia} 
-              disabled={!formData.cliente_id || !formData.tipo_pericia || !formData.data_pericia || createPericia.isPending || updatePericia.isPending}
+              disabled={
+                !formData.cliente_id || 
+                !formData.tipo_pericia || 
+                !formData.data_pericia || 
+                !formData.hora_pericia ||
+                !formData.medico_responsavel ||
+                !formData.crm_medico ||
+                !formData.clinica_nome ||
+                !formData.clinica_telefone ||
+                !formData.clinica_endereco ||
+                !formData.clinica_numero ||
+                !formData.clinica_bairro ||
+                !formData.clinica_cidade ||
+                !formData.clinica_cep ||
+                (formData.tipo_pericia === 'junta_medica' && (
+                  !formData.junta_local ||
+                  !formData.junta_endereco ||
+                  !formData.junta_data ||
+                  !formData.junta_hora ||
+                  juntaMedicos.some(m => !m.nome_medico || !m.crm || !m.especialidade || !m.telefone)
+                )) ||
+                createPericia.isPending || 
+                updatePericia.isPending
+              }
             >
               {(createPericia.isPending || updatePericia.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {selectedPericia ? 'Salvar' : 'Cadastrar'}
