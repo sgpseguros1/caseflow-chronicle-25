@@ -552,6 +552,7 @@ export type Database = {
           data_solicitacao: string
           fase_cobranca: string | null
           hospital_contato: string | null
+          hospital_id: string | null
           hospital_nome: string
           hospital_telefone: string | null
           id: string
@@ -571,6 +572,7 @@ export type Database = {
           data_solicitacao?: string
           fase_cobranca?: string | null
           hospital_contato?: string | null
+          hospital_id?: string | null
           hospital_nome: string
           hospital_telefone?: string | null
           id?: string
@@ -590,6 +592,7 @@ export type Database = {
           data_solicitacao?: string
           fase_cobranca?: string | null
           hospital_contato?: string | null
+          hospital_id?: string | null
           hospital_nome?: string
           hospital_telefone?: string | null
           id?: string
@@ -611,10 +614,196 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "client_baus_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitais"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "client_baus_responsavel_id_fkey"
             columns: ["responsavel_id"]
             isOneToOne: false
             referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_checklist_ia: {
+        Row: {
+          afastamento: boolean | null
+          afastamento_15_dias: boolean | null
+          atendimento_medico: boolean | null
+          beneficio_recebido: string | null
+          bo_status: string | null
+          cidade_uf_evento: string | null
+          client_id: string
+          concluido_em: string | null
+          concluido_por: string | null
+          contribuia_inss: boolean | null
+          created_at: string
+          culpa_cliente: string | null
+          dano_material_comprovavel: boolean | null
+          danos_materiais: string[] | null
+          data_evento: string | null
+          e_clt: boolean | null
+          e_motorista_app: boolean | null
+          empresa_cnpj: string | null
+          fez_financiamento: boolean | null
+          funcao_cargo: string | null
+          havia_epi: boolean | null
+          havia_treinamento: boolean | null
+          houve_cat: boolean | null
+          id: string
+          impacto_moral: string[] | null
+          incapacidade_atual: string | null
+          internacao: boolean | null
+          lesao_corporal: boolean | null
+          obito: boolean | null
+          perda_renda: boolean | null
+          perfil_vitima: string | null
+          placa_terceiro: string | null
+          provas_disponiveis: string[] | null
+          recebeu_beneficio: boolean | null
+          regime_trabalho: string | null
+          sequela_permanente: string | null
+          sequelas: string | null
+          status: string | null
+          tem_cartao_credito: boolean | null
+          tem_conta_banco: boolean | null
+          tem_emprestimo: boolean | null
+          terceiro_identificado: string | null
+          terceiro_tem_seguro: string | null
+          tipo_acidente_trabalho: string | null
+          tipo_ocorrencia: string | null
+          tipos_gastos: string[] | null
+          trabalhava: boolean | null
+          updated_at: string
+          usa_fintech: boolean | null
+          usava_equipamento_seguranca: string | null
+          veiculo_cliente: string | null
+          veiculo_financiado: string | null
+          veiculo_segurado: boolean | null
+          veiculos_envolvidos: number | null
+        }
+        Insert: {
+          afastamento?: boolean | null
+          afastamento_15_dias?: boolean | null
+          atendimento_medico?: boolean | null
+          beneficio_recebido?: string | null
+          bo_status?: string | null
+          cidade_uf_evento?: string | null
+          client_id: string
+          concluido_em?: string | null
+          concluido_por?: string | null
+          contribuia_inss?: boolean | null
+          created_at?: string
+          culpa_cliente?: string | null
+          dano_material_comprovavel?: boolean | null
+          danos_materiais?: string[] | null
+          data_evento?: string | null
+          e_clt?: boolean | null
+          e_motorista_app?: boolean | null
+          empresa_cnpj?: string | null
+          fez_financiamento?: boolean | null
+          funcao_cargo?: string | null
+          havia_epi?: boolean | null
+          havia_treinamento?: boolean | null
+          houve_cat?: boolean | null
+          id?: string
+          impacto_moral?: string[] | null
+          incapacidade_atual?: string | null
+          internacao?: boolean | null
+          lesao_corporal?: boolean | null
+          obito?: boolean | null
+          perda_renda?: boolean | null
+          perfil_vitima?: string | null
+          placa_terceiro?: string | null
+          provas_disponiveis?: string[] | null
+          recebeu_beneficio?: boolean | null
+          regime_trabalho?: string | null
+          sequela_permanente?: string | null
+          sequelas?: string | null
+          status?: string | null
+          tem_cartao_credito?: boolean | null
+          tem_conta_banco?: boolean | null
+          tem_emprestimo?: boolean | null
+          terceiro_identificado?: string | null
+          terceiro_tem_seguro?: string | null
+          tipo_acidente_trabalho?: string | null
+          tipo_ocorrencia?: string | null
+          tipos_gastos?: string[] | null
+          trabalhava?: boolean | null
+          updated_at?: string
+          usa_fintech?: boolean | null
+          usava_equipamento_seguranca?: string | null
+          veiculo_cliente?: string | null
+          veiculo_financiado?: string | null
+          veiculo_segurado?: boolean | null
+          veiculos_envolvidos?: number | null
+        }
+        Update: {
+          afastamento?: boolean | null
+          afastamento_15_dias?: boolean | null
+          atendimento_medico?: boolean | null
+          beneficio_recebido?: string | null
+          bo_status?: string | null
+          cidade_uf_evento?: string | null
+          client_id?: string
+          concluido_em?: string | null
+          concluido_por?: string | null
+          contribuia_inss?: boolean | null
+          created_at?: string
+          culpa_cliente?: string | null
+          dano_material_comprovavel?: boolean | null
+          danos_materiais?: string[] | null
+          data_evento?: string | null
+          e_clt?: boolean | null
+          e_motorista_app?: boolean | null
+          empresa_cnpj?: string | null
+          fez_financiamento?: boolean | null
+          funcao_cargo?: string | null
+          havia_epi?: boolean | null
+          havia_treinamento?: boolean | null
+          houve_cat?: boolean | null
+          id?: string
+          impacto_moral?: string[] | null
+          incapacidade_atual?: string | null
+          internacao?: boolean | null
+          lesao_corporal?: boolean | null
+          obito?: boolean | null
+          perda_renda?: boolean | null
+          perfil_vitima?: string | null
+          placa_terceiro?: string | null
+          provas_disponiveis?: string[] | null
+          recebeu_beneficio?: boolean | null
+          regime_trabalho?: string | null
+          sequela_permanente?: string | null
+          sequelas?: string | null
+          status?: string | null
+          tem_cartao_credito?: boolean | null
+          tem_conta_banco?: boolean | null
+          tem_emprestimo?: boolean | null
+          terceiro_identificado?: string | null
+          terceiro_tem_seguro?: string | null
+          tipo_acidente_trabalho?: string | null
+          tipo_ocorrencia?: string | null
+          tipos_gastos?: string[] | null
+          trabalhava?: boolean | null
+          updated_at?: string
+          usa_fintech?: boolean | null
+          usava_equipamento_seguranca?: string | null
+          veiculo_cliente?: string | null
+          veiculo_financiado?: string | null
+          veiculo_segurado?: boolean | null
+          veiculos_envolvidos?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_checklist_ia_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -662,6 +851,190 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_seguradoras: {
+        Row: {
+          client_id: string
+          created_at: string
+          data_vigencia_fim: string | null
+          data_vigencia_inicio: string | null
+          id: string
+          nome_seguradora: string
+          numero_apolice: string | null
+          numero_certificado: string | null
+          observacoes: string | null
+          status: string | null
+          tipo_produto: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          data_vigencia_fim?: string | null
+          data_vigencia_inicio?: string | null
+          id?: string
+          nome_seguradora: string
+          numero_apolice?: string | null
+          numero_certificado?: string | null
+          observacoes?: string | null
+          status?: string | null
+          tipo_produto?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          data_vigencia_fim?: string | null
+          data_vigencia_inicio?: string | null
+          id?: string
+          nome_seguradora?: string
+          numero_apolice?: string | null
+          numero_certificado?: string | null
+          observacoes?: string | null
+          status?: string | null
+          tipo_produto?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_seguradoras_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_workflow: {
+        Row: {
+          bau_acionado: boolean | null
+          bau_id: string | null
+          bau_status: string | null
+          bo_data: string | null
+          bo_numero: string | null
+          bo_orgao: string | null
+          bo_status: string | null
+          checklist_ia_status: string | null
+          client_id: string
+          cliente_cadastrado: boolean | null
+          created_at: string
+          financeiro_liberado: boolean | null
+          id: string
+          juridico_liberado: boolean | null
+          laudo_cid: string | null
+          laudo_crm: string | null
+          laudo_data: string | null
+          laudo_medico: string | null
+          laudo_status: string | null
+          laudo_tipo_incapacidade: string | null
+          pericia_liberada: boolean | null
+          protocolo_id: string | null
+          protocolo_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          bau_acionado?: boolean | null
+          bau_id?: string | null
+          bau_status?: string | null
+          bo_data?: string | null
+          bo_numero?: string | null
+          bo_orgao?: string | null
+          bo_status?: string | null
+          checklist_ia_status?: string | null
+          client_id: string
+          cliente_cadastrado?: boolean | null
+          created_at?: string
+          financeiro_liberado?: boolean | null
+          id?: string
+          juridico_liberado?: boolean | null
+          laudo_cid?: string | null
+          laudo_crm?: string | null
+          laudo_data?: string | null
+          laudo_medico?: string | null
+          laudo_status?: string | null
+          laudo_tipo_incapacidade?: string | null
+          pericia_liberada?: boolean | null
+          protocolo_id?: string | null
+          protocolo_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bau_acionado?: boolean | null
+          bau_id?: string | null
+          bau_status?: string | null
+          bo_data?: string | null
+          bo_numero?: string | null
+          bo_orgao?: string | null
+          bo_status?: string | null
+          checklist_ia_status?: string | null
+          client_id?: string
+          cliente_cadastrado?: boolean | null
+          created_at?: string
+          financeiro_liberado?: boolean | null
+          id?: string
+          juridico_liberado?: boolean | null
+          laudo_cid?: string | null
+          laudo_crm?: string | null
+          laudo_data?: string | null
+          laudo_medico?: string | null
+          laudo_status?: string | null
+          laudo_tipo_incapacidade?: string | null
+          pericia_liberada?: boolean | null
+          protocolo_id?: string | null
+          protocolo_status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_workflow_bau_id_fkey"
+            columns: ["bau_id"]
+            isOneToOne: false
+            referencedRelation: "client_baus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_workflow_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_workflow_log: {
+        Row: {
+          campo_alterado: string
+          created_at: string
+          id: string
+          usuario_id: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+          workflow_id: string
+        }
+        Insert: {
+          campo_alterado: string
+          created_at?: string
+          id?: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+          workflow_id: string
+        }
+        Update: {
+          campo_alterado?: string
+          created_at?: string
+          id?: string
+          usuario_id?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_workflow_log_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "client_workflow"
             referencedColumns: ["id"]
           },
         ]
@@ -896,6 +1269,9 @@ export type Database = {
           observacoes: string | null
           pago_em: string | null
           pago_por: string | null
+          revertido_em: string | null
+          revertido_motivo: string | null
+          revertido_por: string | null
           status: string
           tipo_indenizacao: string
           updated_at: string
@@ -915,6 +1291,9 @@ export type Database = {
           observacoes?: string | null
           pago_em?: string | null
           pago_por?: string | null
+          revertido_em?: string | null
+          revertido_motivo?: string | null
+          revertido_por?: string | null
           status?: string
           tipo_indenizacao: string
           updated_at?: string
@@ -934,6 +1313,9 @@ export type Database = {
           observacoes?: string | null
           pago_em?: string | null
           pago_por?: string | null
+          revertido_em?: string | null
+          revertido_motivo?: string | null
+          revertido_por?: string | null
           status?: string
           tipo_indenizacao?: string
           updated_at?: string
@@ -1401,6 +1783,101 @@ export type Database = {
             columns: ["processo_id"]
             isOneToOne: false
             referencedRelation: "processos_judiciais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospitais: {
+        Row: {
+          bairro: string
+          cep: string
+          cidade: string
+          created_at: string
+          critico: boolean | null
+          email: string | null
+          id: string
+          motivo_critico: string | null
+          nome: string
+          numero: string
+          rua: string
+          telefone1: string
+          telefone2: string | null
+          total_atrasos: number | null
+          total_incompletos: number | null
+          updated_at: string
+        }
+        Insert: {
+          bairro: string
+          cep: string
+          cidade: string
+          created_at?: string
+          critico?: boolean | null
+          email?: string | null
+          id?: string
+          motivo_critico?: string | null
+          nome: string
+          numero: string
+          rua: string
+          telefone1: string
+          telefone2?: string | null
+          total_atrasos?: number | null
+          total_incompletos?: number | null
+          updated_at?: string
+        }
+        Update: {
+          bairro?: string
+          cep?: string
+          cidade?: string
+          created_at?: string
+          critico?: boolean | null
+          email?: string | null
+          id?: string
+          motivo_critico?: string | null
+          nome?: string
+          numero?: string
+          rua?: string
+          telefone1?: string
+          telefone2?: string | null
+          total_atrasos?: number | null
+          total_incompletos?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ia_analises_cliente: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          modelo_utilizado: string | null
+          resultado_ia: string | null
+          texto_observacao: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          modelo_utilizado?: string | null
+          resultado_ia?: string | null
+          texto_observacao?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          modelo_utilizado?: string | null
+          resultado_ia?: string | null
+          texto_observacao?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ia_analises_cliente_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -2782,12 +3259,14 @@ export type Database = {
           natureza: string
           observacoes: string | null
           orgao_responsavel: string | null
+          origem: string | null
           prazo_estimado: string | null
           prioridade: string | null
           seguradora_id: string | null
           sla_dias: number | null
           status: string
           subtipo: string | null
+          tema: string | null
           tipo: string
           updated_at: string
         }
@@ -2803,12 +3282,14 @@ export type Database = {
           natureza: string
           observacoes?: string | null
           orgao_responsavel?: string | null
+          origem?: string | null
           prazo_estimado?: string | null
           prioridade?: string | null
           seguradora_id?: string | null
           sla_dias?: number | null
           status?: string
           subtipo?: string | null
+          tema?: string | null
           tipo: string
           updated_at?: string
         }
@@ -2824,12 +3305,14 @@ export type Database = {
           natureza?: string
           observacoes?: string | null
           orgao_responsavel?: string | null
+          origem?: string | null
           prazo_estimado?: string | null
           prioridade?: string | null
           seguradora_id?: string | null
           sla_dias?: number | null
           status?: string
           subtipo?: string | null
+          tema?: string | null
           tipo?: string
           updated_at?: string
         }

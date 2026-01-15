@@ -499,8 +499,13 @@ export function useComissoesPagas(periodo?: { inicio: string; fim: string }) {
         });
       }
 
-      return data?.map((c) => ({
+      return (data || []).map((c) => ({
         ...c,
+        clients: c.clients ? {
+          ...c.clients,
+          accident_date: (c.clients as any).accident_date || null,
+          accident_type: (c.clients as any).accident_type || null,
+        } : undefined,
         created_by_profile: c.created_by ? profilesMap[c.created_by] : undefined,
         pago_por_profile: c.pago_por ? profilesMap[c.pago_por] : undefined,
       })) as Comissao[];
