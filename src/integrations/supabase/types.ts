@@ -226,6 +226,81 @@ export type Database = {
           },
         ]
       }
+      andamentos_ia_analise: {
+        Row: {
+          acao_exigida: string | null
+          alerta_1_dia: boolean | null
+          alerta_10_dias: boolean | null
+          alerta_5_dias: boolean | null
+          analisado_em: string | null
+          andamento_id: string
+          categoria_andamento: string | null
+          created_at: string
+          gera_prazo: boolean | null
+          id: string
+          modelo_utilizado: string | null
+          prazo_data_final: string | null
+          prazo_dias_uteis: number | null
+          processo_id: string
+          quem_deve_agir: string | null
+          texto_original: string
+          tipo_peca_provavel: string | null
+        }
+        Insert: {
+          acao_exigida?: string | null
+          alerta_1_dia?: boolean | null
+          alerta_10_dias?: boolean | null
+          alerta_5_dias?: boolean | null
+          analisado_em?: string | null
+          andamento_id: string
+          categoria_andamento?: string | null
+          created_at?: string
+          gera_prazo?: boolean | null
+          id?: string
+          modelo_utilizado?: string | null
+          prazo_data_final?: string | null
+          prazo_dias_uteis?: number | null
+          processo_id: string
+          quem_deve_agir?: string | null
+          texto_original: string
+          tipo_peca_provavel?: string | null
+        }
+        Update: {
+          acao_exigida?: string | null
+          alerta_1_dia?: boolean | null
+          alerta_10_dias?: boolean | null
+          alerta_5_dias?: boolean | null
+          analisado_em?: string | null
+          andamento_id?: string
+          categoria_andamento?: string | null
+          created_at?: string
+          gera_prazo?: boolean | null
+          id?: string
+          modelo_utilizado?: string | null
+          prazo_data_final?: string | null
+          prazo_dias_uteis?: number | null
+          processo_id?: string
+          quem_deve_agir?: string | null
+          texto_original?: string
+          tipo_peca_provavel?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "andamentos_ia_analise_andamento_id_fkey"
+            columns: ["andamento_id"]
+            isOneToOne: false
+            referencedRelation: "andamentos_processo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "andamentos_ia_analise_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos_judiciais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       andamentos_processo: {
         Row: {
           codigo_movimento: number | null
@@ -2464,6 +2539,44 @@ export type Database = {
           },
         ]
       }
+      processo_ia_historico: {
+        Row: {
+          created_at: string
+          id: string
+          modelo_utilizado: string | null
+          processo_id: string
+          resultado_analise: Json | null
+          tipo_analise: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          modelo_utilizado?: string | null
+          processo_id: string
+          resultado_analise?: Json | null
+          tipo_analise: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          modelo_utilizado?: string | null
+          processo_id?: string
+          resultado_analise?: Json | null
+          tipo_analise?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processo_ia_historico_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos_judiciais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processos: {
         Row: {
           advogado_id: string | null
@@ -2561,17 +2674,21 @@ export type Database = {
       }
       processos_judiciais: {
         Row: {
+          advogado_auxiliar_id: string | null
           alerta_prazo_dias: number | null
           assunto_principal: string | null
           assuntos_secundarios: string[] | null
           autor_documento: string | null
           autor_nome: string | null
           autor_tipo: string | null
+          bau_vinculado_id: string | null
           cadastrado_por: string | null
           classe_processual: string | null
+          cliente_id: string | null
           comarca: string | null
           created_at: string
           custas_iniciais: number | null
+          custas_totais: number | null
           dados_completos: Json | null
           data_audiencia: string | null
           data_citacao: string | null
@@ -2581,9 +2698,21 @@ export type Database = {
           data_pericia: string | null
           data_sentenca: string | null
           data_ultima_movimentacao: string | null
+          dias_parado: number | null
           diferenca_valores: number | null
           etiquetas: string[] | null
           grau: string | null
+          honorarios_estimados: number | null
+          ia_acao_necessaria: string | null
+          ia_analisado_em: string | null
+          ia_depende_bau: boolean | null
+          ia_depende_cliente: boolean | null
+          ia_depende_pericia: boolean | null
+          ia_entendimento: string | null
+          ia_impacto_financeiro: string | null
+          ia_proxima_acao_sugerida: string | null
+          ia_resumo_processo: string | null
+          ia_risco_processual: string | null
           id: string
           indenizacao_paga: number | null
           indenizacao_pleiteada: number | null
@@ -2591,8 +2720,14 @@ export type Database = {
           link_externo: string | null
           numero_processo: string
           observacoes_estrategicas: string | null
+          prazo_aberto: boolean | null
+          prazo_acao_quem: string | null
+          prazo_data_final: string | null
+          prazo_dias_restantes: number | null
           prazo_processual: string | null
           prioridade: string | null
+          processo_critico: boolean | null
+          processo_parado: boolean | null
           proxima_acao: string | null
           responsavel_id: string | null
           reu_documento: string | null
@@ -2601,6 +2736,7 @@ export type Database = {
           sincronizado_em: string | null
           status: string | null
           status_detalhado: string | null
+          tipo_prazo: string | null
           tribunal: string | null
           ultima_movimentacao: string | null
           updated_at: string
@@ -2609,17 +2745,21 @@ export type Database = {
           vara: string | null
         }
         Insert: {
+          advogado_auxiliar_id?: string | null
           alerta_prazo_dias?: number | null
           assunto_principal?: string | null
           assuntos_secundarios?: string[] | null
           autor_documento?: string | null
           autor_nome?: string | null
           autor_tipo?: string | null
+          bau_vinculado_id?: string | null
           cadastrado_por?: string | null
           classe_processual?: string | null
+          cliente_id?: string | null
           comarca?: string | null
           created_at?: string
           custas_iniciais?: number | null
+          custas_totais?: number | null
           dados_completos?: Json | null
           data_audiencia?: string | null
           data_citacao?: string | null
@@ -2629,9 +2769,21 @@ export type Database = {
           data_pericia?: string | null
           data_sentenca?: string | null
           data_ultima_movimentacao?: string | null
+          dias_parado?: number | null
           diferenca_valores?: number | null
           etiquetas?: string[] | null
           grau?: string | null
+          honorarios_estimados?: number | null
+          ia_acao_necessaria?: string | null
+          ia_analisado_em?: string | null
+          ia_depende_bau?: boolean | null
+          ia_depende_cliente?: boolean | null
+          ia_depende_pericia?: boolean | null
+          ia_entendimento?: string | null
+          ia_impacto_financeiro?: string | null
+          ia_proxima_acao_sugerida?: string | null
+          ia_resumo_processo?: string | null
+          ia_risco_processual?: string | null
           id?: string
           indenizacao_paga?: number | null
           indenizacao_pleiteada?: number | null
@@ -2639,8 +2791,14 @@ export type Database = {
           link_externo?: string | null
           numero_processo: string
           observacoes_estrategicas?: string | null
+          prazo_aberto?: boolean | null
+          prazo_acao_quem?: string | null
+          prazo_data_final?: string | null
+          prazo_dias_restantes?: number | null
           prazo_processual?: string | null
           prioridade?: string | null
+          processo_critico?: boolean | null
+          processo_parado?: boolean | null
           proxima_acao?: string | null
           responsavel_id?: string | null
           reu_documento?: string | null
@@ -2649,6 +2807,7 @@ export type Database = {
           sincronizado_em?: string | null
           status?: string | null
           status_detalhado?: string | null
+          tipo_prazo?: string | null
           tribunal?: string | null
           ultima_movimentacao?: string | null
           updated_at?: string
@@ -2657,17 +2816,21 @@ export type Database = {
           vara?: string | null
         }
         Update: {
+          advogado_auxiliar_id?: string | null
           alerta_prazo_dias?: number | null
           assunto_principal?: string | null
           assuntos_secundarios?: string[] | null
           autor_documento?: string | null
           autor_nome?: string | null
           autor_tipo?: string | null
+          bau_vinculado_id?: string | null
           cadastrado_por?: string | null
           classe_processual?: string | null
+          cliente_id?: string | null
           comarca?: string | null
           created_at?: string
           custas_iniciais?: number | null
+          custas_totais?: number | null
           dados_completos?: Json | null
           data_audiencia?: string | null
           data_citacao?: string | null
@@ -2677,9 +2840,21 @@ export type Database = {
           data_pericia?: string | null
           data_sentenca?: string | null
           data_ultima_movimentacao?: string | null
+          dias_parado?: number | null
           diferenca_valores?: number | null
           etiquetas?: string[] | null
           grau?: string | null
+          honorarios_estimados?: number | null
+          ia_acao_necessaria?: string | null
+          ia_analisado_em?: string | null
+          ia_depende_bau?: boolean | null
+          ia_depende_cliente?: boolean | null
+          ia_depende_pericia?: boolean | null
+          ia_entendimento?: string | null
+          ia_impacto_financeiro?: string | null
+          ia_proxima_acao_sugerida?: string | null
+          ia_resumo_processo?: string | null
+          ia_risco_processual?: string | null
           id?: string
           indenizacao_paga?: number | null
           indenizacao_pleiteada?: number | null
@@ -2687,8 +2862,14 @@ export type Database = {
           link_externo?: string | null
           numero_processo?: string
           observacoes_estrategicas?: string | null
+          prazo_aberto?: boolean | null
+          prazo_acao_quem?: string | null
+          prazo_data_final?: string | null
+          prazo_dias_restantes?: number | null
           prazo_processual?: string | null
           prioridade?: string | null
+          processo_critico?: boolean | null
+          processo_parado?: boolean | null
           proxima_acao?: string | null
           responsavel_id?: string | null
           reu_documento?: string | null
@@ -2697,6 +2878,7 @@ export type Database = {
           sincronizado_em?: string | null
           status?: string | null
           status_detalhado?: string | null
+          tipo_prazo?: string | null
           tribunal?: string | null
           ultima_movimentacao?: string | null
           updated_at?: string
@@ -2705,6 +2887,27 @@ export type Database = {
           vara?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "processos_judiciais_advogado_auxiliar_id_fkey"
+            columns: ["advogado_auxiliar_id"]
+            isOneToOne: false
+            referencedRelation: "advogados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processos_judiciais_bau_vinculado_id_fkey"
+            columns: ["bau_vinculado_id"]
+            isOneToOne: false
+            referencedRelation: "client_baus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processos_judiciais_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "processos_judiciais_responsavel_id_fkey"
             columns: ["responsavel_id"]
