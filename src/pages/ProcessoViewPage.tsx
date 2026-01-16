@@ -11,13 +11,16 @@ import {
   ArrowLeft, Scale, FileText, Clock, AlertTriangle, CheckCircle, 
   Users, DollarSign, Calendar, Brain, Loader2, RefreshCw,
   Gavel, Building, MapPin, User, Briefcase, AlertCircle, 
-  History, FileStack, Upload, ExternalLink, Eye
+  History, FileStack, Upload, ExternalLink, Eye, Bell
 } from 'lucide-react';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAnalisarProcessoIA, useProcessoIAHistorico, useAndamentosIAAnalise } from '@/hooks/useProcessoIA';
+import { AndamentoTeorCompleto } from '@/components/processos/AndamentoTeorCompleto';
+import { ProcessoAlertasRealtime } from '@/components/processos/ProcessoAlertasRealtime';
+import { SincronizacaoAutomatica } from '@/components/processos/SincronizacaoAutomatica';
 
 const STATUS_LABELS: Record<string, string> = {
   em_andamento: 'Em Andamento',
@@ -261,10 +264,14 @@ export default function ProcessoViewPage() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
             <TabsTrigger value="ia">🧠 IA</TabsTrigger>
             <TabsTrigger value="andamentos">Andamentos</TabsTrigger>
+            <TabsTrigger value="alertas" className="relative">
+              <Bell className="h-4 w-4 mr-1" />
+              Alertas
+            </TabsTrigger>
             <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
             <TabsTrigger value="documentos">Documentos</TabsTrigger>
             <TabsTrigger value="historico">Histórico</TabsTrigger>
@@ -510,39 +517,39 @@ export default function ProcessoViewPage() {
             )}
           </TabsContent>
 
-          {/* Tab Andamentos */}
+          {/* Tab Andamentos - COM TEOR COMPLETO */}
           <TabsContent value="andamentos" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Linha do Tempo
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    Linha do Tempo com Teor Completo
+                  </CardTitle>
+                  <Badge variant="outline" className="text-xs">
+                    {andamentos?.length || 0} andamentos
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[500px]">
+                <ScrollArea className="h-[600px] pr-4">
                   {andamentos && andamentos.length > 0 ? (
-                    <div className="space-y-4">
-                      {andamentos.map((andamento: any, index: number) => (
-                        <div 
-                          key={andamento.id} 
-                          className={`relative pl-6 pb-4 ${index !== andamentos.length - 1 ? 'border-l-2 border-muted' : ''}`}
-                        >
-                          <div className="absolute left-[-5px] top-0 w-3 h-3 rounded-full bg-primary" />
-                          <div className="p-4 bg-muted/30 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <Badge variant="outline">
-                                {format(parseISO(andamento.data_andamento), "dd/MM/yyyy", { locale: ptBR })}
-                              </Badge>
-                              {andamento.destaque && <Badge variant="destructive">Destaque</Badge>}
-                            </div>
-                            <p className="text-sm">{andamento.descricao}</p>
-                            {andamento.complemento && (
-                              <p className="text-xs text-muted-foreground mt-2">{andamento.complemento}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="space-y-2">
+                      {andamentos.map((andamento: any, index: number) => {
+                        // Buscar análise IA do andamento
+                        const iaAnalise = andamentosIA?.find(
+                          (ia: any) => ia.andamento_id === andamento.id
+                        );
+                        
+                        return (
+                          <AndamentoTeorCompleto
+                            key={andamento.id}
+                            andamento={andamento}
+                            iaAnalise={iaAnalise}
+                            isLast={index === andamentos.length - 1}
+                          />
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
@@ -553,6 +560,14 @@ export default function ProcessoViewPage() {
                 </ScrollArea>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Tab Alertas em Tempo Real */}
+          <TabsContent value="alertas" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <ProcessoAlertasRealtime processoId={id} />
+              <SincronizacaoAutomatica intervaloMinutos={360} />
+            </div>
           </TabsContent>
 
           {/* Tab Financeiro */}
