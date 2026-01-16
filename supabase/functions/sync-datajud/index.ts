@@ -130,7 +130,7 @@ serve(async (req) => {
           // Busca todos os processos com paginação
           let page = 0;
           let hasMore = true;
-          const pageSize = 1000; // Máximo permitido pelo DataJud
+          const pageSize = 100; // Menor para evitar timeout e sobrecarga
           
           while (hasMore && page < max_pages) {
             const from = page * pageSize;
@@ -295,35 +295,29 @@ async function consultarDataJudPaginado(
     query: {
       bool: {
         should: [
-          // Busca pelo formato padrão OAB: 12345/ES
+          // Melhor caso: campos estruturados (sem nested)
           {
-            query_string: {
-              query: `"${oabBusca}"`,
-              default_operator: "AND"
+            bool: {
+              must: [
+                { match: { "advogados.inscricao": numeroOab } },
+                { match: { "advogados.uf": uf.toUpperCase() } }
+              ]
             }
           },
-          // Busca alternativa: OAB 12345 ES
+          // Fallback genérico (campo pode ser texto/array)
           {
             query_string: {
-              query: `"${numeroOab}" AND "${uf.toUpperCase()}"`,
-              default_operator: "AND"
-            }
-          },
-          // Busca pelo número da inscrição
-          {
-            multi_match: {
-              query: numeroOab,
-              fields: ["*inscricao*", "*oab*", "*advogado*"],
-              type: "phrase"
+              query: `"${oabBusca}" OR "${oabBuscaAlternativa}" OR ("${numeroOab}" AND "${uf.toUpperCase()}")`,
+              fields: ["*"],
+              default_operator: "AND",
+              lenient: true
             }
           }
         ],
         minimum_should_match: 1
       }
     },
-    sort: [
-      { "dataAjuizamento": { "order": "desc" } }
-    ]
+    sort: [{ "dataAjuizamento": { "order": "desc" } }]
   };
 
   console.log(`Consultando DataJud OAB ${numeroOab}/${uf} - Tribunal: ${tribunal}, Size: ${size}, From: ${from}`);
