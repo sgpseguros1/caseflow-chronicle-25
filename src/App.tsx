@@ -51,6 +51,7 @@ import ProcessoViewPage from "./pages/ProcessoViewPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
 import ComissoesPage from "./pages/ComissoesPage";
 import PainelGeralPage from "./pages/PainelGeralPage";
+import MonitoramentoRealtimePage from "./pages/MonitoramentoRealtimePage";
 import NotFound from "./pages/NotFound";
 import CalendarioPage from "./pages/CalendarioPage";
 import { Loader2 } from "lucide-react";
@@ -80,6 +81,7 @@ const App = () => (
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           <Route path="/painel-geral" element={<ProtectedRoute><PainelGeralPage /></ProtectedRoute>} />
+          <Route path="/monitoramento" element={<ProtectedRoute><MonitoramentoRealtimePage /></ProtectedRoute>} />
           {/* Cadastros */}
           <Route path="/cadastros/gestores" element={<ProtectedRoute><GestoresPage /></ProtectedRoute>} />
           <Route path="/cadastros/gestores/novo" element={<ProtectedRoute><GestorFormPage /></ProtectedRoute>} />
