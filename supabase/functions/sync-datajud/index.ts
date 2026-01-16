@@ -283,9 +283,11 @@ async function consultarDataJudPaginado(
 ): Promise<{ processos: DataJudProcesso[]; total: number }> {
   const baseUrl = `https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal.toLowerCase()}/_search`;
 
-  // CORREÇÃO: Query FILTRA pela OAB específica do advogado
-  // Isso busca apenas processos onde o advogado com essa OAB atua
-  const oabFormatada = `${numeroOab}${uf.toUpperCase()}`;
+  // Query simples que funciona em TODOS os tribunais
+  // A API DataJud não suporta nested queries em todos os índices
+  // Usamos query_string para buscar pela OAB nos campos disponíveis
+  const oabBusca = `${numeroOab}/${uf.toUpperCase()}`;
+  const oabBuscaAlternativa = `OAB ${numeroOab} ${uf.toUpperCase()}`;
   
   const query = {
     size: size,
@@ -293,25 +295,26 @@ async function consultarDataJudPaginado(
     query: {
       bool: {
         should: [
-          // Busca pela OAB no campo de advogados
+          // Busca pelo formato padrão OAB: 12345/ES
           {
-            nested: {
-              path: "advogados",
-              query: {
-                bool: {
-                  must: [
-                    { match: { "advogados.inscricao": numeroOab } },
-                    { match: { "advogados.uf": uf.toUpperCase() } }
-                  ]
-                }
-              }
+            query_string: {
+              query: `"${oabBusca}"`,
+              default_operator: "AND"
             }
           },
-          // Busca alternativa pelo número da OAB nos dados gerais
+          // Busca alternativa: OAB 12345 ES
           {
             query_string: {
               query: `"${numeroOab}" AND "${uf.toUpperCase()}"`,
-              fields: ["*"]
+              default_operator: "AND"
+            }
+          },
+          // Busca pelo número da inscrição
+          {
+            multi_match: {
+              query: numeroOab,
+              fields: ["*inscricao*", "*oab*", "*advogado*"],
+              type: "phrase"
             }
           }
         ],
