@@ -50,6 +50,7 @@ import ProcessosJudiciaisPage from "./pages/ProcessosJudiciaisPage";
 import ProcessoViewPage from "./pages/ProcessoViewPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
 import ComissoesPage from "./pages/ComissoesPage";
+import PainelGeralPage from "./pages/PainelGeralPage";
 import NotFound from "./pages/NotFound";
 import CalendarioPage from "./pages/CalendarioPage";
 import { Loader2 } from "lucide-react";
@@ -78,6 +79,7 @@ const App = () => (
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/painel-geral" element={<ProtectedRoute><PainelGeralPage /></ProtectedRoute>} />
           {/* Cadastros */}
           <Route path="/cadastros/gestores" element={<ProtectedRoute><GestoresPage /></ProtectedRoute>} />
           <Route path="/cadastros/gestores/novo" element={<ProtectedRoute><GestorFormPage /></ProtectedRoute>} />
