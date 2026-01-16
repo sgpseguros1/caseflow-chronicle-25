@@ -2931,6 +2931,7 @@ export type Database = {
           numero_processo: string
           oab_id: string | null
           orgao_julgador: string | null
+          partes: Json | null
           situacao: string | null
           tribunal: string | null
           ultimo_movimento: string | null
@@ -2949,6 +2950,7 @@ export type Database = {
           numero_processo: string
           oab_id?: string | null
           orgao_julgador?: string | null
+          partes?: Json | null
           situacao?: string | null
           tribunal?: string | null
           ultimo_movimento?: string | null
@@ -2967,6 +2969,7 @@ export type Database = {
           numero_processo?: string
           oab_id?: string | null
           orgao_julgador?: string | null
+          partes?: Json | null
           situacao?: string | null
           tribunal?: string | null
           ultimo_movimento?: string | null

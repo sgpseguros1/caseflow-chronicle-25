@@ -6,21 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface DataJudMovimento {
+  nome: string;
+  dataHora: string;
+  codigo?: number;
+  complementosTabelados?: Array<{ nome: string; valor: string; descricao?: string }>;
+}
+
+interface DataJudParte {
+  nome?: string;
+  tipoParte?: string;
+  polo?: string;
+  advogados?: Array<{ nome: string; numeroOAB?: string }>;
+}
+
 interface DataJudProcesso {
   numeroProcesso: string;
   classe?: { nome: string; codigo: number };
   orgaoJulgador?: { nome: string; codigoMunicipioIBGE?: number };
   assuntos?: Array<{ nome: string; codigo: number }>;
-  movimentos?: Array<{
-    nome: string;
-    dataHora: string;
-    codigo?: number;
-    complementosTabelados?: Array<{ nome: string; valor: string }>;
-  }>;
+  movimentos?: DataJudMovimento[];
+  partes?: DataJudParte[];
   dataAjuizamento?: string;
   grau?: string;
   nivelSigilo?: number;
   formato?: { nome: string };
+  valorCausa?: number;
 }
 
 serve(async (req) => {
@@ -74,13 +85,27 @@ serve(async (req) => {
     }
 
     console.log('Processo encontrado:', processo.numeroProcesso);
+    console.log('Movimentos encontrados:', processo.movimentos?.length || 0);
+    console.log('Partes encontradas:', processo.partes?.length || 0);
 
     // Formata as datas
     const dataAjuizamento = formatarDataDataJud(processo.dataAjuizamento);
-    const dataUltimoMovimento = formatarDataDataJud(processo.movimentos?.[0]?.dataHora);
+    
+    // Pega o movimento mais recente
+    const movimentosOrdenados = (processo.movimentos || []).sort((a, b) => {
+      const dataA = a.dataHora || '';
+      const dataB = b.dataHora || '';
+      return dataB.localeCompare(dataA);
+    });
+    
+    const ultimoMovimento = movimentosOrdenados[0];
+    const dataUltimoMovimento = formatarDataDataJud(ultimoMovimento?.dataHora);
 
     // Formata o número do processo
     const numeroFormatado = formatarNumeroProcesso(processo.numeroProcesso);
+
+    // Extrai as partes formatadas
+    const partesFormatadas = formatarPartes(processo.partes);
 
     // Primeiro insere na tabela processos_sincronizados (monitoramento)
     const { data: processoSync, error: syncError } = await supabase
@@ -89,15 +114,16 @@ serve(async (req) => {
         numero_processo: numeroFormatado,
         tribunal: tribunalInfo.nome.toLowerCase(),
         classe_processual: processo.classe?.nome || null,
-        assunto: processo.assuntos?.[0]?.nome || null,
+        assunto: processo.assuntos?.map(a => a.nome).join(', ') || null,
         orgao_julgador: processo.orgaoJulgador?.nome || null,
         data_ajuizamento: dataAjuizamento,
-        ultimo_movimento: processo.movimentos?.[0]?.nome || null,
+        ultimo_movimento: ultimoMovimento?.nome || null,
         data_ultimo_movimento: dataUltimoMovimento,
         situacao: determinarSituacao(processo),
         nivel_sigilo: processo.nivelSigilo?.toString() || '0',
         link_externo: gerarLinkExterno(numeroFormatado, tribunalInfo.nome),
         dados_completos: processo,
+        partes: partesFormatadas,
       }, {
         onConflict: 'numero_processo',
       })
@@ -109,27 +135,41 @@ serve(async (req) => {
       throw syncError;
     }
 
+    console.log('Processo salvo com ID:', processoSync.id);
+
     // Insere as movimentações
-    if (processo.movimentos && processo.movimentos.length > 0) {
-      const movimentacoes = processo.movimentos.slice(0, 50).map((mov) => ({
-        processo_id: processoSync.id,
-        data_movimento: formatarDataDataJud(mov.dataHora) || new Date().toISOString(),
-        codigo_movimento: mov.codigo || null,
-        descricao: mov.nome,
-        complemento: mov.complementosTabelados?.map(c => `${c.nome}: ${c.valor}`).join('; ') || null,
-        urgente: isMovimentoUrgente(mov.nome),
-        lido: false,
-      }));
+    let movimentacoesInseridas = 0;
+    if (movimentosOrdenados.length > 0) {
+      const movimentacoes = movimentosOrdenados.slice(0, 100).map((mov) => {
+        // Extrai o teor completo da decisão/movimento
+        const complementos = mov.complementosTabelados || [];
+        const teor = extrairTeorDecisao(mov, complementos);
+        
+        return {
+          processo_id: processoSync.id,
+          data_movimento: formatarDataDataJud(mov.dataHora) || new Date().toISOString(),
+          codigo_movimento: mov.codigo || null,
+          descricao: mov.nome,
+          complemento: teor.complemento,
+          decisao_teor: teor.decisao,
+          urgente: isMovimentoUrgente(mov.nome),
+          lido: false,
+        };
+      });
 
       // Limpa movimentações antigas e insere novas
       await supabase.from('movimentacoes_processo').delete().eq('processo_id', processoSync.id);
       
-      const { error: movError } = await supabase
+      const { error: movError, data: movData } = await supabase
         .from('movimentacoes_processo')
-        .insert(movimentacoes);
+        .insert(movimentacoes)
+        .select();
 
       if (movError) {
         console.error('Erro ao inserir movimentações:', movError);
+      } else {
+        movimentacoesInseridas = movData?.length || 0;
+        console.log('Movimentações inseridas:', movimentacoesInseridas);
       }
     }
 
@@ -137,7 +177,8 @@ serve(async (req) => {
       success: true,
       numero_processo: numeroFormatado,
       processo: processoSync,
-      movimentacoes: processo.movimentos?.length || 0,
+      movimentacoes: movimentacoesInseridas,
+      partes: partesFormatadas,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -151,6 +192,42 @@ serve(async (req) => {
     });
   }
 });
+
+// Extrai teor da decisão dos complementos
+function extrairTeorDecisao(mov: DataJudMovimento, complementos: Array<{ nome: string; valor: string; descricao?: string }>) {
+  const complementoTextos: string[] = [];
+  let decisaoTeor = '';
+
+  for (const c of complementos) {
+    if (c.nome && c.valor) {
+      complementoTextos.push(`${c.nome}: ${c.valor}`);
+    }
+    // Alguns tribunais colocam o teor da decisão em campos específicos
+    if (c.nome?.toLowerCase().includes('teor') || c.nome?.toLowerCase().includes('decisão') || c.nome?.toLowerCase().includes('despacho')) {
+      decisaoTeor = c.valor || c.descricao || '';
+    }
+  }
+
+  return {
+    complemento: complementoTextos.join('; ') || null,
+    decisao: decisaoTeor || null,
+  };
+}
+
+// Formata as partes do processo
+function formatarPartes(partes?: DataJudParte[]): any[] {
+  if (!partes || partes.length === 0) return [];
+
+  return partes.map(p => ({
+    nome: p.nome || 'Não informado',
+    tipo: p.tipoParte || p.polo || 'Parte',
+    polo: p.polo || null,
+    advogados: (p.advogados || []).map(adv => ({
+      nome: adv.nome,
+      oab: adv.numeroOAB || null,
+    })),
+  }));
+}
 
 function identificarTribunal(numeroProcesso: string): { nome: string; api: string; grau: string } {
   const numero = numeroProcesso.replace(/\D/g, '');
@@ -202,13 +279,27 @@ async function buscarNoDataJud(
     try {
       const baseUrl = `https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal}/_search`;
       
+      // Query mais completa para trazer todos os dados
       const query = {
         size: 1,
         query: {
           match: {
             "numeroProcesso": numero
           }
-        }
+        },
+        _source: [
+          "numeroProcesso",
+          "classe",
+          "orgaoJulgador",
+          "assuntos",
+          "movimentos",
+          "partes",
+          "dataAjuizamento",
+          "grau",
+          "nivelSigilo",
+          "formato",
+          "valorCausa"
+        ]
       };
 
       console.log(`Tentando ${tribunal}...`);
@@ -231,8 +322,11 @@ async function buscarNoDataJud(
       const processos = data.hits?.hits?.map((hit: any) => hit._source) || [];
       
       if (processos.length > 0) {
+        const proc = processos[0];
         console.log(`Processo encontrado no ${tribunal}`);
-        return processos[0];
+        console.log(`- Movimentos: ${proc.movimentos?.length || 0}`);
+        console.log(`- Partes: ${proc.partes?.length || 0}`);
+        return proc;
       }
     } catch (error) {
       console.error(`Erro ao consultar ${tribunal}:`, error);
@@ -266,7 +360,20 @@ async function buscarPorParteDataJud(
             lenient: true
           }
         },
-        sort: [{ "dataAjuizamento": { "order": "desc" } }]
+        sort: [{ "dataAjuizamento": { "order": "desc" } }],
+        _source: [
+          "numeroProcesso",
+          "classe",
+          "orgaoJulgador",
+          "assuntos",
+          "movimentos",
+          "partes",
+          "dataAjuizamento",
+          "grau",
+          "nivelSigilo",
+          "formato",
+          "valorCausa"
+        ]
       };
 
       console.log(`Buscando por "${termoBusca}" no ${tribunal}...`);
@@ -331,7 +438,10 @@ function formatarDataDataJud(data: string | undefined): string | null {
 }
 
 function determinarSituacao(processo: DataJudProcesso): string {
-  const ultimoMovimento = processo.movimentos?.[0]?.nome?.toLowerCase() || '';
+  const movimentos = processo.movimentos || [];
+  if (movimentos.length === 0) return 'Em andamento';
+  
+  const ultimoMovimento = movimentos[0]?.nome?.toLowerCase() || '';
   
   if (ultimoMovimento.includes('arquiv') || ultimoMovimento.includes('baixa')) return 'Arquivado';
   if (ultimoMovimento.includes('sentença') || ultimoMovimento.includes('sentenca')) return 'Sentenciado';
