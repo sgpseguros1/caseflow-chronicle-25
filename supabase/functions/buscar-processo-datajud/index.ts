@@ -38,23 +38,39 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { numero_processo } = await req.json();
+    const { numero_processo, cpf, nome } = await req.json();
 
-    if (!numero_processo) {
-      throw new Error('Número do processo é obrigatório');
+    // Validar entrada
+    if (!numero_processo && !cpf && !nome) {
+      throw new Error('Informe número do processo, CPF ou nome para buscar');
     }
 
-    console.log(`Buscando processo: ${numero_processo}`);
+    console.log(`Buscando processo - CNJ: ${numero_processo}, CPF: ${cpf}, Nome: ${nome}`);
 
-    // Identifica o tribunal pelo número do processo
-    const tribunalInfo = identificarTribunal(numero_processo);
-    console.log('Tribunal identificado:', tribunalInfo);
+    let processo: DataJudProcesso | null = null;
+    let tribunalInfo = { nome: 'Não identificado', api: 'tjsp', grau: '1º Grau' };
 
-    // Busca o processo no DataJud
-    const processo = await buscarNoDataJud(numero_processo, tribunalInfo.api, datajudApiKey);
+    // Busca por número do processo (CNJ)
+    if (numero_processo) {
+      tribunalInfo = identificarTribunal(numero_processo);
+      console.log('Tribunal identificado:', tribunalInfo);
+      processo = await buscarNoDataJud(numero_processo, tribunalInfo.api, datajudApiKey);
+    } 
+    // Busca por CPF ou Nome
+    else if (cpf || nome) {
+      processo = await buscarPorParteDataJud(cpf, nome, datajudApiKey);
+      if (processo) {
+        tribunalInfo = identificarTribunal(processo.numeroProcesso);
+      }
+    }
     
     if (!processo) {
-      throw new Error('Processo não encontrado no DataJud');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Nenhum processo encontrado para os dados informados',
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('Processo encontrado:', processo.numeroProcesso);
@@ -63,78 +79,65 @@ serve(async (req) => {
     const dataAjuizamento = formatarDataDataJud(processo.dataAjuizamento);
     const dataUltimoMovimento = formatarDataDataJud(processo.movimentos?.[0]?.dataHora);
 
-    // Extrai partes do processo (se disponível nos movimentos/complementos)
-    const partes = extrairPartes(processo);
+    // Formata o número do processo
+    const numeroFormatado = formatarNumeroProcesso(processo.numeroProcesso);
 
-    // Insere ou atualiza o processo no banco
-    const { data: processoSalvo, error: insertError } = await supabase
-      .from('processos_judiciais')
+    // Primeiro insere na tabela processos_sincronizados (monitoramento)
+    const { data: processoSync, error: syncError } = await supabase
+      .from('processos_sincronizados')
       .upsert({
-        numero_processo: formatarNumeroProcesso(numero_processo),
-        tribunal: tribunalInfo.nome,
-        grau: processo.grau || tribunalInfo.grau,
+        numero_processo: numeroFormatado,
+        tribunal: tribunalInfo.nome.toLowerCase(),
         classe_processual: processo.classe?.nome || null,
-        assunto_principal: processo.assuntos?.[0]?.nome || null,
-        assuntos_secundarios: processo.assuntos?.slice(1).map(a => a.nome) || null,
-        vara: processo.orgaoJulgador?.nome || null,
-        status: determinarStatus(processo),
-        status_detalhado: processo.formato?.nome || null,
-        ultima_movimentacao: processo.movimentos?.[0]?.nome || null,
-        data_ultima_movimentacao: dataUltimoMovimento,
-        data_distribuicao: dataAjuizamento,
-        autor_nome: partes.autor || null,
-        reu_nome: partes.reu || null,
+        assunto: processo.assuntos?.[0]?.nome || null,
+        orgao_julgador: processo.orgaoJulgador?.nome || null,
+        data_ajuizamento: dataAjuizamento,
+        ultimo_movimento: processo.movimentos?.[0]?.nome || null,
+        data_ultimo_movimento: dataUltimoMovimento,
+        situacao: determinarSituacao(processo),
+        nivel_sigilo: processo.nivelSigilo?.toString() || '0',
+        link_externo: gerarLinkExterno(numeroFormatado, tribunalInfo.nome),
         dados_completos: processo,
-        link_externo: gerarLinkExterno(numero_processo, tribunalInfo.nome),
-        sincronizado_em: new Date().toISOString(),
       }, {
         onConflict: 'numero_processo',
       })
       .select()
       .single();
 
-    if (insertError) {
-      console.error('Erro ao salvar processo:', insertError);
-      throw insertError;
+    if (syncError) {
+      console.error('Erro ao salvar processo sincronizado:', syncError);
+      throw syncError;
     }
 
-    // Insere os andamentos
+    // Insere as movimentações
     if (processo.movimentos && processo.movimentos.length > 0) {
-      const andamentos = processo.movimentos.map((mov, index) => ({
-        processo_id: processoSalvo.id,
-        data_andamento: formatarDataDataJud(mov.dataHora) || new Date().toISOString(),
-        tipo: classificarTipoMovimento(mov.nome),
+      const movimentacoes = processo.movimentos.slice(0, 50).map((mov) => ({
+        processo_id: processoSync.id,
+        data_movimento: formatarDataDataJud(mov.dataHora) || new Date().toISOString(),
+        codigo_movimento: mov.codigo || null,
         descricao: mov.nome,
         complemento: mov.complementosTabelados?.map(c => `${c.nome}: ${c.valor}`).join('; ') || null,
-        codigo_movimento: mov.codigo || null,
-        destaque: isMovimentoDestaque(mov.nome),
+        urgente: isMovimentoUrgente(mov.nome),
         lido: false,
       }));
 
-      const { error: andamentosError } = await supabase
-        .from('andamentos_processo')
-        .upsert(andamentos, {
-          onConflict: 'id',
-          ignoreDuplicates: true,
-        });
+      // Limpa movimentações antigas e insere novas
+      await supabase.from('movimentacoes_processo').delete().eq('processo_id', processoSync.id);
+      
+      const { error: movError } = await supabase
+        .from('movimentacoes_processo')
+        .insert(movimentacoes);
 
-      if (andamentosError) {
-        console.error('Erro ao inserir andamentos:', andamentosError);
+      if (movError) {
+        console.error('Erro ao inserir movimentações:', movError);
       }
     }
 
-    // Registra no histórico
-    await supabase.from('historico_processo').insert({
-      processo_id: processoSalvo.id,
-      acao: 'criacao',
-      campo_alterado: 'processo',
-      valor_novo: 'Processo importado via DataJud',
-    });
-
     return new Response(JSON.stringify({
       success: true,
-      processo: processoSalvo,
-      andamentos: processo.movimentos?.length || 0,
+      numero_processo: numeroFormatado,
+      processo: processoSync,
+      movimentacoes: processo.movimentos?.length || 0,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -142,7 +145,7 @@ serve(async (req) => {
   } catch (error: unknown) {
     console.error('Erro:', error);
     const message = error instanceof Error ? error.message : 'Erro desconhecido';
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ success: false, error: message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -152,18 +155,24 @@ serve(async (req) => {
 function identificarTribunal(numeroProcesso: string): { nome: string; api: string; grau: string } {
   const numero = numeroProcesso.replace(/\D/g, '');
   
-  // Formato CNJ: NNNNNNN-DD.AAAA.J.TR.OOOO
-  // J = Justiça (8=Estadual, 4=Federal, 5=Trabalho, 2=STF, 3=STJ)
-  // TR = Tribunal
-  
   if (numero.length >= 20) {
     const justica = numero.charAt(13);
     const tribunal = numero.substring(14, 16);
     const grau = numero.charAt(16) === '0' ? '1º Grau' : '2º Grau';
 
+    // Mapeamento de tribunais estaduais
+    const tjMap: { [key: string]: string } = {
+      '01': 'TJAC', '02': 'TJAL', '03': 'TJAP', '04': 'TJAM', '05': 'TJBA',
+      '06': 'TJCE', '07': 'TJDF', '08': 'TJES', '09': 'TJGO', '10': 'TJMA',
+      '11': 'TJMT', '12': 'TJMS', '13': 'TJMG', '14': 'TJPA', '15': 'TJPB',
+      '16': 'TJPR', '17': 'TJPE', '18': 'TJPI', '19': 'TJRJ', '20': 'TJRN',
+      '21': 'TJRS', '22': 'TJRO', '23': 'TJRR', '24': 'TJSC', '25': 'TJSP', '26': 'TJSE', '27': 'TJTO',
+    };
+
     switch (justica) {
       case '8': // Justiça Estadual
-        return { nome: `TJSP`, api: 'tjsp', grau }; // Simplificado para SP
+        const tjNome = tjMap[tribunal] || 'TJ' + tribunal;
+        return { nome: tjNome, api: tjNome.toLowerCase(), grau };
       case '4': // Justiça Federal
         return { nome: `TRF${tribunal}`, api: `trf${tribunal}`, grau };
       case '5': // Justiça do Trabalho
@@ -175,7 +184,6 @@ function identificarTribunal(numeroProcesso: string): { nome: string; api: strin
     }
   }
 
-  // Padrão: tentar nos principais tribunais
   return { nome: 'Não identificado', api: 'tjsp', grau: '1º Grau' };
 }
 
@@ -184,20 +192,21 @@ async function buscarNoDataJud(
   tribunalApi: string,
   apiKey: string
 ): Promise<DataJudProcesso | null> {
-  const numero = formatarNumeroProcesso(numeroProcesso);
+  const numero = numeroProcesso.replace(/\D/g, '');
   
-  // Lista de tribunais para tentar
-  const tribunais = [tribunalApi, 'tjsp', 'tjrj', 'tjmg', 'trf1', 'trf2', 'trf3', 'trf4', 'trf5'];
+  // Lista de tribunais para tentar - começa pelo identificado
+  const tribunaisBase = ['tjsp', 'tjrj', 'tjmg', 'tjes', 'tjba', 'tjpr', 'tjrs', 'tjsc', 'trf1', 'trf2', 'trf3', 'trf4', 'trf5'];
+  const tribunais = [tribunalApi.toLowerCase(), ...tribunaisBase.filter(t => t !== tribunalApi.toLowerCase())];
   
-  for (const tribunal of tribunais) {
+  for (const tribunal of tribunais.slice(0, 5)) { // Limita a 5 tentativas
     try {
-      const baseUrl = `https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal.toLowerCase()}/_search`;
+      const baseUrl = `https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal}/_search`;
       
       const query = {
         size: 1,
         query: {
           match: {
-            "numeroProcesso": numero.replace(/\D/g, '')
+            "numeroProcesso": numero
           }
         }
       };
@@ -224,6 +233,64 @@ async function buscarNoDataJud(
       if (processos.length > 0) {
         console.log(`Processo encontrado no ${tribunal}`);
         return processos[0];
+      }
+    } catch (error) {
+      console.error(`Erro ao consultar ${tribunal}:`, error);
+    }
+  }
+
+  return null;
+}
+
+async function buscarPorParteDataJud(
+  cpf: string | undefined,
+  nome: string | undefined,
+  apiKey: string
+): Promise<DataJudProcesso | null> {
+  // DataJud público não permite busca direta por CPF/nome das partes
+  // Tenta buscar em múltiplos tribunais usando query genérica
+  
+  const tribunais = ['tjsp', 'tjrj', 'tjmg', 'tjes', 'tjba', 'tjpr'];
+  const termoBusca = cpf || nome || '';
+  
+  for (const tribunal of tribunais) {
+    try {
+      const baseUrl = `https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal}/_search`;
+      
+      const query = {
+        size: 5,
+        query: {
+          query_string: {
+            query: `"${termoBusca}"`,
+            default_operator: "AND",
+            lenient: true
+          }
+        },
+        sort: [{ "dataAjuizamento": { "order": "desc" } }]
+      };
+
+      console.log(`Buscando por "${termoBusca}" no ${tribunal}...`);
+      
+      const response = await fetch(baseUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `APIKey ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(query),
+      });
+
+      if (!response.ok) {
+        console.log(`${tribunal} retornou ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json();
+      const processos = data.hits?.hits?.map((hit: any) => hit._source) || [];
+      
+      if (processos.length > 0) {
+        console.log(`Encontrado ${processos.length} processos no ${tribunal}`);
+        return processos[0]; // Retorna o mais recente
       }
     } catch (error) {
       console.error(`Erro ao consultar ${tribunal}:`, error);
@@ -263,75 +330,58 @@ function formatarDataDataJud(data: string | undefined): string | null {
   return null;
 }
 
-function determinarStatus(processo: DataJudProcesso): string {
+function determinarSituacao(processo: DataJudProcesso): string {
   const ultimoMovimento = processo.movimentos?.[0]?.nome?.toLowerCase() || '';
   
-  if (ultimoMovimento.includes('arquiv')) return 'arquivado';
-  if (ultimoMovimento.includes('sentença') || ultimoMovimento.includes('sentenca')) return 'sentenciado';
-  if (ultimoMovimento.includes('audiência') || ultimoMovimento.includes('audiencia')) return 'aguardando_audiencia';
-  if (ultimoMovimento.includes('perícia') || ultimoMovimento.includes('pericia')) return 'aguardando_pericia';
-  if (ultimoMovimento.includes('conclus')) return 'concluso_decisao';
-  if (ultimoMovimento.includes('recurso')) return 'em_recurso';
-  if (ultimoMovimento.includes('pago') || ultimoMovimento.includes('cumprido')) return 'pago_cumprido';
+  if (ultimoMovimento.includes('arquiv') || ultimoMovimento.includes('baixa')) return 'Arquivado';
+  if (ultimoMovimento.includes('sentença') || ultimoMovimento.includes('sentenca')) return 'Sentenciado';
+  if (ultimoMovimento.includes('transit')) return 'Transitado em Julgado';
   
-  return 'em_andamento';
+  return 'Em andamento';
 }
 
-function classificarTipoMovimento(nome: string): string {
-  const lower = nome.toLowerCase();
-  
-  if (lower.includes('despacho')) return 'despacho';
-  if (lower.includes('decisão') || lower.includes('decisao')) return 'decisao';
-  if (lower.includes('sentença') || lower.includes('sentenca')) return 'sentenca';
-  if (lower.includes('audiência') || lower.includes('audiencia')) return 'audiencia';
-  if (lower.includes('arquiv')) return 'arquivamento';
-  if (lower.includes('recurso')) return 'recurso';
-  if (lower.includes('citação') || lower.includes('citacao')) return 'citacao';
-  if (lower.includes('intimação') || lower.includes('intimacao')) return 'intimacao';
-  
-  return 'movimentacao';
-}
-
-function isMovimentoDestaque(nome: string): boolean {
+function isMovimentoUrgente(nome: string): boolean {
   const lower = nome.toLowerCase();
   return (
     lower.includes('sentença') ||
     lower.includes('sentenca') ||
     lower.includes('decisão') ||
     lower.includes('decisao') ||
+    lower.includes('prazo') ||
+    lower.includes('citação') ||
+    lower.includes('citacao') ||
+    lower.includes('intimação') ||
+    lower.includes('intimacao') ||
     lower.includes('audiência') ||
     lower.includes('audiencia') ||
-    lower.includes('arquiv') ||
-    lower.includes('recurso') ||
-    lower.includes('prazo')
+    lower.includes('perícia') ||
+    lower.includes('pericia')
   );
-}
-
-function extrairPartes(processo: DataJudProcesso): { autor: string | null; reu: string | null } {
-  // DataJud geralmente não retorna partes diretamente na API pública
-  // Isso precisaria de acesso a APIs específicas de cada tribunal
-  return { autor: null, reu: null };
 }
 
 function gerarLinkExterno(numeroProcesso: string, tribunal: string): string {
   const numero = numeroProcesso.replace(/\D/g, '');
+  const tribunalUpper = tribunal.toUpperCase();
   
-  if (tribunal.startsWith('TJ')) {
-    if (tribunal === 'TJSP') {
-      return `https://esaj.tjsp.jus.br/cpopg/show.do?processo.numero=${numero}`;
-    }
-    if (tribunal === 'TJRJ') {
-      return `https://www3.tjrj.jus.br/consultaprocessual/#/consultapublica#702${numero}`;
-    }
+  // Links diretos para consulta nos tribunais
+  const links: { [key: string]: string } = {
+    'TJSP': `https://esaj.tjsp.jus.br/cpopg/show.do?processo.numero=${numero}`,
+    'TJRJ': `https://www3.tjrj.jus.br/consultaprocessual/#/consultapublica#${numero}`,
+    'TJMG': `https://www4.tjmg.jus.br/juridico/sf/proc_resultado.jsp?comrCodigo=${numero}`,
+    'TJES': `https://sistemas.tjes.jus.br/pje/ConsultaPublica/listView.seam`,
+    'TJBA': `https://pje.tjba.jus.br/pje/ConsultaPublica/listView.seam`,
+    'TJPR': `https://projudi.tjpr.jus.br/projudi/`,
+    'TJRS': `https://www.tjrs.jus.br/novo/busca/?return=proc&client=wp_index`,
+    'TJSC': `https://esaj.tjsc.jus.br/cpopg/open.do`,
+  };
+  
+  if (links[tribunalUpper]) {
+    return links[tribunalUpper];
   }
   
-  if (tribunal.startsWith('TRF')) {
-    const regiao = tribunal.replace('TRF', '');
+  if (tribunalUpper.startsWith('TRF')) {
+    const regiao = tribunalUpper.replace('TRF', '');
     return `https://pje.trf${regiao}.jus.br/consultapublica/ConsultaPublica/listView.seam`;
-  }
-  
-  if (tribunal.startsWith('TRT')) {
-    return `https://pje.trt${tribunal.replace('TRT', '')}.jus.br/consultaprocessual`;
   }
   
   return `https://www.cnj.jus.br/busca-de-processos/`;
