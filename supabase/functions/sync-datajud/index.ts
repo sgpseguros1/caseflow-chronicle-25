@@ -390,7 +390,92 @@ function getTribunaisPorUF(uf: string): string[] {
 }
 
 function gerarLinkExterno(numeroProcesso: string, tribunal: string): string {
-  // Gera link para consulta no DataJud/JusBrasil
-  const numeroLimpo = numeroProcesso.replace(/\D/g, '');
-  return `https://www.jusbrasil.com.br/processos/busca?q=${numeroLimpo}`;
+  // Gera link oficial do tribunal - NÃO usar JusBrasil
+  const numero = numeroProcesso.replace(/\D/g, '');
+  const tribunalUpper = tribunal.toUpperCase();
+  
+  // TJs Estaduais - Consulta pública oficial
+  if (tribunalUpper.startsWith('TJ') || tribunalUpper.startsWith('TJ')) {
+    const siglaTJ = tribunalUpper.replace('TJ', '').toLowerCase();
+    
+    // Tribunais com e-SAJ
+    if (['sp', 'sc', 'ms', 'am', 'ac', 'al', 'ce'].includes(siglaTJ)) {
+      return `https://esaj.tj${siglaTJ}.jus.br/cpopg/open.do`;
+    }
+    
+    // TJES - Espírito Santo (PJe)
+    if (siglaTJ === 'es') {
+      return `https://pje.tjes.jus.br/pje/ConsultaPublica/listView.seam`;
+    }
+    
+    // TJRJ - Rio de Janeiro
+    if (siglaTJ === 'rj') {
+      return `https://www3.tjrj.jus.br/consultaprocessual/`;
+    }
+    
+    // TJMG - Minas Gerais
+    if (siglaTJ === 'mg') {
+      return `https://pje.tjmg.jus.br/pje/ConsultaPublica/listView.seam`;
+    }
+    
+    // TJBA - Bahia
+    if (siglaTJ === 'ba') {
+      return `https://pje.tjba.jus.br/pje/ConsultaPublica/listView.seam`;
+    }
+    
+    // TJPR - Paraná
+    if (siglaTJ === 'pr') {
+      return `https://projudi.tjpr.jus.br/projudi/`;
+    }
+    
+    // TJRS - Rio Grande do Sul
+    if (siglaTJ === 'rs') {
+      return `https://www.tjrs.jus.br/novo/busca/?return=proc`;
+    }
+    
+    // TJGO - Goiás
+    if (siglaTJ === 'go') {
+      return `https://pje.tjgo.jus.br/ConsultaPublica/listView.seam`;
+    }
+    
+    // TJPE - Pernambuco
+    if (siglaTJ === 'pe') {
+      return `https://srv01.tjpe.jus.br/consultaprocessualunificada/`;
+    }
+    
+    // TJDF - Distrito Federal
+    if (siglaTJ === 'df' || siglaTJ === 'dft') {
+      return `https://pje.tjdft.jus.br/consultapublica/ConsultaPublica/listView.seam`;
+    }
+  }
+  
+  // TRFs - Tribunais Regionais Federais
+  if (tribunalUpper.startsWith('TRF')) {
+    const regiao = tribunalUpper.replace('TRF', '');
+    return `https://pje.trf${regiao}.jus.br/pje/ConsultaPublica/listView.seam`;
+  }
+  
+  // TRTs - Tribunais Regionais do Trabalho
+  if (tribunalUpper.startsWith('TRT')) {
+    const regiao = tribunalUpper.replace('TRT', '');
+    return `https://pje.trt${regiao}.jus.br/consultaprocessual/pages/consultas/ConsultaProcessual.seam`;
+  }
+  
+  // STJ
+  if (tribunalUpper === 'STJ') {
+    return `https://processo.stj.jus.br/processo/pesquisa/`;
+  }
+  
+  // STF
+  if (tribunalUpper === 'STF') {
+    return `https://portal.stf.jus.br/processos/`;
+  }
+  
+  // TST
+  if (tribunalUpper === 'TST') {
+    return `https://pje.tst.jus.br/consultaprocessual/pages/consultas/ConsultaProcessual.seam`;
+  }
+  
+  // Fallback - Busca no portal do CNJ (oficial)
+  return `https://www.cnj.jus.br/busca-de-processos/?termo=${numero}`;
 }
