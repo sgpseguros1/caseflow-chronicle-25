@@ -278,24 +278,52 @@ async function consultarDataJudPaginado(
   numeroOab: string,
   uf: string,
   tribunal: string,
-  size: number = 1000,
+  size: number = 100, // Reduzido para evitar timeout
   from: number = 0
 ): Promise<{ processos: DataJudProcesso[]; total: number }> {
   const baseUrl = `https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal.toLowerCase()}/_search`;
 
-  // Query otimizada com paginação
+  // CORREÇÃO: Query FILTRA pela OAB específica do advogado
+  // Isso busca apenas processos onde o advogado com essa OAB atua
+  const oabFormatada = `${numeroOab}${uf.toUpperCase()}`;
+  
   const query = {
     size: size,
     from: from,
     query: {
-      match_all: {}
+      bool: {
+        should: [
+          // Busca pela OAB no campo de advogados
+          {
+            nested: {
+              path: "advogados",
+              query: {
+                bool: {
+                  must: [
+                    { match: { "advogados.inscricao": numeroOab } },
+                    { match: { "advogados.uf": uf.toUpperCase() } }
+                  ]
+                }
+              }
+            }
+          },
+          // Busca alternativa pelo número da OAB nos dados gerais
+          {
+            query_string: {
+              query: `"${numeroOab}" AND "${uf.toUpperCase()}"`,
+              fields: ["*"]
+            }
+          }
+        ],
+        minimum_should_match: 1
+      }
     },
     sort: [
       { "dataAjuizamento": { "order": "desc" } }
     ]
   };
 
-  console.log(`Consultando DataJud - Tribunal: ${tribunal}, Size: ${size}, From: ${from}`);
+  console.log(`Consultando DataJud OAB ${numeroOab}/${uf} - Tribunal: ${tribunal}, Size: ${size}, From: ${from}`);
 
   try {
     const response = await fetch(baseUrl, {
@@ -319,7 +347,7 @@ async function consultarDataJudPaginado(
     const processos = data.hits?.hits?.map(hit => hit._source).filter(Boolean) as DataJudProcesso[] || [];
     const total = data.hits?.total?.value || processos.length;
     
-    console.log(`DataJud retornou ${processos.length} processos do ${tribunal} (total: ${total})`);
+    console.log(`DataJud retornou ${processos.length} processos da OAB ${numeroOab}/${uf} no ${tribunal} (total: ${total})`);
     
     return { processos, total };
   } catch (error) {
