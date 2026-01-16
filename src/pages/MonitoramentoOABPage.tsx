@@ -6,25 +6,33 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useProcessosSincronizados, useMovimentacoesProcesso } from '@/hooks/useProcessosSincronizados';
+import { useProcessosSincronizados, useMovimentacoesProcesso, ProcessoSincronizado } from '@/hooks/useProcessosSincronizados';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Scale, ExternalLink, AlertTriangle, CheckCircle, Clock, Trash2, Eye, Loader2, Gavel, FileText, User, Hash } from 'lucide-react';
+import { Search, Scale, ExternalLink, AlertTriangle, CheckCircle, Clock, Trash2, Eye, Loader2, Gavel, FileText, User, Hash, Users, Calendar, Building2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatDateOnly } from '@/lib/dateUtils';
 import { toast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { useQueryClient } from '@tanstack/react-query';
+
+interface Parte {
+  nome: string;
+  tipo: string;
+  polo?: string;
+  advogados?: Array<{ nome: string; oab?: string }>;
+}
 
 export default function MonitoramentoOABPage() {
   const [busca, setBusca] = useState('');
   const [buscando, setBuscando] = useState(false);
-  const [processoDetalhe, setProcessoDetalhe] = useState<string | null>(null);
+  const [processoDetalhe, setProcessoDetalhe] = useState<ProcessoSincronizado | null>(null);
   const queryClient = useQueryClient();
 
   const { data: processos, isLoading: loadingProcessos } = useProcessosSincronizados();
-  const { data: movimentacoes } = useMovimentacoesProcesso(processoDetalhe || undefined);
+  const { data: movimentacoes } = useMovimentacoesProcesso(processoDetalhe?.id || undefined);
 
   const handleBuscar = async () => {
     const termo = busca.trim();
@@ -57,9 +65,10 @@ export default function MonitoramentoOABPage() {
       if (data?.success) {
         toast({
           title: 'Processo encontrado!',
-          description: `Dados do processo ${data.numero_processo || termo} foram importados.`,
+          description: `Processo ${data.numero_processo} importado com ${data.movimentacoes || 0} movimentações.`,
         });
         queryClient.invalidateQueries({ queryKey: ['processos-sincronizados'] });
+        setBusca('');
       } else {
         toast({
           title: 'Nenhum processo encontrado',
@@ -101,11 +110,34 @@ export default function MonitoramentoOABPage() {
     }
   };
 
+  // Extrai as partes do processo
+  const getPartes = (processo: ProcessoSincronizado): Parte[] => {
+    if (!processo.dados_completos) return [];
+    
+    // Tenta obter partes do dados_completos (JSON do DataJud)
+    const dados = processo.dados_completos as any;
+    if (dados.partes && Array.isArray(dados.partes)) {
+      return dados.partes.map((p: any) => ({
+        nome: p.nome || 'Não informado',
+        tipo: p.tipoParte || p.polo || 'Parte',
+        polo: p.polo,
+        advogados: (p.advogados || []).map((a: any) => ({
+          nome: a.nome,
+          oab: a.numeroOAB,
+        })),
+      }));
+    }
+    
+    return [];
+  };
+
   const stats = {
     totalProcessos: processos?.length || 0,
     ativos: processos?.filter(p => p.situacao === 'Em andamento' || p.situacao === 'Ativo')?.length || 0,
     arquivados: processos?.filter(p => p.situacao === 'Arquivado' || p.situacao === 'Baixado')?.length || 0,
   };
+
+  const partesDoProcesso = processoDetalhe ? getPartes(processoDetalhe) : [];
 
   return (
     <div className="space-y-6">
@@ -292,7 +324,7 @@ export default function MonitoramentoOABPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setProcessoDetalhe(processo.id)}
+                            onClick={() => setProcessoDetalhe(processo)}
                           >
                             <Eye className="w-3 h-3" />
                           </Button>
@@ -316,45 +348,201 @@ export default function MonitoramentoOABPage() {
 
       {/* Modal de Detalhes do Processo */}
       <Dialog open={!!processoDetalhe} onOpenChange={() => setProcessoDetalhe(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh]">
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Movimentações do Processo</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Scale className="w-5 h-5" />
+              Detalhes do Processo
+            </DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            {movimentacoes?.length ? (
-              <div className="space-y-3">
-                {movimentacoes.map((mov) => (
-                  <div key={mov.id} className={`p-4 border rounded-lg ${mov.urgente ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : ''}`}>
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <p className="font-medium">{mov.descricao}</p>
-                        {mov.complemento && (
-                          <p className="text-sm text-muted-foreground mt-1">{mov.complemento}</p>
-                        )}
-                        {mov.decisao_teor && (
-                          <div className="mt-2 p-2 bg-muted rounded text-sm">
-                            {mov.decisao_teor}
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-right text-sm text-muted-foreground">
-                        {formatDateOnly(mov.data_movimento)}
+          
+          {processoDetalhe && (
+            <Tabs defaultValue="resumo" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="resumo">Resumo</TabsTrigger>
+                <TabsTrigger value="partes">Partes ({partesDoProcesso.length})</TabsTrigger>
+                <TabsTrigger value="movimentacoes">Movimentações ({movimentacoes?.length || 0})</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="resumo" className="mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <Hash className="w-4 h-4 text-muted-foreground mt-1" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Número do Processo</p>
+                        <p className="font-mono font-medium">{processoDetalhe.numero_processo}</p>
                       </div>
                     </div>
-                    {mov.urgente && (
-                      <Badge variant="destructive" className="mt-2">
-                        <AlertTriangle className="w-3 h-3 mr-1" /> Urgente
-                      </Badge>
+                    
+                    <div className="flex items-start gap-2">
+                      <FileText className="w-4 h-4 text-muted-foreground mt-1" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Classe Processual</p>
+                        <p className="font-medium">{processoDetalhe.classe_processual || 'Não informada'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-2">
+                      <Building2 className="w-4 h-4 text-muted-foreground mt-1" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Órgão Julgador</p>
+                        <p className="font-medium">{processoDetalhe.orgao_julgador || 'Não informado'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <Gavel className="w-4 h-4 text-muted-foreground mt-1" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Tribunal</p>
+                        <Badge variant="outline">{processoDetalhe.tribunal?.toUpperCase()}</Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-2">
+                      <Calendar className="w-4 h-4 text-muted-foreground mt-1" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Data de Ajuizamento</p>
+                        <p className="font-medium">{processoDetalhe.data_ajuizamento ? formatDateOnly(processoDetalhe.data_ajuizamento) : 'Não informada'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-2">
+                      <FileText className="w-4 h-4 text-muted-foreground mt-1" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Assunto</p>
+                        <p className="font-medium">{processoDetalhe.assunto || 'Não informado'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+
+                <div>
+                  <p className="text-sm font-medium mb-2">Última Movimentação</p>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="font-medium">{processoDetalhe.ultimo_movimento || 'Nenhuma movimentação registrada'}</p>
+                    {processoDetalhe.data_ultimo_movimento && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {formatDateOnly(processoDetalhe.data_ultimo_movimento)} - {formatDistanceToNow(new Date(processoDetalhe.data_ultimo_movimento), { addSuffix: true, locale: ptBR })}
+                      </p>
                     )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhuma movimentação registrada
-              </div>
-            )}
-          </ScrollArea>
+                </div>
+
+                {processoDetalhe.link_externo && (
+                  <div className="mt-4">
+                    <a
+                      href={processoDetalhe.link_externo}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-primary hover:underline"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Consultar no site do tribunal
+                    </a>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="partes" className="mt-4">
+                <ScrollArea className="max-h-[50vh]">
+                  {partesDoProcesso.length > 0 ? (
+                    <div className="space-y-4">
+                      {partesDoProcesso.map((parte, index) => (
+                        <Card key={index} className="border-l-4 border-l-primary">
+                          <CardContent className="pt-4">
+                            <div className="flex items-start gap-3">
+                              <div className="p-2 bg-primary/10 rounded-full">
+                                <User className="w-4 h-4 text-primary" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium">{parte.nome}</p>
+                                  <Badge variant="outline" className="text-xs">
+                                    {parte.tipo}
+                                  </Badge>
+                                </div>
+                                
+                                {parte.advogados && parte.advogados.length > 0 && (
+                                  <div className="mt-2">
+                                    <p className="text-xs text-muted-foreground mb-1">Advogados:</p>
+                                    <div className="space-y-1">
+                                      {parte.advogados.map((adv, advIndex) => (
+                                        <div key={advIndex} className="flex items-center gap-2 text-sm">
+                                          <Scale className="w-3 h-3 text-muted-foreground" />
+                                          <span>{adv.nome}</span>
+                                          {adv.oab && (
+                                            <Badge variant="secondary" className="text-xs">
+                                              OAB {adv.oab}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>Nenhuma parte encontrada neste processo</p>
+                      <p className="text-xs mt-1">Os dados de partes podem não estar disponíveis na API pública</p>
+                    </div>
+                  )}
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="movimentacoes" className="mt-4">
+                <ScrollArea className="max-h-[50vh]">
+                  {movimentacoes?.length ? (
+                    <div className="space-y-3">
+                      {movimentacoes.map((mov) => (
+                        <div key={mov.id} className={`p-4 border rounded-lg ${mov.urgente ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : ''}`}>
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="font-medium">{mov.descricao}</p>
+                              {mov.complemento && (
+                                <p className="text-sm text-muted-foreground mt-1">{mov.complemento}</p>
+                              )}
+                              {mov.decisao_teor && (
+                                <div className="mt-2 p-3 bg-muted rounded text-sm border-l-4 border-primary">
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Teor da decisão:</p>
+                                  {mov.decisao_teor}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right text-sm text-muted-foreground whitespace-nowrap ml-4">
+                              {formatDateOnly(mov.data_movimento)}
+                            </div>
+                          </div>
+                          {mov.urgente && (
+                            <Badge variant="destructive" className="mt-2">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Urgente
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>Nenhuma movimentação registrada</p>
+                      <p className="text-xs mt-1">As movimentações podem não estar disponíveis na API pública</p>
+                    </div>
+                  )}
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          )}
         </DialogContent>
       </Dialog>
     </div>
