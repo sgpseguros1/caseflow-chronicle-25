@@ -1551,6 +1551,36 @@ export type Database = {
           },
         ]
       }
+      comunicacao_canais_config: {
+        Row: {
+          ativo: boolean | null
+          canal: string
+          configuracao: Json | null
+          created_at: string
+          id: string
+          nome_exibicao: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          canal: string
+          configuracao?: Json | null
+          created_at?: string
+          id?: string
+          nome_exibicao: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean | null
+          canal?: string
+          configuracao?: Json | null
+          created_at?: string
+          id?: string
+          nome_exibicao?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       comunicacao_historico: {
         Row: {
           assunto: string | null
