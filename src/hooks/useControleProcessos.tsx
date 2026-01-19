@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth, subMonths, differenceInDays } from 'date-fns';
+import { useEffect } from 'react';
 
 export interface ProcessoStats {
   totalProtocolos: number;
@@ -70,8 +71,44 @@ interface PeriodoFilter {
 }
 
 export function useControleProcessosStats(periodo?: PeriodoFilter) {
+  const queryClient = useQueryClient();
+
+  // Realtime subscription para atualização automática
+  useEffect(() => {
+    const channel = supabase
+      .channel('controle-processos-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'protocolos' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['controle-processos-stats'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'lancamentos_financeiros' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['controle-processos-stats'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'protocolo_financeiro' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['controle-processos-stats'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['controle-processos-stats', periodo],
+    refetchInterval: 30000, // Atualiza a cada 30 segundos
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<ProcessoStats> => {
       const hoje = new Date();
       const inicioDefault = startOfMonth(subMonths(hoje, 11)).toISOString();
