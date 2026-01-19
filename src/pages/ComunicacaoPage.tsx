@@ -25,11 +25,12 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { CaixaEntradaUnificada } from '@/components/comunicacao/CaixaEntradaUnificada';
+import { WhatsAppConfigDialog } from '@/components/comunicacao/WhatsAppConfigDialog';
 import { useComunicacaoStats, useCanaisConfig } from '@/hooks/useComunicacaoCentral';
 import { useComunicacaoRegistros } from '@/hooks/useComunicacaoRegistros';
 
 const CANAL_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg: string; label: string }> = {
-  whatsapp: { icon: <MessageSquare className="h-5 w-5" />, color: 'text-green-600', bg: 'bg-green-100', label: 'WhatsApp' },
+  whatsapp: { icon: <MessageSquare className="h-5 w-5" />, color: 'text-primary', bg: 'bg-primary/10', label: 'WhatsApp' },
   email: { icon: <Mail className="h-5 w-5" />, color: 'text-blue-600', bg: 'bg-blue-100', label: 'E-mail' },
   sms: { icon: <Phone className="h-5 w-5" />, color: 'text-purple-600', bg: 'bg-purple-100', label: 'SMS' },
   interno: { icon: <Zap className="h-5 w-5" />, color: 'text-amber-600', bg: 'bg-amber-100', label: 'Chat Interno' },
@@ -41,6 +42,7 @@ const CANAL_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg: s
 export default function ComunicacaoPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('inbox');
+  const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
   const { data: stats } = useComunicacaoStats();
   const { data: canais = [] } = useCanaisConfig();
   const { data: historico = [] } = useComunicacaoRegistros();
@@ -334,18 +336,20 @@ export default function ComunicacaoPage() {
                   <h4 className="font-medium mb-2">🔗 Integrações Externas</h4>
                   <p className="text-sm text-muted-foreground mb-4">
                     Para conectar APIs externas (WhatsApp Business, Facebook, Instagram), 
-                    será necessário configurar as credenciais do provedor.
+                    configure as credenciais do provedor.
                   </p>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" disabled>
+                    <Button variant="outline" size="sm" onClick={() => setWhatsappDialogOpen(true)}>
+                      <MessageSquare className="mr-2 h-4 w-4" />
                       Configurar WhatsApp Business API
                     </Button>
                     <Button variant="outline" size="sm" disabled>
+                      <Facebook className="mr-2 h-4 w-4" />
                       Conectar Facebook/Instagram
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    * Funcionalidade disponível em breve
+                    * Facebook/Instagram em breve
                   </p>
                 </div>
               </div>
@@ -353,6 +357,12 @@ export default function ComunicacaoPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* WhatsApp Config Dialog */}
+      <WhatsAppConfigDialog 
+        open={whatsappDialogOpen} 
+        onOpenChange={setWhatsappDialogOpen} 
+      />
     </div>
   );
 }
