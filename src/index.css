@@ -6,42 +6,42 @@
 
 @layer base {
   :root {
-    /* Tema Azul Escuro - Estilo Dashboard Moderno */
-    --background: 210 30% 8%;
-    --foreground: 200 20% 95%;
+    /* Tema Rafael Seguros - Azul Marinho + Dourado */
+    --background: 215 50% 8%;
+    --foreground: 45 30% 95%;
 
-    /* Cards and surfaces - Azul muito escuro */
-    --card: 210 35% 10%;
-    --card-foreground: 200 20% 95%;
+    /* Cards and surfaces - Azul marinho escuro */
+    --card: 215 45% 12%;
+    --card-foreground: 45 30% 95%;
 
-    --popover: 210 35% 12%;
-    --popover-foreground: 200 20% 95%;
+    --popover: 215 45% 14%;
+    --popover-foreground: 45 30% 95%;
 
-    /* Primary - Ciano/Azul claro (#00D4FF) */
-    --primary: 190 100% 50%;
-    --primary-foreground: 210 30% 8%;
+    /* Primary - Amarelo Dourado (#F5C518) */
+    --primary: 45 92% 52%;
+    --primary-foreground: 215 50% 10%;
 
-    /* Secondary - Azul médio escuro */
-    --secondary: 210 30% 15%;
-    --secondary-foreground: 200 20% 90%;
+    /* Secondary - Azul médio */
+    --secondary: 215 40% 18%;
+    --secondary-foreground: 45 30% 90%;
 
-    /* Gold/Accent - Ciano brilhante */
-    --gold: 190 100% 50%;
-    --gold-foreground: 210 30% 8%;
+    /* Gold/Accent - Dourado brilhante */
+    --gold: 45 92% 52%;
+    --gold-foreground: 215 50% 10%;
 
     /* Muted tones - Azul acinzentado */
-    --muted: 210 25% 18%;
-    --muted-foreground: 210 15% 60%;
+    --muted: 215 35% 20%;
+    --muted-foreground: 215 20% 60%;
 
-    /* Accent - Ciano para destaques */
-    --accent: 190 100% 50%;
-    --accent-foreground: 210 30% 8%;
+    /* Accent - Dourado para destaques */
+    --accent: 45 92% 52%;
+    --accent-foreground: 215 50% 10%;
 
     /* Status colors */
     --success: 160 84% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 45 93% 50%;
+    --warning: 35 95% 55%;
     --warning-foreground: 0 0% 10%;
 
     --info: 200 95% 55%;
@@ -51,105 +51,107 @@
     --destructive-foreground: 0 0% 100%;
 
     /* UI elements */
-    --border: 210 25% 20%;
-    --input: 210 30% 12%;
-    --ring: 190 100% 50%;
+    --border: 215 30% 22%;
+    --input: 215 40% 14%;
+    --ring: 45 92% 52%;
 
     --radius: 0.5rem;
 
     /* Sidebar - Azul mais escuro */
-    --sidebar-background: 210 35% 6%;
-    --sidebar-foreground: 200 20% 85%;
-    --sidebar-primary: 190 100% 50%;
-    --sidebar-primary-foreground: 210 30% 8%;
-    --sidebar-accent: 210 30% 14%;
-    --sidebar-accent-foreground: 200 20% 95%;
-    --sidebar-border: 210 25% 18%;
-    --sidebar-ring: 190 100% 50%;
+    --sidebar-background: 215 50% 6%;
+    --sidebar-foreground: 45 20% 85%;
+    --sidebar-primary: 45 92% 52%;
+    --sidebar-primary-foreground: 215 50% 10%;
+    --sidebar-accent: 215 40% 16%;
+    --sidebar-accent-foreground: 45 30% 95%;
+    --sidebar-border: 215 30% 20%;
+    --sidebar-ring: 45 92% 52%;
 
-    /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(190 100% 50%), hsl(200 100% 45%));
-    --gradient-accent: linear-gradient(135deg, hsl(190 100% 55%), hsl(180 90% 45%));
-    --gradient-card: linear-gradient(180deg, hsl(210 35% 12%), hsl(210 35% 9%));
-    --gradient-gold: linear-gradient(135deg, hsl(190 100% 55%), hsl(195 95% 45%));
+    /* Custom gradients - Rafael Seguros */
+    --gradient-primary: linear-gradient(135deg, hsl(45 92% 52%), hsl(40 90% 45%));
+    --gradient-accent: linear-gradient(135deg, hsl(45 92% 58%), hsl(35 88% 48%));
+    --gradient-card: linear-gradient(180deg, hsl(215 45% 14%), hsl(215 45% 10%));
+    --gradient-gold: linear-gradient(135deg, hsl(45 92% 55%), hsl(40 88% 48%));
+    --gradient-blue: linear-gradient(135deg, hsl(215 60% 25%), hsl(215 50% 15%));
 
     /* Shadows */
-    --shadow-sm: 0 1px 3px 0px hsl(210 50% 5% / 0.4), 0 1px 2px -1px hsl(210 50% 5% / 0.4);
-    --shadow-md: 0 1px 3px 0px hsl(210 50% 5% / 0.5), 0 2px 4px -1px hsl(210 50% 5% / 0.5);
-    --shadow-lg: 0 1px 3px 0px hsl(210 50% 5% / 0.5), 0 4px 6px -1px hsl(210 50% 5% / 0.5);
-    --shadow-card: 0 2px 8px hsl(210 50% 5% / 0.4), 0 1px 3px hsl(210 50% 5% / 0.3);
+    --shadow-sm: 0 1px 3px 0px hsl(215 60% 5% / 0.4), 0 1px 2px -1px hsl(215 60% 5% / 0.4);
+    --shadow-md: 0 1px 3px 0px hsl(215 60% 5% / 0.5), 0 2px 4px -1px hsl(215 60% 5% / 0.5);
+    --shadow-lg: 0 1px 3px 0px hsl(215 60% 5% / 0.5), 0 4px 6px -1px hsl(215 60% 5% / 0.5);
+    --shadow-card: 0 2px 8px hsl(215 60% 5% / 0.4), 0 1px 3px hsl(215 60% 5% / 0.3);
+    --shadow-gold: 0 4px 20px hsl(45 92% 52% / 0.2);
     
-    /* Chart colors - Variações de azul/ciano */
-    --chart-1: 190 100% 50%;
-    --chart-2: 200 95% 55%;
-    --chart-3: 180 85% 45%;
-    --chart-4: 210 90% 60%;
-    --chart-5: 170 80% 50%;
-    --sidebar: 210 35% 6%;
+    /* Chart colors - Variações dourado/azul */
+    --chart-1: 45 92% 52%;
+    --chart-2: 40 88% 48%;
+    --chart-3: 200 80% 50%;
+    --chart-4: 215 70% 45%;
+    --chart-5: 35 85% 55%;
+    --sidebar: 215 50% 6%;
     
     --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --shadow-2xs: 0 1px 3px 0px hsl(210 50% 5% / 0.3);
-    --shadow-xs: 0 1px 3px 0px hsl(210 50% 5% / 0.3);
-    --shadow-xl: 0 1px 3px 0px hsl(210 50% 5% / 0.5), 0 8px 10px -1px hsl(210 50% 5% / 0.5);
-    --shadow-2xl: 0 1px 3px 0px hsl(210 50% 5% / 0.6);
+    --shadow-2xs: 0 1px 3px 0px hsl(215 60% 5% / 0.3);
+    --shadow-xs: 0 1px 3px 0px hsl(215 60% 5% / 0.3);
+    --shadow-xl: 0 1px 3px 0px hsl(215 60% 5% / 0.5), 0 8px 10px -1px hsl(215 60% 5% / 0.5);
+    --shadow-2xl: 0 1px 3px 0px hsl(215 60% 5% / 0.6);
     --tracking-normal: 0em;
     --spacing: 0.25rem;
   }
 
   .dark {
-    /* Mantém o mesmo - já é escuro azulado */
-    --background: 210 30% 8%;
-    --foreground: 200 20% 95%;
+    /* Mantém o mesmo - já é escuro azulado Rafael Seguros */
+    --background: 215 50% 8%;
+    --foreground: 45 30% 95%;
 
-    --card: 210 35% 10%;
-    --card-foreground: 200 20% 95%;
+    --card: 215 45% 12%;
+    --card-foreground: 45 30% 95%;
 
-    --popover: 210 35% 12%;
-    --popover-foreground: 200 20% 95%;
+    --popover: 215 45% 14%;
+    --popover-foreground: 45 30% 95%;
 
-    --primary: 190 100% 50%;
-    --primary-foreground: 210 30% 8%;
+    --primary: 45 92% 52%;
+    --primary-foreground: 215 50% 10%;
 
-    --secondary: 210 30% 15%;
-    --secondary-foreground: 200 20% 90%;
+    --secondary: 215 40% 18%;
+    --secondary-foreground: 45 30% 90%;
 
-    --muted: 210 25% 18%;
-    --muted-foreground: 210 15% 60%;
+    --muted: 215 35% 20%;
+    --muted-foreground: 215 20% 60%;
 
-    --accent: 190 100% 50%;
-    --accent-foreground: 210 30% 8%;
+    --accent: 45 92% 52%;
+    --accent-foreground: 215 50% 10%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 25% 20%;
-    --input: 210 30% 12%;
-    --ring: 190 100% 50%;
+    --border: 215 30% 22%;
+    --input: 215 40% 14%;
+    --ring: 45 92% 52%;
 
-    --sidebar-background: 210 35% 6%;
-    --sidebar-foreground: 200 20% 85%;
-    --sidebar-primary: 190 100% 50%;
-    --sidebar-primary-foreground: 210 30% 8%;
-    --sidebar-accent: 210 30% 14%;
-    --sidebar-accent-foreground: 200 20% 95%;
-    --sidebar-border: 210 25% 18%;
-    --sidebar-ring: 190 100% 50%;
-    --chart-1: 190 100% 50%;
-    --chart-2: 200 95% 55%;
-    --chart-3: 180 85% 45%;
-    --chart-4: 210 90% 60%;
-    --chart-5: 170 80% 50%;
-    --sidebar: 210 35% 6%;
-    --shadow-2xs: 0 1px 3px 0px hsl(210 50% 5% / 0.3);
-    --shadow-xs: 0 1px 3px 0px hsl(210 50% 5% / 0.3);
-    --shadow-sm: 0 1px 3px 0px hsl(210 50% 5% / 0.4), 0 1px 2px -1px hsl(210 50% 5% / 0.4);
-    --shadow: 0 1px 3px 0px hsl(210 50% 5% / 0.5), 0 1px 2px -1px hsl(210 50% 5% / 0.5);
-    --shadow-md: 0 1px 3px 0px hsl(210 50% 5% / 0.5), 0 2px 4px -1px hsl(210 50% 5% / 0.5);
-    --shadow-lg: 0 1px 3px 0px hsl(210 50% 5% / 0.5), 0 4px 6px -1px hsl(210 50% 5% / 0.5);
-    --shadow-xl: 0 1px 3px 0px hsl(210 50% 5% / 0.5), 0 8px 10px -1px hsl(210 50% 5% / 0.5);
-    --shadow-2xl: 0 1px 3px 0px hsl(210 50% 5% / 0.6);
+    --sidebar-background: 215 50% 6%;
+    --sidebar-foreground: 45 20% 85%;
+    --sidebar-primary: 45 92% 52%;
+    --sidebar-primary-foreground: 215 50% 10%;
+    --sidebar-accent: 215 40% 16%;
+    --sidebar-accent-foreground: 45 30% 95%;
+    --sidebar-border: 215 30% 20%;
+    --sidebar-ring: 45 92% 52%;
+    --chart-1: 45 92% 52%;
+    --chart-2: 40 88% 48%;
+    --chart-3: 200 80% 50%;
+    --chart-4: 215 70% 45%;
+    --chart-5: 35 85% 55%;
+    --sidebar: 215 50% 6%;
+    --shadow-2xs: 0 1px 3px 0px hsl(215 60% 5% / 0.3);
+    --shadow-xs: 0 1px 3px 0px hsl(215 60% 5% / 0.3);
+    --shadow-sm: 0 1px 3px 0px hsl(215 60% 5% / 0.4), 0 1px 2px -1px hsl(215 60% 5% / 0.4);
+    --shadow: 0 1px 3px 0px hsl(215 60% 5% / 0.5), 0 1px 2px -1px hsl(215 60% 5% / 0.5);
+    --shadow-md: 0 1px 3px 0px hsl(215 60% 5% / 0.5), 0 2px 4px -1px hsl(215 60% 5% / 0.5);
+    --shadow-lg: 0 1px 3px 0px hsl(215 60% 5% / 0.5), 0 4px 6px -1px hsl(215 60% 5% / 0.5);
+    --shadow-xl: 0 1px 3px 0px hsl(215 60% 5% / 0.5), 0 8px 10px -1px hsl(215 60% 5% / 0.5);
+    --shadow-2xl: 0 1px 3px 0px hsl(215 60% 5% / 0.6);
   }
 }
 
@@ -227,12 +229,45 @@
   .data-table-row {
     @apply border-b border-border/50 transition-colors hover:bg-muted/50;
   }
+
+  /* Background with logo watermark */
+  .bg-logo-watermark {
+    position: relative;
+  }
+
+  .bg-logo-watermark::before {
+    content: '';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50vw;
+    height: 50vw;
+    max-width: 600px;
+    max-height: 600px;
+    background-image: url('/logo-rafael-seguros.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .gold-glow {
+    box-shadow: 0 0 30px hsl(45 92% 52% / 0.3);
+  }
 }
 
 @layer utilities {
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-accent);
+  }
+
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(45 92% 58%), hsl(40 85% 50%));
   }
 
   .animate-fade-in {

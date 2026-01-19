@@ -15,7 +15,6 @@ import {
   ChevronRight,
   ChevronDown,
   LogOut,
-  UserCheck,
   Shield,
   Bell,
   MessageSquare,
@@ -30,7 +29,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import logoJusPro from '@/assets/logo-juspro.png';
+import logoRafael from '@/assets/logo-rafael-seguros.png';
 
 interface MenuItem {
   icon: React.ElementType;
@@ -78,7 +77,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['Cadastros']);
   const location = useLocation();
-  const { signOut, profile, isAdminOrGestor, isAdmin, isGestor } = useAuth();
+  const { signOut, profile, isAdminOrGestor, isAdmin } = useAuth();
 
   const toggleMenu = (label: string) => {
     setExpandedMenus((prev) =>
@@ -107,26 +106,25 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-40 h-screen bg-sidebar transition-all duration-300 flex flex-col',
+        'fixed left-0 top-0 z-40 h-screen bg-sidebar transition-all duration-300 flex flex-col border-r border-sidebar-border',
         collapsed ? 'w-20' : 'w-64'
       )}
     >
       {/* Logo */}
-      <div className="flex h-20 items-center justify-center border-b border-sidebar-border px-4">
+      <div className="flex h-24 items-center justify-center border-b border-sidebar-border px-4 bg-gradient-to-b from-sidebar-accent/30 to-transparent">
         {!collapsed ? (
           <div className="flex flex-col items-center gap-1">
             <img 
-              src={logoJusPro} 
-              alt="Rafael Assessoria em Seguros"
-              className="h-12 w-auto object-contain"
+              src={logoRafael} 
+              alt="Rafael Seguros"
+              className="h-16 w-auto object-contain drop-shadow-lg"
             />
-            <p className="text-[10px] text-sidebar-foreground/60">Gestão Jurídica</p>
           </div>
         ) : (
           <img 
-            src={logoJusPro} 
-            alt="Rafael Assessoria em Seguros" 
-            className="h-10 w-auto object-contain"
+            src={logoRafael} 
+            alt="Rafael Seguros" 
+            className="h-12 w-auto object-contain drop-shadow-lg"
           />
         )}
       </div>
@@ -168,7 +166,7 @@ export function Sidebar() {
                     )}
                   </button>
                   {!collapsed && isExpanded && (
-                    <ul className="ml-4 mt-1 space-y-1 border-l border-sidebar-border pl-3">
+                    <ul className="ml-4 mt-1 space-y-1 border-l border-primary/30 pl-3">
                       {item.children.map((child) => {
                         const isChildActive = location.pathname === child.path;
                         const ChildIcon = child.icon;
@@ -215,10 +213,10 @@ export function Sidebar() {
       </nav>
 
       {/* User Section */}
-      <div className="border-t border-sidebar-border p-4">
+      <div className="border-t border-sidebar-border p-4 bg-gradient-to-t from-sidebar-accent/20 to-transparent">
         {!collapsed ? (
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold text-gold-foreground font-medium">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shadow-lg">
               {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
             <div className="flex-1 min-w-0">
@@ -231,7 +229,7 @@ export function Sidebar() {
             </div>
             <button
               onClick={() => signOut()}
-              className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+              className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground/60 hover:text-primary transition-colors"
               title="Sair"
             >
               <LogOut className="h-4 w-4" />
@@ -239,12 +237,12 @@ export function Sidebar() {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold text-gold-foreground font-medium">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shadow-lg">
               {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
             <button
               onClick={() => signOut()}
-              className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+              className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground/60 hover:text-primary transition-colors"
               title="Sair"
             >
               <LogOut className="h-4 w-4" />
@@ -256,7 +254,7 @@ export function Sidebar() {
       {/* Collapse Toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-24 flex h-6 w-6 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm hover:bg-muted transition-colors"
+        className="absolute -right-3 top-28 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card text-primary shadow-md hover:bg-muted transition-colors"
       >
         {collapsed ? (
           <ChevronRight className="h-4 w-4" />
