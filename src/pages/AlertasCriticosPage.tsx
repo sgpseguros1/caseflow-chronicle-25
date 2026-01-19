@@ -17,7 +17,8 @@ import {
   TrendingDown,
   Timer,
   User,
-  CheckCircle2
+  CheckCircle2,
+  UserCog
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -26,6 +27,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFuncionarios } from '@/hooks/useFuncionarios';
 import { TIPO_PROTOCOLO_LABELS, STATUS_PROTOCOLO_LABELS } from '@/types/protocolo';
 import { toast } from 'sonner';
+import AtribuicaoAutomaticaPanel from '@/components/alertas/AtribuicaoAutomaticaPanel';
 
 // Helper function to calculate days stopped
 const calcularDiasParado = (dataUltimaMovimentacao: string | null) => {
@@ -350,7 +352,7 @@ export default function AlertasCriticosPage() {
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="tempo" className="gap-2">
             <Clock className="h-4 w-4" />
             Tempo ({alertasTempo.length})
@@ -366,6 +368,10 @@ export default function AlertasCriticosPage() {
           <TabsTrigger value="responsabilidade" className="gap-2">
             <User className="h-4 w-4" />
             Responsabilidade ({alertasResponsabilidade.length})
+          </TabsTrigger>
+          <TabsTrigger value="atribuicao" className="gap-2">
+            <UserCog className="h-4 w-4" />
+            Atribuição Auto
           </TabsTrigger>
         </TabsList>
 
@@ -653,6 +659,11 @@ export default function AlertasCriticosPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* BLOCO 5: ATRIBUIÇÃO AUTOMÁTICA */}
+        <TabsContent value="atribuicao" className="mt-4">
+          <AtribuicaoAutomaticaPanel />
         </TabsContent>
       </Tabs>
 

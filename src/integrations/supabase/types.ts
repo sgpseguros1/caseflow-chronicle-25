@@ -118,6 +118,7 @@ export type Database = {
       }
       alertas: {
         Row: {
+          atribuicao_automatica: boolean | null
           created_at: string
           descricao: string | null
           funcionario_id: string | null
@@ -125,13 +126,16 @@ export type Database = {
           lido_em: string | null
           prioridade: string
           processo_id: string | null
+          protocolo_id: string | null
           resolvido_em: string | null
+          responsavel_atribuido_id: string | null
           status: string
           tipo: string
           titulo: string
           usuario_alvo_id: string | null
         }
         Insert: {
+          atribuicao_automatica?: boolean | null
           created_at?: string
           descricao?: string | null
           funcionario_id?: string | null
@@ -139,13 +143,16 @@ export type Database = {
           lido_em?: string | null
           prioridade?: string
           processo_id?: string | null
+          protocolo_id?: string | null
           resolvido_em?: string | null
+          responsavel_atribuido_id?: string | null
           status?: string
           tipo: string
           titulo: string
           usuario_alvo_id?: string | null
         }
         Update: {
+          atribuicao_automatica?: boolean | null
           created_at?: string
           descricao?: string | null
           funcionario_id?: string | null
@@ -153,7 +160,9 @@ export type Database = {
           lido_em?: string | null
           prioridade?: string
           processo_id?: string | null
+          protocolo_id?: string | null
           resolvido_em?: string | null
+          responsavel_atribuido_id?: string | null
           status?: string
           tipo?: string
           titulo?: string
@@ -172,6 +181,20 @@ export type Database = {
             columns: ["processo_id"]
             isOneToOne: false
             referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alertas_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alertas_responsavel_atribuido_id_fkey"
+            columns: ["responsavel_atribuido_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
             referencedColumns: ["id"]
           },
         ]
@@ -350,6 +373,78 @@ export type Database = {
             columns: ["processo_id"]
             isOneToOne: false
             referencedRelation: "processos_judiciais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atribuicao_automatica_log: {
+        Row: {
+          alerta_id: string | null
+          created_at: string
+          historico_id: string | null
+          id: string
+          motivo: string
+          protocolo_id: string | null
+          responsavel_anterior_id: string | null
+          responsavel_novo_id: string | null
+          usuario_ultima_interacao: string | null
+        }
+        Insert: {
+          alerta_id?: string | null
+          created_at?: string
+          historico_id?: string | null
+          id?: string
+          motivo: string
+          protocolo_id?: string | null
+          responsavel_anterior_id?: string | null
+          responsavel_novo_id?: string | null
+          usuario_ultima_interacao?: string | null
+        }
+        Update: {
+          alerta_id?: string | null
+          created_at?: string
+          historico_id?: string | null
+          id?: string
+          motivo?: string
+          protocolo_id?: string | null
+          responsavel_anterior_id?: string | null
+          responsavel_novo_id?: string | null
+          usuario_ultima_interacao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atribuicao_automatica_log_alerta_id_fkey"
+            columns: ["alerta_id"]
+            isOneToOne: false
+            referencedRelation: "alertas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atribuicao_automatica_log_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atribuicao_automatica_log_responsavel_anterior_id_fkey"
+            columns: ["responsavel_anterior_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atribuicao_automatica_log_responsavel_novo_id_fkey"
+            columns: ["responsavel_novo_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atribuicao_automatica_log_usuario_ultima_interacao_fkey"
+            columns: ["usuario_ultima_interacao"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
