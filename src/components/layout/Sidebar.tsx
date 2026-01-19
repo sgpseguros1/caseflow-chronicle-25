@@ -15,7 +15,6 @@ import {
   ChevronRight,
   ChevronDown,
   LogOut,
-  Gavel,
   UserCheck,
   Shield,
   Bell,
@@ -27,7 +26,6 @@ import {
   Search,
   ListTodo,
   MessagesSquare,
-  Send,
   Coins,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -52,8 +50,7 @@ const menuItems: MenuItem[] = [
   { icon: Scale, label: 'Processos Judiciais', path: '/processos-judiciais' },
   { icon: Search, label: 'Monitoramento OAB', path: '/monitoramento-oab' },
   { icon: ListTodo, label: 'Painel de Tarefas', path: '/painel-tarefas' },
-  { icon: Send, label: 'Solicitações', path: '/solicitacoes' },
-  { icon: MessagesSquare, label: 'Chat Interno', path: '/chat' },
+  { icon: MessagesSquare, label: 'Comunicação Interna', path: '/comunicacao-interna' },
   {
     icon: Users,
     label: 'Cadastros',
@@ -64,7 +61,6 @@ const menuItems: MenuItem[] = [
     ],
   },
   { icon: Calendar, label: 'Perícias Agendadas', path: '/pericias' },
-  { icon: Gavel, label: 'Processos (Legado)', path: '/processos' },
   { icon: Calendar, label: 'Calendário', path: '/calendario' },
   { icon: Briefcase, label: 'Funcionários', path: '/funcionarios' },
   { icon: BarChart3, label: 'Métricas Diárias', path: '/metricas' },
@@ -74,7 +70,6 @@ const menuItems: MenuItem[] = [
   { icon: Bot, label: 'Módulo IA', path: '/ia' },
   { icon: DollarSign, label: 'Financeiro', path: '/financeiro', gestorOnly: true },
   { icon: Scale, label: 'Relatórios', path: '/relatorios', gestorOnly: true },
-  // COMISSÕES - Visível para TODOS, permissões controladas internamente na página
   { icon: Coins, label: 'Comissões', path: '/comissoes' },
   { icon: Shield, label: 'Usuários', path: '/admin/usuarios', adminOnly: true },
 ];

@@ -21,8 +21,6 @@ import AdvogadoFormPage from "./pages/AdvogadoFormPage";
 import SeguradorasPage from "./pages/SeguradorasPage";
 import SeguradoraFormPage from "./pages/SeguradoraFormPage";
 import PericiasAgendadasPage from "./pages/PericiasAgendadasPage";
-import ProcessosPage from "./pages/ProcessosPage";
-import ProcessoFormPage from "./pages/ProcessoFormPage";
 import ProtocolosPage from "./pages/ProtocolosPage";
 import ProtocolosDashboardPage from "./pages/ProtocolosDashboardPage";
 import ProtocoloViewPage from "./pages/ProtocoloViewPage";
@@ -45,8 +43,7 @@ import FinanceiroFormPage from "./pages/FinanceiroFormPage";
 import ControleProcessosPage from "./pages/ControleProcessosPage";
 import MonitoramentoOABPage from "./pages/MonitoramentoOABPage";
 import PainelTarefasUsuarioPage from "./pages/PainelTarefasUsuarioPage";
-import ChatInternoPage from "./pages/ChatInternoPage";
-import SolicitacoesPage from "./pages/SolicitacoesPage";
+import ComunicacaoInternaPage from "./pages/ComunicacaoInternaPage";
 import ProcessosJudiciaisPage from "./pages/ProcessosJudiciaisPage";
 import ProcessoViewPage from "./pages/ProcessoViewPage";
 import RelatoriosPage from "./pages/RelatoriosPage";
@@ -108,9 +105,6 @@ const App = () => (
           <Route path="/protocolos" element={<ProtectedRoute><ProtocolosPage /></ProtectedRoute>} />
           <Route path="/protocolos/dashboard" element={<ProtectedRoute><ProtocolosDashboardPage /></ProtectedRoute>} />
           <Route path="/protocolos/:id" element={<ProtectedRoute><ProtocoloViewPage /></ProtectedRoute>} />
-          {/* Processos (Legado) */}
-          <Route path="/processos" element={<ProtectedRoute><ProcessosPage /></ProtectedRoute>} />
-          <Route path="/processos/novo" element={<ProtectedRoute><ProcessoFormPage /></ProtectedRoute>} />
           {/* Funcionários */}
           <Route path="/funcionarios" element={<ProtectedRoute><FuncionariosPage /></ProtectedRoute>} />
           <Route path="/funcionarios/novo" element={<ProtectedRoute><FuncionarioFormPage /></ProtectedRoute>} />
@@ -138,10 +132,11 @@ const App = () => (
           <Route path="/monitoramento-oab" element={<ProtectedRoute><MonitoramentoOABPage /></ProtectedRoute>} />
           {/* Painel de Tarefas do Usuário */}
           <Route path="/painel-tarefas" element={<ProtectedRoute><PainelTarefasUsuarioPage /></ProtectedRoute>} />
-          {/* Chat Interno */}
-          <Route path="/chat" element={<ProtectedRoute><ChatInternoPage /></ProtectedRoute>} />
-          {/* Solicitações */}
-          <Route path="/solicitacoes" element={<ProtectedRoute><SolicitacoesPage /></ProtectedRoute>} />
+          {/* Comunicação Interna Unificada (Chat + Solicitações) */}
+          <Route path="/comunicacao-interna" element={<ProtectedRoute><ComunicacaoInternaPage /></ProtectedRoute>} />
+          {/* Redirecionamentos para a nova página unificada */}
+          <Route path="/chat" element={<Navigate to="/comunicacao-interna" replace />} />
+          <Route path="/solicitacoes" element={<Navigate to="/comunicacao-interna" replace />} />
           {/* Processos Judiciais do Escritório */}
           <Route path="/processos-judiciais" element={<ProtectedRoute><ProcessosJudiciaisPage /></ProtectedRoute>} />
           <Route path="/processos-judiciais/:id" element={<ProtectedRoute><ProcessoViewPage /></ProtectedRoute>} />
