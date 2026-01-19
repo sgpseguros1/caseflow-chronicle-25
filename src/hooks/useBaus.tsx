@@ -54,8 +54,13 @@ export const STATUS_BAU_LABELS: Record<string, string> = {
   incompleto: 'Incompleto',
   em_correcao: 'Em Correção',
   validado: 'Validado',
+  arquivado: 'Arquivado',
+  concluido: 'Concluído',
   cancelado: 'Cancelado',
 };
+
+// Status finais que não geram alertas e excluem o BAU da lista ativa
+export const STATUS_FINAIS = ['recebido', 'validado', 'arquivado', 'concluido', 'cancelado'];
 
 export const FASE_COBRANCA_LABELS: Record<string, string> = {
   normal: 'Normal',
@@ -259,26 +264,59 @@ export function useUpdateBau() {
 }
 
 // ==========================================
-// HOOK: Delete BAU (gestor only)
+// HOOK: Concluir/Arquivar BAU (com justificativa obrigatória)
+// IMPORTANTE: BAUs não podem ser excluídos, apenas arquivados/concluídos
 // ==========================================
-export function useDeleteBau() {
+export function useConcluirBau() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
+    mutationFn: async ({ 
+      id, 
+      status, 
+      justificativa 
+    }: { 
+      id: string; 
+      status: 'arquivado' | 'concluido' | 'cancelado'; 
+      justificativa: string;
+    }) => {
+      if (!justificativa.trim()) {
+        throw new Error('Justificativa é obrigatória para conclusão/arquivamento');
+      }
+
+      const { data: userData } = await supabase.auth.getUser();
+      
+      const { data: result, error } = await supabase
         .from('client_baus')
-        .delete()
-        .eq('id', id);
+        .update({
+          status,
+          justificativa_conclusao: justificativa,
+          concluido_em: new Date().toISOString(),
+          concluido_por: userData.user?.id,
+        })
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) throw error;
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['baus'] });
-      toast({ title: 'BAU excluído' });
+      queryClient.invalidateQueries({ queryKey: ['bau', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['baus', 'client', data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ['bau-dashboard'] });
+      toast({ 
+        title: 'BAU atualizado', 
+        description: `Status alterado para ${STATUS_BAU_LABELS[data.status]}` 
+      });
     },
     onError: (error) => {
-      toast({ title: 'Erro ao excluir BAU', description: error.message, variant: 'destructive' });
+      toast({ 
+        title: 'Erro ao atualizar BAU', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
     },
   });
 }
