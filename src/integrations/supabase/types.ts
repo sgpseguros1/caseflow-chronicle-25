@@ -717,6 +717,8 @@ export type Database = {
       client_baus: {
         Row: {
           client_id: string
+          concluido_em: string | null
+          concluido_por: string | null
           created_at: string
           data_recebimento: string | null
           data_solicitacao: string
@@ -726,6 +728,7 @@ export type Database = {
           hospital_nome: string
           hospital_telefone: string | null
           id: string
+          justificativa_conclusao: string | null
           motivo_incompleto: string | null
           observacoes: string | null
           previsao_entrega: string | null
@@ -737,6 +740,8 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          concluido_em?: string | null
+          concluido_por?: string | null
           created_at?: string
           data_recebimento?: string | null
           data_solicitacao?: string
@@ -746,6 +751,7 @@ export type Database = {
           hospital_nome: string
           hospital_telefone?: string | null
           id?: string
+          justificativa_conclusao?: string | null
           motivo_incompleto?: string | null
           observacoes?: string | null
           previsao_entrega?: string | null
@@ -757,6 +763,8 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          concluido_em?: string | null
+          concluido_por?: string | null
           created_at?: string
           data_recebimento?: string | null
           data_solicitacao?: string
@@ -766,6 +774,7 @@ export type Database = {
           hospital_nome?: string
           hospital_telefone?: string | null
           id?: string
+          justificativa_conclusao?: string | null
           motivo_incompleto?: string | null
           observacoes?: string | null
           previsao_entrega?: string | null

@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { 
   Building2, 
   Clock, 
@@ -14,25 +16,29 @@ import {
   CheckCircle2, 
   Phone,
   ExternalLink,
-  Calendar,
   User,
   TrendingUp,
   FileWarning,
   Activity,
-  Users
+  Users,
+  Archive,
+  XCircle
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   useBauDashboardStats, 
   useBauContatos,
+  useConcluirBau,
   TIPO_SOLICITACAO_LABELS, 
   STATUS_BAU_LABELS,
   FASE_COBRANCA_LABELS,
-  FASE_COBRANCA_COLORS 
+  FASE_COBRANCA_COLORS,
+  STATUS_FINAIS
 } from '@/hooks/useBaus';
 import { useAuth } from '@/hooks/useAuth';
 import { useFuncionarios } from '@/hooks/useFuncionarios';
+import { toast } from '@/hooks/use-toast';
 
 // Timeline component for BAU
 function BauTimeline({ bauId }: { bauId: string }) {
@@ -80,18 +86,31 @@ export default function BauPainelPage() {
   const { data: stats, isLoading } = useBauDashboardStats();
   const { data: funcionarios } = useFuncionarios();
   const { isAdminOrGestor } = useAuth();
+  const concluirBau = useConcluirBau();
 
   const [tab, setTab] = useState('lista');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [filtroResponsavel, setFiltroResponsavel] = useState<string>('todos');
   const [filtroFase, setFiltroFase] = useState<string>('todos');
   const [selectedBauId, setSelectedBauId] = useState<string | null>(null);
+  
+  // Estado para modal de conclusão/arquivamento
+  const [conclusaoModal, setConclusaoModal] = useState<{
+    open: boolean;
+    bauId: string | null;
+    clienteNome: string;
+    hospitalNome: string;
+  }>({ open: false, bauId: null, clienteNome: '', hospitalNome: '' });
+  const [conclusaoStatus, setConclusaoStatus] = useState<'arquivado' | 'concluido' | 'cancelado'>('arquivado');
+  const [justificativa, setJustificativa] = useState('');
 
-  // Filtered BAUs list
+  // BAUs ativos (não finalizados)
   const bausFiltrados = useMemo(() => {
     if (!stats?.baus) return [];
 
     return stats.baus.filter(bau => {
+      // Excluir status finais da lista principal
+      if (STATUS_FINAIS.includes(bau.status)) return false;
       if (filtroStatus !== 'todos' && bau.status !== filtroStatus) return false;
       if (filtroResponsavel !== 'todos' && bau.responsavel_id !== filtroResponsavel) return false;
       if (filtroFase !== 'todos') {
@@ -104,6 +123,32 @@ export default function BauPainelPage() {
       return true;
     }).sort((a, b) => (b.dias_corridos || 0) - (a.dias_corridos || 0));
   }, [stats?.baus, filtroStatus, filtroResponsavel, filtroFase]);
+
+  // BAUs arquivados/concluídos
+  const bausArquivados = useMemo(() => {
+    if (!stats?.baus) return [];
+    return stats.baus.filter(bau => STATUS_FINAIS.includes(bau.status))
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  }, [stats?.baus]);
+
+  const handleConcluirBau = async () => {
+    if (!conclusaoModal.bauId || !justificativa.trim()) {
+      toast({ title: 'Justificativa obrigatória', description: 'Informe o motivo do arquivamento/conclusão', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      await concluirBau.mutateAsync({
+        id: conclusaoModal.bauId,
+        status: conclusaoStatus,
+        justificativa: justificativa.trim(),
+      });
+      setConclusaoModal({ open: false, bauId: null, clienteNome: '', hospitalNome: '' });
+      setJustificativa('');
+    } catch (error) {
+      // Error handled by mutation
+    }
+  };
 
   const getFaseBadge = (dias: number, status: string) => {
     if (['recebido', 'validado'].includes(status)) {
@@ -291,14 +336,18 @@ export default function BauPainelPage() {
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="lista" className="gap-2">
             <Building2 className="h-4 w-4" />
-            Lista ({bausFiltrados.length})
+            Ativos ({bausFiltrados.length})
           </TabsTrigger>
           <TabsTrigger value="acao" className="gap-2">
             <Phone className="h-4 w-4" />
             Ação Hoje ({stats?.acaoHoje?.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="arquivados" className="gap-2">
+            <Archive className="h-4 w-4" />
+            Arquivados ({bausArquivados.length})
           </TabsTrigger>
           <TabsTrigger value="analistas" className="gap-2">
             <Users className="h-4 w-4" />
@@ -378,10 +427,10 @@ export default function BauPainelPage() {
                           {bau.responsavel?.nome || <span className="text-muted-foreground">-</span>}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
+                          <div className="flex gap-1 justify-end">
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button size="sm" variant="outline" onClick={() => setSelectedBauId(bau.id)}>
+                                <Button size="sm" variant="outline" onClick={() => setSelectedBauId(bau.id)} title="Ver histórico">
                                   <Clock className="h-4 w-4" />
                                 </Button>
                               </DialogTrigger>
@@ -392,7 +441,20 @@ export default function BauPainelPage() {
                                 <BauTimeline bauId={bau.id} />
                               </DialogContent>
                             </Dialog>
-                            <Button size="sm" variant="default" asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              title="Arquivar/Concluir"
+                              onClick={() => setConclusaoModal({
+                                open: true,
+                                bauId: bau.id,
+                                clienteNome: bau.cliente?.name || 'N/A',
+                                hospitalNome: bau.hospital_nome,
+                              })}
+                            >
+                              <Archive className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="default" asChild title="Ver cliente">
                               <Link to={`/clientes/${bau.client_id}`}>
                                 <ExternalLink className="h-4 w-4" />
                               </Link>
@@ -474,7 +536,92 @@ export default function BauPainelPage() {
           </Card>
         </TabsContent>
 
-        {/* TAB 3: Performance Analistas */}
+        {/* TAB 3: Arquivados/Concluídos */}
+        <TabsContent value="arquivados" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Archive className="h-5 w-5 text-primary" />
+                BAUs Arquivados/Concluídos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {bausArquivados.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Archive className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum BAU arquivado</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Hospital</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Justificativa</TableHead>
+                      <TableHead>Concluído em</TableHead>
+                      <TableHead>Responsável</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bausArquivados.map(bau => (
+                      <TableRow key={bau.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">
+                          {bau.cliente?.name || 'N/A'}
+                        </TableCell>
+                        <TableCell>{bau.hospital_nome}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={bau.status === 'cancelado' ? 'destructive' : 'secondary'}
+                            className={bau.status === 'concluido' ? 'bg-green-100 text-green-800' : ''}
+                          >
+                            {STATUS_BAU_LABELS[bau.status]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate" title={(bau as any).justificativa_conclusao || ''}>
+                          {(bau as any).justificativa_conclusao || <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell>
+                          {(bau as any).concluido_em 
+                            ? format(parseISO((bau as any).concluido_em), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+                            : <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell>
+                          {bau.responsavel?.nome || <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-1 justify-end">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button size="sm" variant="outline" onClick={() => setSelectedBauId(bau.id)} title="Ver histórico">
+                                  <Clock className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Linha do Tempo - {bau.hospital_nome}</DialogTitle>
+                                </DialogHeader>
+                                <BauTimeline bauId={bau.id} />
+                              </DialogContent>
+                            </Dialog>
+                            <Button size="sm" variant="default" asChild title="Ver cliente">
+                              <Link to={`/clientes/${bau.client_id}`}>
+                                <ExternalLink className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* TAB 4: Performance Analistas */}
         <TabsContent value="analistas" className="mt-4">
           <Card>
             <CardHeader>
@@ -608,6 +755,100 @@ export default function BauPainelPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal de Conclusão/Arquivamento */}
+      <Dialog 
+        open={conclusaoModal.open} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setConclusaoModal({ open: false, bauId: null, clienteNome: '', hospitalNome: '' });
+            setJustificativa('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Archive className="h-5 w-5" />
+              Arquivar/Concluir BAU
+            </DialogTitle>
+            <DialogDescription>
+              <strong>Cliente:</strong> {conclusaoModal.clienteNome}<br />
+              <strong>Hospital:</strong> {conclusaoModal.hospitalNome}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Novo Status</Label>
+              <Select value={conclusaoStatus} onValueChange={(v) => setConclusaoStatus(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="arquivado">
+                    <div className="flex items-center gap-2">
+                      <Archive className="h-4 w-4" />
+                      Arquivado
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="concluido">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      Concluído
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="cancelado">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="h-4 w-4 text-red-600" />
+                      Cancelado
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Justificativa <span className="text-red-500">*</span></Label>
+              <Textarea
+                value={justificativa}
+                onChange={(e) => setJustificativa(e.target.value)}
+                placeholder="Informe o motivo do arquivamento/conclusão/cancelamento..."
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground">
+                Campo obrigatório. Esta informação será registrada no histórico do BAU.
+              </p>
+            </div>
+
+            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 rounded-lg p-3">
+              <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                <strong>Importante:</strong> BAUs não podem ser excluídos. 
+                O registro permanecerá no sistema para fins de auditoria e histórico.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConclusaoModal({ open: false, bauId: null, clienteNome: '', hospitalNome: '' });
+                setJustificativa('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConcluirBau}
+              disabled={!justificativa.trim() || concluirBau.isPending}
+            >
+              {concluirBau.isPending ? 'Salvando...' : 'Confirmar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
