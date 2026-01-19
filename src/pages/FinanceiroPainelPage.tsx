@@ -333,7 +333,7 @@ export default function FinanceiroPainelPage() {
                           {TIPO_RECEITA_LABELS[lanc.tipo_receita as keyof typeof TIPO_RECEITA_LABELS] || lanc.tipo_receita}
                         </TableCell>
                         <TableCell className="text-right font-bold text-base">
-                          {formatCurrency(lanc.valor || 0)}
+                          {formatCurrency(lanc.valor_bruto || 0)}
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} text-sm px-3 py-1`}>
