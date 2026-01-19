@@ -1,20 +1,18 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format, startOfMonth, endOfMonth, subMonths, differenceInDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { 
-  DollarSign, TrendingUp, TrendingDown, Clock, FileText, AlertTriangle, 
-  Calendar, Users, PieChart, BarChart3, Lock, Eye, Plus,
-  ArrowUpRight, ArrowDownRight, Receipt, CheckCircle2, Trash2
+  DollarSign, TrendingUp, TrendingDown, Clock, AlertTriangle, 
+  Calendar, Plus, ArrowUpRight, ArrowDownRight, CheckCircle2, 
+  Lock, Wallet, PiggyBank, Receipt, CreditCard
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -23,23 +21,19 @@ import {
   useLancamentosFinanceiros, 
   useFechamentosMensais,
   useFecharMes,
-  useAuditoriaFinanceira,
   useMarcarRecebido,
   useDeleteLancamento,
   TIPO_RECEITA_LABELS
 } from '@/hooks/useFinanceiro';
 import { useAuth } from '@/hooks/useAuth';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell } from 'recharts';
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280', '#ec4899', '#14b8a6'];
-
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  recebido: { label: 'Recebido', color: 'bg-green-500' },
-  parcial: { label: 'Parcial', color: 'bg-yellow-500' },
-  em_aberto: { label: 'A Receber', color: 'bg-blue-500' },
-  em_atraso: { label: 'Em Atraso', color: 'bg-red-500' },
-  negociado: { label: 'Negociado', color: 'bg-purple-500' },
-  cancelado: { label: 'Cancelado', color: 'bg-gray-500' }
+const STATUS_CONFIG: Record<string, { label: string; bgColor: string; textColor: string }> = {
+  recebido: { label: '✅ Recebido', bgColor: 'bg-green-100', textColor: 'text-green-700' },
+  parcial: { label: '⏳ Parcial', bgColor: 'bg-yellow-100', textColor: 'text-yellow-700' },
+  em_aberto: { label: '📋 A Receber', bgColor: 'bg-blue-100', textColor: 'text-blue-700' },
+  em_atraso: { label: '🚨 Atrasado', bgColor: 'bg-red-100', textColor: 'text-red-700' },
+  negociado: { label: '🤝 Negociado', bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
+  cancelado: { label: '❌ Cancelado', bgColor: 'bg-gray-100', textColor: 'text-gray-700' }
 };
 
 export default function FinanceiroPainelPage() {
@@ -58,51 +52,25 @@ export default function FinanceiroPainelPage() {
     const hoje = new Date();
     switch (periodoSelecionado) {
       case 'mes_atual':
-        return { 
-          inicio: startOfMonth(hoje).toISOString(), 
-          fim: endOfMonth(hoje).toISOString() 
-        };
+        return { inicio: startOfMonth(hoje).toISOString(), fim: endOfMonth(hoje).toISOString() };
       case 'mes_anterior':
         const mesAnterior = subMonths(hoje, 1);
-        return { 
-          inicio: startOfMonth(mesAnterior).toISOString(), 
-          fim: endOfMonth(mesAnterior).toISOString() 
-        };
+        return { inicio: startOfMonth(mesAnterior).toISOString(), fim: endOfMonth(mesAnterior).toISOString() };
       case 'ultimos_3_meses':
-        return { 
-          inicio: startOfMonth(subMonths(hoje, 2)).toISOString(), 
-          fim: endOfMonth(hoje).toISOString() 
-        };
-      case 'ultimos_6_meses':
-        return { 
-          inicio: startOfMonth(subMonths(hoje, 5)).toISOString(), 
-          fim: endOfMonth(hoje).toISOString() 
-        };
-      case 'ano_atual':
-        return { 
-          inicio: new Date(hoje.getFullYear(), 0, 1).toISOString(), 
-          fim: new Date(hoje.getFullYear(), 11, 31).toISOString() 
-        };
+        return { inicio: startOfMonth(subMonths(hoje, 2)).toISOString(), fim: endOfMonth(hoje).toISOString() };
       default:
-        return { 
-          inicio: startOfMonth(hoje).toISOString(), 
-          fim: endOfMonth(hoje).toISOString() 
-        };
+        return { inicio: startOfMonth(hoje).toISOString(), fim: endOfMonth(hoje).toISOString() };
     }
   }, [periodoSelecionado]);
 
   const { data: stats, isLoading: statsLoading } = useFinanceiroStats(periodo);
   const { data: lancamentos, isLoading: lancamentosLoading } = useLancamentosFinanceiros(periodo);
   const { data: fechamentos } = useFechamentosMensais();
-  const { data: auditoria } = useAuditoriaFinanceira();
   const fecharMes = useFecharMes();
   const marcarRecebido = useMarcarRecebido();
   const deleteLancamento = useDeleteLancamento();
 
-  // Verificar permissão - apenas admin e gestor
   const temPermissao = isAdmin || isGestor;
-  
-  // Verificar se é o usuário Rafael (único que pode excluir)
   const isRafael = profile?.name?.toLowerCase().includes('rafael') || profile?.email?.toLowerCase().includes('rafael');
 
   if (authLoading) {
@@ -119,10 +87,9 @@ export default function FinanceiroPainelPage() {
         <Lock className="h-16 w-16 text-muted-foreground" />
         <h2 className="text-2xl font-bold">Acesso Restrito</h2>
         <p className="text-muted-foreground text-center max-w-md">
-          O painel financeiro é exclusivo para Gestores e Administradores.
-          Entre em contato com seu gestor para mais informações.
+          Apenas Gestores e Administradores podem acessar.
         </p>
-        <Button onClick={() => navigate('/dashboard')}>Voltar ao Dashboard</Button>
+        <Button onClick={() => navigate('/dashboard')}>Voltar</Button>
       </div>
     );
   }
@@ -134,8 +101,6 @@ export default function FinanceiroPainelPage() {
   const mesAtual = new Date().getMonth() + 1;
   const anoAtual = new Date().getFullYear();
   const mesFechado = fechamentos?.some(f => f.ano === anoAtual && f.mes === mesAtual);
-  
-  // Verificar se é o último dia do mês
   const hoje = new Date();
   const ultimoDiaMes = new Date(anoAtual, mesAtual, 0).getDate();
   const podeFecharMes = hoje.getDate() === ultimoDiaMes && !mesFechado;
@@ -171,687 +136,337 @@ export default function FinanceiroPainelPage() {
     }
   };
 
-  const openMarcarRecebido = (id: string) => {
-    setLancamentoSelecionado(id);
-    setMarcarRecebidoDialogOpen(true);
-  };
+  // Calcular totais e percentuais
+  const totalRecebido = stats?.totalRecebido || 0;
+  const totalAReceber = stats?.totalAReceber || 0;
+  const totalEmAtraso = stats?.totalEmAtraso || 0;
+  const totalGeral = totalRecebido + totalAReceber + totalEmAtraso;
+  
+  const percentRecebido = totalGeral > 0 ? (totalRecebido / totalGeral) * 100 : 0;
+  const percentAReceber = totalGeral > 0 ? (totalAReceber / totalGeral) * 100 : 0;
+  const percentEmAtraso = totalGeral > 0 ? (totalEmAtraso / totalGeral) * 100 : 0;
 
-  const openDeleteDialog = (id: string) => {
-    setLancamentoParaExcluir(id);
-    setDeleteDialogOpen(true);
-  };
+  // Filtrar lançamentos por status para exibição rápida
+  const lancamentosRecebidos = lancamentos?.filter(l => l.status === 'recebido') || [];
+  const lancamentosPendentes = lancamentos?.filter(l => l.status === 'em_aberto') || [];
+  const lancamentosAtrasados = lancamentos?.filter(l => l.status === 'em_atraso') || [];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 animate-fade-in p-4">
+      {/* CABEÇALHO SIMPLES */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 p-6 rounded-2xl border">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <DollarSign className="h-7 w-7 text-primary" />
-            Painel Financeiro
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <div className="p-3 bg-green-500 rounded-xl">
+              <Wallet className="h-8 w-8 text-white" />
+            </div>
+            Dinheiro da Empresa
           </h1>
-          <p className="text-muted-foreground">Gestão completa de receitas e caixa em tempo real</p>
+          <p className="text-muted-foreground text-lg mt-2">Quanto entrou, quanto falta e quanto está atrasado 💰</p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={periodoSelecionado} onValueChange={setPeriodoSelecionado}>
-            <SelectTrigger className="w-48">
-              <Calendar className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-48 h-12 text-base">
+              <Calendar className="h-5 w-5 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="mes_atual">Mês Atual</SelectItem>
-              <SelectItem value="mes_anterior">Mês Anterior</SelectItem>
-              <SelectItem value="ultimos_3_meses">Últimos 3 Meses</SelectItem>
-              <SelectItem value="ultimos_6_meses">Últimos 6 Meses</SelectItem>
-              <SelectItem value="ano_atual">Ano Atual</SelectItem>
+              <SelectItem value="mes_atual">📅 Este Mês</SelectItem>
+              <SelectItem value="mes_anterior">📅 Mês Passado</SelectItem>
+              <SelectItem value="ultimos_3_meses">📅 Últimos 3 Meses</SelectItem>
             </SelectContent>
           </Select>
           
-          <Button onClick={() => navigate('/financeiro/novo')} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Novo Lançamento
+          <Button onClick={() => navigate('/financeiro/novo')} className="h-12 text-base gap-2 bg-green-600 hover:bg-green-700">
+            <Plus className="h-5 w-5" />
+            Novo
           </Button>
         </div>
       </div>
 
-      {/* Cards Executivos */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {/* Total Recebido - VERDE */}
-        <Card 
-          className="border-l-4 border-l-green-500 cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => navigate('/financeiro/novo')}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Total Recebido
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {statsLoading ? '...' : formatCurrency(stats?.totalRecebido || 0)}
-            </div>
-            {stats?.crescimentoPercentual !== undefined && (
-              <p className={`text-xs flex items-center gap-1 mt-1 ${stats.crescimentoPercentual >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {stats.crescimentoPercentual >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                {Math.abs(stats.crescimentoPercentual).toFixed(1)}% vs período anterior
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* A Receber - AZUL */}
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              A Receber
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {statsLoading ? '...' : formatCurrency(stats?.totalAReceber || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats?.contasAReceber?.length || 0} lançamentos pendentes
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Em Atraso - VERMELHO */}
-        <Card className="border-l-4 border-l-red-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Em Atraso
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {statsLoading ? '...' : formatCurrency(stats?.totalEmAtraso || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats?.contasEmAtraso?.length || 0} em atraso
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Receita Média - ROXO */}
-        <Card className="border-l-4 border-l-purple-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Receita Média
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {statsLoading ? '...' : formatCurrency(stats?.receitaMedia || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Últimos 3 meses fechados</p>
-          </CardContent>
-        </Card>
-
-        {/* Lançamentos - CINZA */}
-        <Card className="border-l-4 border-l-gray-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Lançamentos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-600">
-              {statsLoading ? '...' : stats?.numeroLancamentos || 0}
-            </div>
-            <div className="flex flex-wrap gap-1 mt-1">
-              {stats?.lancamentosPorStatus?.map(s => (
-                <Badge key={s.status} variant="outline" className="text-xs">
-                  {STATUS_CONFIG[s.status]?.label || s.status}: {s.quantidade}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Status do Mês */}
-        <Card className="border-l-4 border-l-amber-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              Status do Mês
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {mesFechado ? (
-              <Badge className="bg-green-500">Fechado</Badge>
-            ) : (
-              <div className="space-y-2">
-                <Badge variant="outline" className="border-amber-500 text-amber-600">Aberto</Badge>
-                {podeFecharMes && (
-                  <Dialog open={fechamentoDialogOpen} onOpenChange={setFechamentoDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="gap-2 w-full">
-                        <Lock className="h-4 w-4" />
-                        Fechar Mês
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Fechar Mês {mesAtual}/{anoAtual}</DialogTitle>
-                        <DialogDescription>
-                          Ao fechar o mês, os dados serão consolidados e não poderão mais ser editados.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div>
-                          <Label>Observações (opcional)</Label>
-                          <Textarea 
-                            value={fechamentoObs} 
-                            onChange={(e) => setFechamentoObs(e.target.value)}
-                            placeholder="Adicione observações sobre o fechamento..."
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setFechamentoDialogOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleFecharMes} disabled={fecharMes.isPending}>
-                          {fecharMes.isPending ? 'Fechando...' : 'Confirmar Fechamento'}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                )}
-                {!podeFecharMes && !mesFechado && (
-                  <p className="text-xs text-muted-foreground">Fechamento apenas no dia {ultimoDiaMes}</p>
-                )}
+      {/* RESUMO VISUAL - 3 CAIXAS GRANDES */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* DINHEIRO QUE ENTROU */}
+        <Card className="border-4 border-green-400 bg-green-50 dark:bg-green-950/30 shadow-lg hover:shadow-xl transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-green-500 rounded-xl">
+                <TrendingUp className="h-8 w-8 text-white" />
               </div>
-            )}
+              <Badge className="bg-green-500 text-white text-sm px-3 py-1">
+                {percentRecebido.toFixed(0)}%
+              </Badge>
+            </div>
+            <p className="text-green-700 dark:text-green-300 font-semibold text-lg mb-1">💵 Dinheiro que ENTROU</p>
+            <p className="text-4xl font-bold text-green-600">
+              {statsLoading ? '...' : formatCurrency(totalRecebido)}
+            </p>
+            <div className="mt-4">
+              <Progress value={percentRecebido} className="h-3 bg-green-200" />
+            </div>
+            <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+              <CheckCircle2 className="h-4 w-4" />
+              {lancamentosRecebidos.length} pagamentos recebidos
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* DINHEIRO QUE VAI ENTRAR */}
+        <Card className="border-4 border-blue-400 bg-blue-50 dark:bg-blue-950/30 shadow-lg hover:shadow-xl transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-blue-500 rounded-xl">
+                <Clock className="h-8 w-8 text-white" />
+              </div>
+              <Badge className="bg-blue-500 text-white text-sm px-3 py-1">
+                {percentAReceber.toFixed(0)}%
+              </Badge>
+            </div>
+            <p className="text-blue-700 dark:text-blue-300 font-semibold text-lg mb-1">⏳ Vai ENTRAR (aguardando)</p>
+            <p className="text-4xl font-bold text-blue-600">
+              {statsLoading ? '...' : formatCurrency(totalAReceber)}
+            </p>
+            <div className="mt-4">
+              <Progress value={percentAReceber} className="h-3 bg-blue-200" />
+            </div>
+            <p className="text-sm text-blue-600 mt-2 flex items-center gap-1">
+              <Receipt className="h-4 w-4" />
+              {lancamentosPendentes.length} esperando pagamento
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* DINHEIRO ATRASADO */}
+        <Card className="border-4 border-red-400 bg-red-50 dark:bg-red-950/30 shadow-lg hover:shadow-xl transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-red-500 rounded-xl">
+                <AlertTriangle className="h-8 w-8 text-white" />
+              </div>
+              <Badge className="bg-red-500 text-white text-sm px-3 py-1">
+                {percentEmAtraso.toFixed(0)}%
+              </Badge>
+            </div>
+            <p className="text-red-700 dark:text-red-300 font-semibold text-lg mb-1">🚨 ATRASADO (cobrar!)</p>
+            <p className="text-4xl font-bold text-red-600">
+              {statsLoading ? '...' : formatCurrency(totalEmAtraso)}
+            </p>
+            <div className="mt-4">
+              <Progress value={percentEmAtraso} className="h-3 bg-red-200" />
+            </div>
+            <p className="text-sm text-red-600 mt-2 flex items-center gap-1">
+              <CreditCard className="h-4 w-4" />
+              {lancamentosAtrasados.length} precisam de cobrança
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabs de Conteúdo */}
-      <Tabs defaultValue="visao_geral" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="visao_geral" className="gap-2">
-            <PieChart className="h-4 w-4" />
-            Visão Geral
-          </TabsTrigger>
-          <TabsTrigger value="lancamentos" className="gap-2">
-            <Receipt className="h-4 w-4" />
-            Lançamentos
-          </TabsTrigger>
-          <TabsTrigger value="contas_receber" className="gap-2">
-            <Clock className="h-4 w-4" />
-            A Receber
-          </TabsTrigger>
-          <TabsTrigger value="em_atraso" className="gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Em Atraso
-          </TabsTrigger>
-          <TabsTrigger value="clientes" className="gap-2">
-            <Users className="h-4 w-4" />
-            Por Cliente
-          </TabsTrigger>
-          {isAdmin && (
-            <TabsTrigger value="auditoria" className="gap-2">
-              <Eye className="h-4 w-4" />
-              Auditoria
-            </TabsTrigger>
-          )}
-        </TabsList>
-
-        {/* Visão Geral */}
-        <TabsContent value="visao_geral" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Receita por Tipo de Indenização */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <PieChart className="h-5 w-5 text-primary" />
-                  Receita por Tipo de Indenização
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {stats?.porTipo && stats.porTipo.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPie>
-                        <Pie
-                          data={stats.porTipo}
-                          dataKey="valor"
-                          nameKey="tipo"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          label={({ tipo, percentual }) => `${tipo}: ${percentual.toFixed(1)}%`}
-                        >
-                          {stats.porTipo.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                      </RechartsPie>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">Nenhum dado disponível</p>
-                )}
-                <div className="mt-4 space-y-2">
-                  {stats?.porTipo?.map((item, index) => (
-                    <div key={item.tipo} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                        <span className="text-sm">{item.tipo}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm font-medium">{formatCurrency(item.valor)}</span>
-                        <Progress value={item.percentual} className="w-20 h-2" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Fluxo de Caixa Diário */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-primary" />
-                  Fluxo de Caixa Diário
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {stats?.porDia && stats.porDia.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={stats.porDia}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis 
-                          dataKey="data" 
-                          tickFormatter={(value) => format(new Date(value), 'dd/MM')}
-                          className="text-xs"
-                        />
-                        <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
-                        <Tooltip 
-                          formatter={(value: number) => formatCurrency(value)}
-                          labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy')}
-                        />
-                        <Bar dataKey="valor" fill="#10b981" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">Nenhum dado disponível</p>
-                )}
-              </CardContent>
-            </Card>
+      {/* TOTAL GERAL */}
+      <Card className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-950/30 dark:to-pink-950/30 border-2 border-purple-300">
+        <CardContent className="p-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-purple-500 rounded-xl">
+              <PiggyBank className="h-10 w-10 text-white" />
+            </div>
+            <div>
+              <p className="text-purple-700 dark:text-purple-300 font-semibold text-lg">🏦 TOTAL GERAL (Tudo Junto)</p>
+              <p className="text-4xl font-bold text-purple-600">
+                {statsLoading ? '...' : formatCurrency(totalGeral)}
+              </p>
+            </div>
           </div>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Status do Mês</p>
+            {mesFechado ? (
+              <Badge className="bg-green-500 text-lg px-4 py-2">🔒 Fechado</Badge>
+            ) : (
+              <Badge variant="outline" className="border-amber-500 text-amber-600 text-lg px-4 py-2">📖 Aberto</Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Histórico de Fechamentos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Lock className="h-5 w-5 text-primary" />
-                Histórico de Fechamentos Mensais
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {fechamentos && fechamentos.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Período</TableHead>
-                      <TableHead>Total Recebido</TableHead>
-                      <TableHead>A Receber</TableHead>
-                      <TableHead>Em Atraso</TableHead>
-                      <TableHead>Lançamentos</TableHead>
-                      <TableHead>Fechado Em</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {fechamentos.slice(0, 6).map((f) => (
-                      <TableRow key={f.id}>
-                        <TableCell className="font-medium">{f.mes}/{f.ano}</TableCell>
-                        <TableCell className="text-green-600">{formatCurrency(f.total_recebido)}</TableCell>
-                        <TableCell className="text-blue-600">{formatCurrency(f.total_a_receber)}</TableCell>
-                        <TableCell className="text-red-600">{formatCurrency(f.total_em_atraso)}</TableCell>
-                        <TableCell>{f.numero_lancamentos}</TableCell>
-                        <TableCell>{format(new Date(f.fechado_em), 'dd/MM/yyyy HH:mm')}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-muted-foreground text-center py-8">Nenhum fechamento realizado</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Lançamentos */}
-        <TabsContent value="lancamentos" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Lançamentos Financeiros</CardTitle>
-              <CardDescription>Todos os registros do período selecionado</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {lancamentosLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                </div>
-              ) : lancamentos && lancamentos.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Valor Bruto</TableHead>
-                      <TableHead>Valor Pago</TableHead>
-                      <TableHead>Pendente</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {lancamentos.map((l) => (
-                      <TableRow key={l.id}>
-                        <TableCell className="font-medium">{l.cliente?.name || 'N/A'}</TableCell>
-                        <TableCell>{TIPO_RECEITA_LABELS[l.tipo_receita] || l.tipo_receita}</TableCell>
-                        <TableCell>{formatCurrency(l.valor_bruto)}</TableCell>
-                        <TableCell className="text-green-600">{formatCurrency(l.valor_pago)}</TableCell>
-                        <TableCell className={l.valor_pendente > 0 ? 'text-red-600' : ''}>{formatCurrency(l.valor_pendente)}</TableCell>
-                        <TableCell>
-                          <Badge className={STATUS_CONFIG[l.status]?.color || 'bg-gray-500'}>
-                            {STATUS_CONFIG[l.status]?.label || l.status}
+      {/* LISTA SIMPLES DE LANÇAMENTOS */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <Receipt className="h-6 w-6 text-primary" />
+            📋 Lista de Pagamentos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {lancamentosLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : !lancamentos?.length ? (
+            <div className="text-center py-12">
+              <DollarSign className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-xl text-muted-foreground">Nenhum lançamento neste período</p>
+              <Button onClick={() => navigate('/financeiro/novo')} className="mt-4">
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Primeiro
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="text-base font-bold">Cliente</TableHead>
+                    <TableHead className="text-base font-bold">Tipo</TableHead>
+                    <TableHead className="text-base font-bold text-right">Valor</TableHead>
+                    <TableHead className="text-base font-bold text-center">Status</TableHead>
+                    <TableHead className="text-base font-bold text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lancamentos.slice(0, 15).map((lanc) => {
+                    const statusConfig = STATUS_CONFIG[lanc.status] || STATUS_CONFIG.em_aberto;
+                    return (
+                      <TableRow key={lanc.id} className="hover:bg-muted/30">
+                        <TableCell className="font-medium text-base">
+                          {lanc.cliente?.name || 'Cliente não informado'}
+                        </TableCell>
+                        <TableCell className="text-base">
+                          {TIPO_RECEITA_LABELS[lanc.tipo_receita as keyof typeof TIPO_RECEITA_LABELS] || lanc.tipo_receita}
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-base">
+                          {formatCurrency(lanc.valor || 0)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} text-sm px-3 py-1`}>
+                            {statusConfig.label}
                           </Badge>
                         </TableCell>
-                        <TableCell>{l.data_recebimento ? format(new Date(l.data_recebimento), 'dd/MM/yyyy') : '-'}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              onClick={() => navigate(`/financeiro/${l.id}`)}
-                            >
-                              Editar
-                            </Button>
-                            {l.status !== 'recebido' && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {lanc.status !== 'recebido' && lanc.status !== 'cancelado' && (
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                className="text-green-600"
-                                onClick={() => openMarcarRecebido(l.id)}
+                                className="text-green-600 border-green-300 hover:bg-green-50"
+                                onClick={() => {
+                                  setLancamentoSelecionado(lanc.id);
+                                  setMarcarRecebidoDialogOpen(true);
+                                }}
                               >
-                                Receber
+                                <CheckCircle2 className="h-4 w-4 mr-1" />
+                                Recebeu
                               </Button>
                             )}
                             {isRafael && (
                               <Button 
                                 size="sm" 
-                                variant="ghost"
-                                className="text-red-600"
-                                onClick={() => openDeleteDialog(l.id)}
+                                variant="outline"
+                                className="text-red-600 border-red-300 hover:bg-red-50"
+                                onClick={() => {
+                                  setLancamentoParaExcluir(lanc.id);
+                                  setDeleteDialogOpen(true);
+                                }}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                🗑️
                               </Button>
                             )}
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-muted-foreground text-center py-8">Nenhum lançamento encontrado</p>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {lancamentos.length > 15 && (
+                <p className="text-center text-muted-foreground py-4">
+                  Mostrando 15 de {lancamentos.length} lançamentos
+                </p>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Contas a Receber */}
-        <TabsContent value="contas_receber" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-500" />
-                Contas a Receber
-              </CardTitle>
-              <CardDescription>Valores pendentes de recebimento</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {stats?.contasAReceber && stats.contasAReceber.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Valor Total</TableHead>
-                      <TableHead>Valor Pago</TableHead>
-                      <TableHead>Pendente</TableHead>
-                      <TableHead>Vencimento</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {stats.contasAReceber.map((l) => (
-                      <TableRow key={l.id}>
-                        <TableCell className="font-medium">{l.cliente?.name || 'N/A'}</TableCell>
-                        <TableCell>{TIPO_RECEITA_LABELS[l.tipo_receita] || l.tipo_receita}</TableCell>
-                        <TableCell>{formatCurrency(l.valor_bruto)}</TableCell>
-                        <TableCell className="text-green-600">{formatCurrency(l.valor_pago)}</TableCell>
-                        <TableCell className="text-blue-600 font-medium">{formatCurrency(l.valor_pendente)}</TableCell>
-                        <TableCell>{l.data_vencimento ? format(new Date(l.data_vencimento), 'dd/MM/yyyy') : '-'}</TableCell>
-                        <TableCell>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="text-green-600"
-                            onClick={() => openMarcarRecebido(l.id)}
-                          >
-                            Marcar Recebido
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-muted-foreground text-center py-8">Nenhuma conta a receber</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+      {/* BOTÃO FECHAR MÊS */}
+      {podeFecharMes && (
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-amber-700 dark:text-amber-300 font-semibold text-lg">
+                📆 Último dia do mês! Hora de fechar?
+              </p>
+              <p className="text-muted-foreground">Após fechar, os dados não poderão mais ser alterados.</p>
+            </div>
+            <Button 
+              onClick={() => setFechamentoDialogOpen(true)}
+              className="bg-amber-600 hover:bg-amber-700 text-lg px-6 py-3"
+            >
+              <Lock className="h-5 w-5 mr-2" />
+              Fechar Mês
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Em Atraso */}
-        <TabsContent value="em_atraso" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                Contas em Atraso
-              </CardTitle>
-              <CardDescription>Valores com data de vencimento ultrapassada</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {stats?.contasEmAtraso && stats.contasEmAtraso.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Valor Pendente</TableHead>
-                      <TableHead>Vencimento</TableHead>
-                      <TableHead>Dias em Atraso</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {stats.contasEmAtraso.map((l) => {
-                      const diasAtraso = l.data_vencimento 
-                        ? differenceInDays(new Date(), new Date(l.data_vencimento))
-                        : 0;
-                      return (
-                        <TableRow key={l.id} className="bg-red-50 dark:bg-red-900/10">
-                          <TableCell className="font-medium">{l.cliente?.name || 'N/A'}</TableCell>
-                          <TableCell>{TIPO_RECEITA_LABELS[l.tipo_receita] || l.tipo_receita}</TableCell>
-                          <TableCell className="text-red-600 font-bold">{formatCurrency(l.valor_pendente)}</TableCell>
-                          <TableCell>{l.data_vencimento ? format(new Date(l.data_vencimento), 'dd/MM/yyyy') : '-'}</TableCell>
-                          <TableCell>
-                            <Badge variant="destructive">{diasAtraso} dias</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="text-green-600"
-                              onClick={() => openMarcarRecebido(l.id)}
-                            >
-                              Marcar Recebido
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8">
-                  <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
-                  <p className="text-muted-foreground">Nenhuma conta em atraso!</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Por Cliente */}
-        <TabsContent value="clientes" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                Top 10 Clientes por Receita
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {stats?.porCliente && stats.porCliente.length > 0 ? (
-                <div className="space-y-4">
-                  {stats.porCliente.map((cliente, index) => (
-                    <div key={cliente.clienteId} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                          {index + 1}
-                        </div>
-                        <span className="font-medium">{cliente.clienteNome}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-lg font-bold text-green-600">{formatCurrency(cliente.valor)}</span>
-                        <Button size="sm" variant="ghost" onClick={() => navigate(`/clientes/${cliente.clienteId}`)}>
-                          Ver Cliente
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-8">Nenhum dado disponível</p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Auditoria (apenas admin) */}
-        {isAdmin && (
-          <TabsContent value="auditoria" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Eye className="h-5 w-5 text-primary" />
-                  Log de Auditoria Financeira
-                </CardTitle>
-                <CardDescription>Todas as ações são registradas automaticamente</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {auditoria && auditoria.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Data/Hora</TableHead>
-                        <TableHead>Ação</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Valor Anterior</TableHead>
-                        <TableHead>Valor Novo</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {auditoria.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell>{format(new Date(log.created_at), 'dd/MM/yyyy HH:mm')}</TableCell>
-                          <TableCell>
-                            <Badge variant={log.acao === 'exclusao' ? 'destructive' : log.acao === 'criacao' ? 'default' : 'secondary'}>
-                              {log.acao}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{log.descricao}</TableCell>
-                          <TableCell>{log.valor_anterior ? formatCurrency(log.valor_anterior) : '-'}</TableCell>
-                          <TableCell>{log.valor_novo ? formatCurrency(log.valor_novo) : '-'}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">Nenhum registro de auditoria</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-      </Tabs>
-
-      {/* Dialog Marcar Recebido */}
+      {/* DIALOGS */}
       <Dialog open={marcarRecebidoDialogOpen} onOpenChange={setMarcarRecebidoDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmar Recebimento</DialogTitle>
-            <DialogDescription>
-              Informe a data em que o valor foi recebido.
-            </DialogDescription>
+            <DialogTitle className="text-xl">✅ Marcar como Recebido</DialogTitle>
+            <DialogDescription>Confirme que este pagamento foi recebido</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label>Data de Recebimento</Label>
+            <Label className="text-base">Data do Recebimento</Label>
             <Input 
               type="date" 
-              value={dataRecebimento}
+              value={dataRecebimento} 
               onChange={(e) => setDataRecebimento(e.target.value)}
+              className="mt-2 h-12 text-base"
             />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setMarcarRecebidoDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleMarcarRecebido} disabled={marcarRecebido.isPending} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleMarcarRecebido} className="bg-green-600 hover:bg-green-700">
               {marcarRecebido.isPending ? 'Salvando...' : 'Confirmar Recebimento'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Excluir */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Excluir Lançamento</DialogTitle>
-            <DialogDescription>
-              Esta ação é irreversível. O lançamento será removido permanentemente, mas ficará registrado na auditoria.
-            </DialogDescription>
+            <DialogTitle className="text-xl text-red-600">🗑️ Excluir Lançamento</DialogTitle>
+            <DialogDescription>Esta ação não pode ser desfeita!</DialogDescription>
           </DialogHeader>
+          <p className="py-4 text-muted-foreground">Tem certeza que deseja excluir este lançamento financeiro?</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleExcluir} disabled={deleteLancamento.isPending}>
-              {deleteLancamento.isPending ? 'Excluindo...' : 'Excluir'}
+            <Button variant="destructive" onClick={handleExcluir}>
+              {deleteLancamento.isPending ? 'Excluindo...' : 'Sim, Excluir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={fechamentoDialogOpen} onOpenChange={setFechamentoDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-xl">🔒 Fechar Mês {mesAtual}/{anoAtual}</DialogTitle>
+            <DialogDescription>Após fechar, os dados serão consolidados e não poderão mais ser editados.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label className="text-base">Observações (opcional)</Label>
+            <Textarea 
+              value={fechamentoObs} 
+              onChange={(e) => setFechamentoObs(e.target.value)}
+              placeholder="Adicione observações sobre o fechamento..."
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFechamentoDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleFecharMes} disabled={fecharMes.isPending} className="bg-amber-600 hover:bg-amber-700">
+              {fecharMes.isPending ? 'Fechando...' : 'Confirmar Fechamento'}
             </Button>
           </DialogFooter>
         </DialogContent>
