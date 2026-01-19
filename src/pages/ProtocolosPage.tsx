@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Search, Filter, FileText, Clock, AlertTriangle, TrendingUp, DollarSign, Users, CheckCircle2, XCircle, Briefcase, Scale } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Search, Filter, FileText, Clock, AlertTriangle, TrendingUp, DollarSign, Users, CheckCircle2, XCircle, Briefcase, Scale, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,14 +12,24 @@ import { useProtocolos } from '@/hooks/useProtocolos';
 import { useDashboardProtocolos } from '@/hooks/useDashboardProtocolos';
 import { TIPO_PROTOCOLO_LABELS, STATUS_PROTOCOLO_LABELS, TipoProtocolo, StatusProtocolo } from '@/types/protocolo';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function ProtocolosPage() {
+  const navigate = useNavigate();
   const { data: protocolos, isLoading } = useProtocolos();
   const { data: stats, isLoading: loadingStats } = useDashboardProtocolos();
   const [search, setSearch] = useState('');
   const [tipoFilter, setTipoFilter] = useState<string>('todos');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [showMetrics, setShowMetrics] = useState(true);
+  const [showNewProtocolDialog, setShowNewProtocolDialog] = useState(false);
 
   const filteredProtocolos = protocolos?.filter(p => {
     const matchSearch = !search || 
@@ -52,6 +62,31 @@ export default function ProtocolosPage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
+      {/* Dialog para explicar criação via Cliente */}
+      <Dialog open={showNewProtocolDialog} onOpenChange={setShowNewProtocolDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              Criar Novo Protocolo
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Para garantir a integridade dos dados, novos protocolos devem ser criados através do cadastro do <strong>Cliente</strong>.
+              <br /><br />
+              Acesse a aba "Protocolos" dentro da ficha de edição do cliente desejado para criar um novo protocolo.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowNewProtocolDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => navigate('/clientes')}>
+              Ir para Clientes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Protocolos</h1>
@@ -61,9 +96,9 @@ export default function ProtocolosPage() {
           <Button variant="outline" onClick={() => setShowMetrics(!showMetrics)}>
             {showMetrics ? 'Ocultar Métricas' : 'Mostrar Métricas'}
           </Button>
-          <Link to="/protocolos/novo">
-            <Button><Plus className="h-4 w-4 mr-2" />Novo Protocolo</Button>
-          </Link>
+          <Button onClick={() => setShowNewProtocolDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />Novo Protocolo
+          </Button>
         </div>
       </div>
 

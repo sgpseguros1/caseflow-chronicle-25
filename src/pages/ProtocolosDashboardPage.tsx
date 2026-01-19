@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,17 +16,28 @@ import {
   List,
   Plus,
   DollarSign,
-  BarChart3
+  BarChart3,
+  Info
 } from 'lucide-react';
 import { useDashboardProtocolos } from '@/hooks/useDashboardProtocolos';
 import { ProtocolosKanbanBoard } from '@/components/protocolos/ProtocolosKanbanBoard';
 import { ProtocoloCard } from '@/components/protocolos/ProtocoloCard';
 import { TIPO_PROTOCOLO_LABELS, STATUS_PROTOCOLO_LABELS } from '@/types/protocolo';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function ProtocolosDashboardPage() {
+  const navigate = useNavigate();
   const { data: stats, isLoading } = useDashboardProtocolos();
   const [viewMode, setViewMode] = useState<'kanban' | 'lista'>('kanban');
+  const [showNewProtocolDialog, setShowNewProtocolDialog] = useState(false);
 
   if (isLoading) {
     return (
@@ -52,6 +63,31 @@ export default function ProtocolosDashboardPage() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
+      {/* Dialog para explicar criação via Cliente */}
+      <Dialog open={showNewProtocolDialog} onOpenChange={setShowNewProtocolDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              Criar Novo Protocolo
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Para garantir a integridade dos dados, novos protocolos devem ser criados através do cadastro do <strong>Cliente</strong>.
+              <br /><br />
+              Acesse a aba "Protocolos" dentro da ficha de edição do cliente desejado para criar um novo protocolo.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowNewProtocolDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => navigate('/clientes')}>
+              Ir para Clientes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -68,9 +104,9 @@ export default function ProtocolosDashboardPage() {
           <Button variant={viewMode === 'lista' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('lista')}>
             <List className="h-4 w-4 mr-1" /> Lista
           </Button>
-          <Link to="/protocolos/novo">
-            <Button><Plus className="h-4 w-4 mr-2" />Novo Protocolo</Button>
-          </Link>
+          <Button onClick={() => setShowNewProtocolDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />Novo Protocolo
+          </Button>
         </div>
       </div>
 
