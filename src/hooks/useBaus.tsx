@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { differenceInDays, parseISO } from 'date-fns';
+import { useEffect } from 'react';
 
 // Types
 export interface Bau {
@@ -91,6 +92,21 @@ const calcularFase = (dias: number): string => {
 // HOOK: Fetch all BAUs
 // ==========================================
 export function useBaus() {
+  const queryClient = useQueryClient();
+
+  // Realtime subscription para BAUs
+  useEffect(() => {
+    const channel = supabase
+      .channel('baus-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'client_baus' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['baus'] });
+        queryClient.invalidateQueries({ queryKey: ['bau-dashboard'] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['baus'],
     queryFn: async () => {
@@ -121,6 +137,7 @@ export function useBaus() {
       return bausWithDays;
     },
     refetchInterval: 30000, // Refresh every 30 seconds
+    refetchOnWindowFocus: true,
   });
 }
 

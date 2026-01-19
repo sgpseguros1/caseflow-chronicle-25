@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
+import SessionTracker from "@/components/auth/SessionTracker";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -52,6 +53,7 @@ import RelatoriosPage from "./pages/RelatoriosPage";
 import ComissoesPage from "./pages/ComissoesPage";
 import PainelGeralPage from "./pages/PainelGeralPage";
 import MonitoramentoRealtimePage from "./pages/MonitoramentoRealtimePage";
+import MonitoramentoSessoesPage from "./pages/MonitoramentoSessoesPage";
 import NotFound from "./pages/NotFound";
 import CalendarioPage from "./pages/CalendarioPage";
 import { Loader2 } from "lucide-react";
@@ -66,7 +68,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  return <AppLayout>{children}</AppLayout>;
+  return (
+    <SessionTracker>
+      <AppLayout>{children}</AppLayout>
+    </SessionTracker>
+  );
 };
 
 const App = () => (
@@ -125,6 +131,7 @@ const App = () => (
           <Route path="/comunicacao/templates/novo" element={<ProtectedRoute><ComunicacaoTemplateFormPage /></ProtectedRoute>} />
           <Route path="/ia" element={<ProtectedRoute><IAModulePage /></ProtectedRoute>} />
           <Route path="/admin/usuarios" element={<ProtectedRoute><UsersAdminPage /></ProtectedRoute>} />
+          <Route path="/admin/sessoes" element={<ProtectedRoute><MonitoramentoSessoesPage /></ProtectedRoute>} />
           <Route path="/financeiro" element={<ProtectedRoute><FinanceiroPainelPage /></ProtectedRoute>} />
           <Route path="/financeiro/novo" element={<ProtectedRoute><FinanceiroFormPage /></ProtectedRoute>} />
           {/* Monitoramento OAB / Processos Judiciais */}
