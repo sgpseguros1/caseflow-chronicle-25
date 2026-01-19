@@ -155,8 +155,8 @@ export function useMensagensConversa(conversaId?: string) {
         conversa_id: d.conversa_id || null,
         atendente_id: d.atendente_id || null,
         atendente_nome: d.atendente_nome || null,
-        anexos: (d as any).anexos || [],
-        origem: (d as any).origem || 'manual',
+        anexos: d.anexos || [],
+        origem: d.origem || 'manual',
       })) as Mensagem[];
     },
     enabled: !!conversaId,
