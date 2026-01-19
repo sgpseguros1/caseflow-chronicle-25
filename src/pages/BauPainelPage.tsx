@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { 
   Building2, 
   Clock, 
@@ -22,7 +23,10 @@ import {
   Activity,
   Users,
   Archive,
-  XCircle
+  XCircle,
+  Plus,
+  Search,
+  UserPlus
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -30,6 +34,7 @@ import {
   useBauDashboardStats, 
   useBauContatos,
   useConcluirBau,
+  useCreateBau,
   TIPO_SOLICITACAO_LABELS, 
   STATUS_BAU_LABELS,
   FASE_COBRANCA_LABELS,
@@ -38,6 +43,8 @@ import {
 } from '@/hooks/useBaus';
 import { useAuth } from '@/hooks/useAuth';
 import { useFuncionarios } from '@/hooks/useFuncionarios';
+import { useClients } from '@/hooks/useClients';
+import { useHospitais } from '@/hooks/useHospitais';
 import { toast } from '@/hooks/use-toast';
 
 // Timeline component for BAU
@@ -83,10 +90,14 @@ function BauTimeline({ bauId }: { bauId: string }) {
 }
 
 export default function BauPainelPage() {
+  const navigate = useNavigate();
   const { data: stats, isLoading } = useBauDashboardStats();
   const { data: funcionarios } = useFuncionarios();
+  const { data: clientes } = useClients();
+  const { data: hospitais } = useHospitais();
   const { isAdminOrGestor } = useAuth();
   const concluirBau = useConcluirBau();
+  const createBau = useCreateBau();
 
   const [tab, setTab] = useState('lista');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
@@ -103,6 +114,59 @@ export default function BauPainelPage() {
   }>({ open: false, bauId: null, clienteNome: '', hospitalNome: '' });
   const [conclusaoStatus, setConclusaoStatus] = useState<'arquivado' | 'concluido' | 'cancelado'>('arquivado');
   const [justificativa, setJustificativa] = useState('');
+
+  // Estado para modal de nova solicitação de BAU
+  const [novoBauModal, setNovoBauModal] = useState(false);
+  const [clienteSearch, setClienteSearch] = useState('');
+  const [selectedCliente, setSelectedCliente] = useState<{ id: string; name: string; code: number } | null>(null);
+  const [hospitalNome, setHospitalNome] = useState('');
+  const [hospitalTelefone, setHospitalTelefone] = useState('');
+  const [tipoSolicitacao, setTipoSolicitacao] = useState<'escritorio' | 'cliente_solicitou' | 'cliente_ira_solicitar'>('escritorio');
+  const [previsaoEntrega, setPrevisaoEntrega] = useState('');
+
+  // Filtrar clientes pela busca
+  const clientesFiltrados = useMemo(() => {
+    if (!clientes) return [];
+    if (!clienteSearch.trim()) return clientes.slice(0, 10);
+    const search = clienteSearch.toLowerCase();
+    return clientes.filter(c => 
+      c.name.toLowerCase().includes(search) || 
+      c.code.toString().includes(search)
+    ).slice(0, 20);
+  }, [clientes, clienteSearch]);
+
+  // Função para criar novo BAU
+  const handleCriarBau = async () => {
+    if (!selectedCliente) {
+      toast({ title: 'Selecione um cliente', variant: 'destructive' });
+      return;
+    }
+    if (!hospitalNome.trim()) {
+      toast({ title: 'Informe o nome do hospital', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      await createBau.mutateAsync({
+        client_id: selectedCliente.id,
+        hospital_nome: hospitalNome.trim(),
+        hospital_telefone: hospitalTelefone.trim() || null,
+        tipo_solicitacao: tipoSolicitacao,
+        previsao_entrega: previsaoEntrega || null,
+      });
+      
+      // Reset form
+      setNovoBauModal(false);
+      setSelectedCliente(null);
+      setHospitalNome('');
+      setHospitalTelefone('');
+      setTipoSolicitacao('escritorio');
+      setPrevisaoEntrega('');
+      setClienteSearch('');
+    } catch (error) {
+      // Error handled by mutation
+    }
+  };
 
   // BAUs ativos (não finalizados)
   const bausFiltrados = useMemo(() => {
@@ -173,13 +237,147 @@ export default function BauPainelPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-          <Building2 className="h-8 w-8 text-primary" />
-          Painel BAU — Hospitais
-        </h1>
-        <p className="text-muted-foreground">Dashboard de controle de prontuários médicos</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <Building2 className="h-8 w-8 text-primary" />
+            Painel BAU — Hospitais
+          </h1>
+          <p className="text-muted-foreground">Dashboard de controle de prontuários médicos</p>
+        </div>
+        <Button onClick={() => setNovoBauModal(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Solicitar BAU
+        </Button>
       </div>
+
+      {/* Modal de Nova Solicitação */}
+      <Dialog open={novoBauModal} onOpenChange={setNovoBauModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" />
+              Nova Solicitação de BAU
+            </DialogTitle>
+            <DialogDescription>
+              Selecione o cliente e preencha os dados do hospital
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Busca de Cliente */}
+            <div className="space-y-2">
+              <Label>Cliente *</Label>
+              {selectedCliente ? (
+                <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="font-medium">{selectedCliente.name}</span>
+                  <Badge variant="outline">#{selectedCliente.code}</Badge>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setSelectedCliente(null)}
+                    className="ml-auto"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar cliente por nome ou código..."
+                      value={clienteSearch}
+                      onChange={(e) => setClienteSearch(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  {clienteSearch && clientesFiltrados.length > 0 && (
+                    <div className="max-h-48 overflow-y-auto border rounded-lg">
+                      {clientesFiltrados.map(cliente => (
+                        <div 
+                          key={cliente.id}
+                          className="flex items-center gap-2 p-2 hover:bg-muted cursor-pointer"
+                          onClick={() => {
+                            setSelectedCliente({ id: cliente.id, name: cliente.name, code: cliente.code });
+                            setClienteSearch('');
+                          }}
+                        >
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span>{cliente.name}</span>
+                          <Badge variant="outline" className="text-xs">#{cliente.code}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Hospital */}
+            <div className="space-y-2">
+              <Label>Nome do Hospital *</Label>
+              <Input
+                value={hospitalNome}
+                onChange={(e) => setHospitalNome(e.target.value)}
+                placeholder="Ex: Hospital São Paulo"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Telefone do Hospital</Label>
+                <Input
+                  value={hospitalTelefone}
+                  onChange={(e) => setHospitalTelefone(e.target.value)}
+                  placeholder="(00) 0000-0000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Previsão de Entrega</Label>
+                <Input
+                  type="date"
+                  value={previsaoEntrega}
+                  onChange={(e) => setPrevisaoEntrega(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tipo de Solicitação</Label>
+              <Select 
+                value={tipoSolicitacao} 
+                onValueChange={(v) => setTipoSolicitacao(v as 'escritorio' | 'cliente_solicitou' | 'cliente_ira_solicitar')}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="escritorio">Escritório vai solicitar</SelectItem>
+                  <SelectItem value="cliente_solicitou">Cliente já solicitou</SelectItem>
+                  <SelectItem value="cliente_ira_solicitar">Cliente irá solicitar</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNovoBauModal(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleCriarBau} 
+              disabled={!selectedCliente || !hospitalNome.trim() || createBau.isPending}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              {createBau.isPending ? 'Criando...' : 'Criar BAU'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-7">
