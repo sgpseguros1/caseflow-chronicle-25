@@ -36,17 +36,17 @@ function formatMessageDate(dateStr: string) {
 }
 
 const PRIORIDADE_CONFIG: Record<string, { label: string; emoji: string; color: string }> = {
-  baixa: { label: 'Baixa', emoji: '🟢', color: 'bg-gray-100 text-gray-700' },
-  normal: { label: 'Normal', emoji: '🔵', color: 'bg-blue-100 text-blue-700' },
-  alta: { label: 'Alta', emoji: '🟠', color: 'bg-orange-100 text-orange-700' },
-  urgente: { label: 'Urgente', emoji: '🔴', color: 'bg-red-100 text-red-700' },
+  baixa: { label: 'Baixa', emoji: '🟢', color: 'bg-muted text-foreground' },
+  normal: { label: 'Normal', emoji: '🔵', color: 'bg-info/20 text-info' },
+  alta: { label: 'Alta', emoji: '🟠', color: 'bg-warning/20 text-warning' },
+  urgente: { label: 'Urgente', emoji: '🔴', color: 'bg-destructive/20 text-destructive' },
 };
 
 const STATUS_SOLICITACAO: Record<string, { label: string; emoji: string; color: string }> = {
-  pendente: { label: 'Pendente', emoji: '⏳', color: 'bg-yellow-100 text-yellow-700' },
-  em_andamento: { label: 'Em Andamento', emoji: '🔄', color: 'bg-blue-100 text-blue-700' },
-  concluida: { label: 'Concluída', emoji: '✅', color: 'bg-green-100 text-green-700' },
-  cancelada: { label: 'Cancelada', emoji: '❌', color: 'bg-gray-100 text-gray-700' },
+  pendente: { label: 'Pendente', emoji: '⏳', color: 'bg-primary/20 text-primary' },
+  em_andamento: { label: 'Em Andamento', emoji: '🔄', color: 'bg-info/20 text-info' },
+  concluida: { label: 'Concluída', emoji: '✅', color: 'bg-success/20 text-success' },
+  cancelada: { label: 'Cancelada', emoji: '❌', color: 'bg-muted text-muted-foreground' },
 };
 
 export default function ComunicacaoInternaPage() {
@@ -155,11 +155,11 @@ export default function ComunicacaoInternaPage() {
   return (
     <div className="h-[calc(100vh-8rem)]">
       {/* CABEÇALHO */}
-      <div className="flex justify-between items-center mb-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-6 rounded-2xl border">
+      <div className="flex justify-between items-center mb-6 bg-gradient-to-r from-card to-secondary/30 p-6 rounded-2xl border border-border/50">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <div className="p-3 bg-blue-500 rounded-xl">
-              <MessagesSquare className="h-8 w-8 text-white" />
+            <div className="p-3 bg-primary rounded-xl">
+              <MessagesSquare className="h-8 w-8 text-primary-foreground" />
             </div>
             Comunicação Interna
           </h1>
@@ -172,7 +172,7 @@ export default function ComunicacaoInternaPage() {
             </Badge>
           )}
           {pendentesRecebidas > 0 && (
-            <Badge className="bg-yellow-500 text-lg px-4 py-2">
+            <Badge className="bg-primary text-primary-foreground text-lg px-4 py-2">
               📋 {pendentesRecebidas} pendentes
             </Badge>
           )}
