@@ -139,25 +139,27 @@ export default function ClientEditPage() {
       return;
     }
 
-    // VALIDAÇÃO OBRIGATÓRIA: Checklist IA deve estar 100% preenchido
-    if (!checklistProgress.isComplete) {
-      setShowChecklistError(true);
-      toast.error(
-        `O Checklist IA é OBRIGATÓRIO! Preencha ${checklistProgress.total - checklistProgress.filled} campo(s) restante(s) antes de salvar.`,
-        {
-          duration: 6000,
-          description: 'Vá para a aba "Checklist IA" e preencha todos os campos obrigatórios.',
-        }
-      );
-      return;
-    }
-
     if (!id) return;
 
+    // Salvar os dados do cliente
     await updateClient.mutateAsync({
       id,
       ...formData,
     });
+    
+    // Mostrar aviso se o checklist estiver incompleto (mas não bloqueia o salvamento)
+    if (!checklistProgress.isComplete) {
+      setShowChecklistError(true);
+      toast.warning(
+        `Cliente salvo! Mas o Checklist IA está em ${checklistProgress.percentage}%. Complete para liberar análise da IA.`,
+        {
+          duration: 5000,
+          description: `Faltam ${checklistProgress.total - checklistProgress.filled} campo(s) obrigatório(s).`,
+        }
+      );
+    } else {
+      toast.success('Cliente atualizado com sucesso!');
+    }
     
     navigate(`/clientes/${id}`);
   };
