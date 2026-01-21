@@ -187,10 +187,32 @@ export function useChecklistProgress(checklist: ClientChecklistIA | null): {
   const total = mandatoryFields.length;
   let filled = 0;
 
+  // Boolean fields that count as filled when explicitly set to true OR false
+  const booleanFields = [
+    'atendimento_medico',
+    'lesao_corporal',
+    'tem_conta_banco',
+    'tem_cartao_credito',
+    'tem_emprestimo',
+    'fez_financiamento',
+    'trabalhava',
+    'contribuia_inss',
+    'afastamento_15_dias'
+  ];
+
   for (const field of mandatoryFields) {
     const value = (checklist as any)[field];
-    if (value !== null && value !== undefined && value !== '') {
-      filled++;
+    
+    // For boolean fields, check if it's explicitly true or false (not null/undefined)
+    if (booleanFields.includes(field)) {
+      if (typeof value === 'boolean') {
+        filled++;
+      }
+    } else {
+      // For other fields, check normal value presence
+      if (value !== null && value !== undefined && value !== '') {
+        filled++;
+      }
     }
   }
 
