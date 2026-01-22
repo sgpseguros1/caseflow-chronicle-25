@@ -81,11 +81,10 @@ export default function ClientFormPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate CPF if provided
+    // Validação de CPF apenas como aviso (não bloqueia)
     if (formData.cpf && formData.cpf.trim() !== '' && !isValidCPF(formData.cpf)) {
       setCpfError('CPF inválido');
-      toast.error('Por favor, corrija o CPF antes de salvar.');
-      return;
+      toast.warning('CPF parece inválido, mas o cadastro será salvo.');
     }
     
     await createClient.mutateAsync({
@@ -142,25 +141,23 @@ export default function ClientFormPage() {
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <Label htmlFor="name">Nome Completo *</Label>
+              <Label htmlFor="name">Nome Completo</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
                 placeholder="Nome completo do cliente"
-                required
               />
             </div>
             <div>
-              <Label htmlFor="cpf">CPF *</Label>
+              <Label htmlFor="cpf">CPF</Label>
               <Input
                 id="cpf"
                 value={formData.cpf}
                 onChange={(e) => handleChange('cpf', e.target.value)}
                 onBlur={handleCpfBlur}
                 placeholder="000.000.000-00"
-                className={cpfError ? 'border-destructive' : ''}
-                required
+                className={cpfError ? 'border-warning' : ''}
               />
               {cpfError && <p className="text-sm text-destructive mt-1">{cpfError}</p>}
             </div>
@@ -219,13 +216,12 @@ export default function ClientFormPage() {
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3">
             <div>
-              <Label htmlFor="phone1">Telefone 1 *</Label>
+              <Label htmlFor="phone1">Telefone 1</Label>
               <Input
                 id="phone1"
                 value={formData.phone1}
                 onChange={(e) => handleChange('phone1', e.target.value)}
                 placeholder="(00) 00000-0000"
-                required
               />
             </div>
             <div>

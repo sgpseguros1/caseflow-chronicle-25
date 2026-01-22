@@ -132,36 +132,36 @@ export default function ClientEditPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validação do CPF
+    // Validação do CPF apenas como aviso (não bloqueia salvamento)
     if (formData.cpf && formData.cpf.trim() !== '' && !isValidCPF(formData.cpf)) {
       setCpfError('CPF inválido');
-      toast.error('Por favor, corrija o CPF antes de salvar.');
-      return;
+      // Apenas aviso, não impede salvamento
     }
 
     if (!id) return;
 
-    // Salvar os dados do cliente
-    await updateClient.mutateAsync({
-      id,
-      ...formData,
-    });
-    
-    // Mostrar aviso se o checklist estiver incompleto (mas não bloqueia o salvamento)
-    if (!checklistProgress.isComplete) {
-      setShowChecklistError(true);
-      toast.warning(
-        `Cliente salvo! Mas o Checklist IA está em ${checklistProgress.percentage}%. Complete para liberar análise da IA.`,
-        {
-          duration: 5000,
-          description: `Faltam ${checklistProgress.total - checklistProgress.filled} campo(s) obrigatório(s).`,
-        }
-      );
-    } else {
-      toast.success('Cliente atualizado com sucesso!');
+    try {
+      // Salvar os dados do cliente - SEMPRE SALVA independente de campos vazios
+      await updateClient.mutateAsync({
+        id,
+        ...formData,
+      });
+      
+      toast.success('Cliente salvo com sucesso!');
+      
+      // Mostrar aviso sobre checklist se incompleto (apenas informativo)
+      if (!checklistProgress.isComplete) {
+        toast.info(
+          `Checklist IA em ${checklistProgress.percentage}%. Complete para análise automática.`,
+          { duration: 4000 }
+        );
+      }
+      
+      navigate(`/clientes/${id}`);
+    } catch (error) {
+      console.error('Erro ao salvar cliente:', error);
+      // O toast de erro já é exibido pelo hook
     }
-    
-    navigate(`/clientes/${id}`);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -243,14 +243,12 @@ Responda de forma objetiva e profissional.`,
         <ClientWorkflowSection clientId={id} />
       )}
 
-      {/* Alerta de Checklist Obrigatório */}
-      {showChecklistError && !checklistProgress.isComplete && (
-        <Alert variant="destructive" className="border-destructive bg-destructive/10">
-          <AlertTriangle className="h-5 w-5" />
-          <AlertDescription className="font-medium">
-            <strong>CHECKLIST IA OBRIGATÓRIO!</strong> Você precisa preencher 100% do Checklist IA antes de salvar o cliente. 
-            Faltam <strong>{checklistProgress.total - checklistProgress.filled}</strong> campo(s). 
-            Clique na aba "Checklist IA" para completar.
+      {/* Alerta de Checklist - Apenas Informativo */}
+      {!checklistProgress.isComplete && (
+        <Alert className="border-warning/50 bg-warning/10">
+          <AlertTriangle className="h-5 w-5 text-warning" />
+          <AlertDescription className="text-warning-foreground">
+            <strong>Checklist IA incompleto ({checklistProgress.percentage}%)</strong> - Complete para liberar análise automática da IA.
           </AlertDescription>
         </Alert>
       )}
@@ -1015,30 +1013,18 @@ Responda de forma objetiva e profissional.`,
           </TabsContent>
 
           {/* Actions - dentro do form */}
-          <div className="flex flex-col gap-3 pt-4">
-            {!checklistProgress.isComplete && (
-              <Alert variant="destructive" className="border-destructive/50">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Não é possível salvar:</strong> Checklist IA incompleto ({checklistProgress.percentage}%). 
-                  Preencha todos os campos obrigatórios.
-                </AlertDescription>
-              </Alert>
-            )}
-            <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => navigate(`/clientes/${id}`)}>
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={updateClient.isPending} 
-                className={`gap-2 ${!checklistProgress.isComplete ? 'opacity-70' : ''}`}
-              >
-                {!checklistProgress.isComplete && <AlertTriangle className="h-4 w-4 text-warning" />}
-                <Save className="h-4 w-4" />
-                {updateClient.isPending ? 'Salvando...' : 'Salvar Alterações'}
-              </Button>
-            </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => navigate(`/clientes/${id}`)}>
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={updateClient.isPending} 
+              className="gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {updateClient.isPending ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
           </div>
         </form>
 

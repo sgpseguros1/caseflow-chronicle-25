@@ -164,5 +164,6 @@ export const DOCUMENT_CATEGORIES = [
   'Procuração',
   'Contrato',
   'Comprovante de pagamento',
+  'BAU',
   'Outros',
 ] as const;
