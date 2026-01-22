@@ -134,14 +134,35 @@ export function useUploadClientDocument() {
       category?: string;
       userId?: string;
     }) => {
-      const filePath = `${clientId}/${Date.now()}_${file.name}`;
+      // Limpar nome do arquivo para evitar problemas
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const filePath = `${clientId}/${Date.now()}_${cleanFileName}`;
       
-      // Upload file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('client-documents')
-        .upload(filePath, file);
+      // Upload file to storage com retry
+      let uploadError: any = null;
+      let uploadSuccess = false;
+      
+      for (let attempt = 0; attempt < 3 && !uploadSuccess; attempt++) {
+        const result = await supabase.storage
+          .from('client-documents')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true, // Permite sobrescrever se já existir
+          });
+        
+        if (!result.error) {
+          uploadSuccess = true;
+        } else {
+          uploadError = result.error;
+          // Aguardar antes de tentar novamente
+          if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
+        }
+      }
 
-      if (uploadError) throw uploadError;
+      if (!uploadSuccess && uploadError) {
+        console.error('Upload error after retries:', uploadError);
+        throw new Error(`Falha no upload: ${uploadError.message}`);
+      }
 
       // Create document record
       const { data, error } = await supabase
@@ -150,29 +171,36 @@ export function useUploadClientDocument() {
           client_id: clientId,
           file_name: file.name,
           file_path: filePath,
-          file_type: file.type,
+          file_type: file.type || 'application/octet-stream',
           file_size: file.size,
-          description,
-          document_category: category,
-          uploaded_by: userId,
+          description: description || null,
+          document_category: category || 'Outros',
+          uploaded_by: userId || null,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database insert error:', error);
+        // Tentar limpar o arquivo do storage se falhou no banco
+        await supabase.storage.from('client-documents').remove([filePath]);
+        throw new Error(`Erro ao registrar documento: ${error.message}`);
+      }
+      
       return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['client_documents', variables.clientId] });
       toast({
-        title: 'Documento enviado!',
-        description: 'O documento foi salvo com sucesso.',
+        title: 'Documento salvo!',
+        description: 'Arquivo enviado e registrado com sucesso.',
       });
     },
     onError: (error: Error) => {
+      console.error('Document upload mutation error:', error);
       toast({
-        title: 'Erro ao enviar documento',
-        description: error.message,
+        title: 'Erro ao salvar documento',
+        description: error.message || 'Tente novamente em alguns segundos.',
         variant: 'destructive',
       });
     },
