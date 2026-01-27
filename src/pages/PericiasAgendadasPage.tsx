@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, addDays, isSameDay, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Search, Calendar as CalendarIcon, AlertTriangle, Clock, Users, CheckCircle2, XCircle, Loader2, Eye, Edit, Filter, ChevronLeft, ChevronRight, History } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, AlertTriangle, Clock, Users, CheckCircle2, XCircle, Loader2, Eye, Edit, Filter, ChevronLeft, ChevronRight, History, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,8 +14,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar } from '@/components/ui/calendar';
-import { usePericias, usePericiaStats, useCreatePericia, useUpdatePericia, useUpdatePericiaStatus, usePericiaLogs, TIPO_PERICIA_LABELS, STATUS_PERICIA_LABELS, STATUS_PERICIA_COLORS, Pericia, JuntaMedico } from '@/hooks/usePericias';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { usePericias, usePericiaStats, useCreatePericia, useUpdatePericia, useUpdatePericiaStatus, useDeletePericia, usePericiaLogs, TIPO_PERICIA_LABELS, STATUS_PERICIA_LABELS, STATUS_PERICIA_COLORS, Pericia, JuntaMedico } from '@/hooks/usePericias';
 import { useClients } from '@/hooks/useClients';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
 const TIPO_PERICIA_OPTIONS = Object.entries(TIPO_PERICIA_LABELS).map(([value, label]) => ({ value, label }));
@@ -32,6 +34,7 @@ export default function PericiasAgendadasPage() {
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedPericia, setSelectedPericia] = useState<Pericia | null>(null);
   const [formData, setFormData] = useState<any>({});
   const [juntaMedicos, setJuntaMedicos] = useState<Omit<JuntaMedico, 'id' | 'junta_id' | 'created_at'>[]>([emptyMedico, emptyMedico, emptyMedico]);
@@ -42,9 +45,11 @@ export default function PericiasAgendadasPage() {
   const { data: stats } = usePericiaStats();
   const { data: clients = [] } = useClients();
   const { data: logs = [] } = usePericiaLogs(selectedPericia?.id);
+  const { isAdmin } = useAuth();
   const createPericia = useCreatePericia();
   const updatePericia = useUpdatePericia();
   const updateStatus = useUpdatePericiaStatus();
+  const deletePericia = useDeletePericia();
 
   // Filtros
   const filteredPericias = useMemo(() => {
@@ -413,6 +418,16 @@ export default function PericiasAgendadasPage() {
                             <Button variant="ghost" size="icon" onClick={() => openStatusDialog(pericia)}>
                               <CheckCircle2 className="h-4 w-4" />
                             </Button>
+                            {isAdmin && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => { setSelectedPericia(pericia); setShowDeleteDialog(true); }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -923,6 +938,39 @@ export default function PericiasAgendadasPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog: Confirmar Exclusão */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Perícia</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta perícia? Esta ação não pode ser desfeita.
+              <br /><br />
+              <strong>Cliente:</strong> {selectedPericia?.cliente?.name}
+              <br />
+              <strong>Data:</strong> {selectedPericia?.data_pericia && format(parseISO(selectedPericia.data_pericia), 'dd/MM/yyyy')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (selectedPericia) {
+                  await deletePericia.mutateAsync(selectedPericia.id);
+                  setShowDeleteDialog(false);
+                  setSelectedPericia(null);
+                }
+              }}
+              disabled={deletePericia.isPending}
+            >
+              {deletePericia.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -402,7 +402,7 @@ export function useUpdatePericiaStatus() {
 
   return useMutation({
     mutationFn: async ({ id, status, observacoes }: { id: string; status: Pericia['status']; observacoes?: string }) => {
-      const updateData: any = { status };
+      const updateData: Record<string, unknown> = { status };
       if (observacoes) updateData.observacoes = observacoes;
 
       const { data, error } = await supabase
@@ -411,7 +411,11 @@ export function useUpdatePericiaStatus() {
         .eq('id', id)
         .select()
         .single();
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Erro ao atualizar status da perícia:', error);
+        throw error;
+      }
 
       // Se mudou para "realizada_aguardando_pagamento", criar lançamento financeiro
       if (status === 'realizada_aguardando_pagamento') {
@@ -431,17 +435,27 @@ export function useUpdatePericiaStatus() {
             judicial: 'judicial',
             acidente_trabalho: 'trabalhista',
             danos: 'danos',
+            junta_medica: 'outros',
             outros: 'outros'
           };
 
-          await supabase.from('lancamentos_financeiros').insert({
-            cliente_id: pericia.cliente_id,
-            pericia_id: id,
-            tipo_receita: tipoReceitaMap[pericia.tipo_pericia] || 'outros',
-            valor_bruto: 0,
-            valor_pago: 0,
-            status: 'em_aberto'
-          });
+          // Verificar se já existe lançamento para esta perícia
+          const { data: existingLancamento } = await supabase
+            .from('lancamentos_financeiros')
+            .select('id')
+            .eq('pericia_id', id)
+            .maybeSingle();
+
+          if (!existingLancamento) {
+            await supabase.from('lancamentos_financeiros').insert({
+              cliente_id: pericia.cliente_id,
+              pericia_id: id,
+              tipo_receita: tipoReceitaMap[pericia.tipo_pericia] || 'outros',
+              valor_bruto: 0,
+              valor_pago: 0,
+              status: 'em_aberto'
+            });
+          }
         }
       }
 
@@ -455,7 +469,35 @@ export function useUpdatePericiaStatus() {
       toast({ title: 'Status atualizado!', description: 'O status da perícia foi alterado.' });
     },
     onError: (error: Error) => {
+      console.error('Erro no mutation de status:', error);
       toast({ title: 'Erro ao atualizar status', description: error.message, variant: 'destructive' });
+    }
+  });
+}
+
+export function useDeletePericia() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('pericias')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Erro ao excluir perícia:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pericias'] });
+      queryClient.invalidateQueries({ queryKey: ['pericias-stats'] });
+      toast({ title: 'Perícia excluída!', description: 'O registro foi removido com sucesso.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erro ao excluir perícia', description: 'Apenas administradores podem excluir perícias.', variant: 'destructive' });
     }
   });
 }
