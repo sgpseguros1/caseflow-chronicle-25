@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Save, User, MapPin, Phone, Building2, Car, Stethoscope, Hospital, UserPlus, FileText, Upload, Loader2, Sparkles, FileStack, Bot, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Save, User, MapPin, Phone, Building2, Car, Stethoscope, Hospital, UserPlus, FileText, Upload, Loader2, Sparkles, FileStack, Bot, AlertTriangle, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -186,6 +186,25 @@ export default function ClientEditPage() {
   //   if (!id) return;
   //   await deleteDocument.mutateAsync({ id: docId, filePath, clientId: id });
   // };
+
+  // Download de documento
+  const downloadDocument = async (filePath: string, fileName: string) => {
+    try {
+      const { data, error } = await supabase.storage.from('client-documents').download(filePath);
+      if (error) throw error;
+      if (data) {
+        const url = URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Erro ao baixar documento:', error);
+      toast.error('Erro ao baixar documento');
+    }
+  };
 
   const getAiSuggestion = async () => {
     if (!formData.accident_type || !formData.injuries) {
@@ -1002,8 +1021,16 @@ Responda de forma objetiva e profissional.`,
                               {doc.document_category} • {format(new Date(doc.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                             </p>
                           </div>
-                        </div>
-                        {/* Botão de exclusão removido - ninguém pode excluir documentos */}
+                      </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => downloadDocument(doc.file_path, doc.file_name)}
+                          title="Baixar documento"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
                       </div>
                     ))}
                   </div>
