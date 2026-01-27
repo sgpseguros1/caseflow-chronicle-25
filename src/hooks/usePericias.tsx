@@ -419,11 +419,17 @@ export function useUpdatePericiaStatus() {
 
       // Se mudou para "realizada_aguardando_pagamento", criar lançamento financeiro
       if (status === 'realizada_aguardando_pagamento') {
-        const { data: pericia } = await supabase
+        const { data: pericia, error: periciaError } = await supabase
           .from('pericias')
           .select('cliente_id, tipo_pericia')
           .eq('id', id)
-          .single();
+          .maybeSingle();
+
+        if (periciaError) {
+          // Não pode bloquear a mudança de status por falha secundária
+          console.warn('[Pericias] Falha ao buscar perícia para lançamento financeiro:', periciaError);
+          return data;
+        }
 
         if (pericia) {
           const tipoReceitaMap: Record<string, string> = {
@@ -440,14 +446,20 @@ export function useUpdatePericiaStatus() {
           };
 
           // Verificar se já existe lançamento para esta perícia
-          const { data: existingLancamento } = await supabase
+          const { data: existingLancamento, error: existingError } = await supabase
             .from('lancamentos_financeiros')
             .select('id')
             .eq('pericia_id', id)
             .maybeSingle();
 
+          if (existingError) {
+            // Usuários sem permissão de finanças não devem ser impedidos de alterar status
+            console.warn('[Pericias] Sem acesso a lançamentos_financeiros (ignorado):', existingError);
+            return data;
+          }
+
           if (!existingLancamento) {
-            await supabase.from('lancamentos_financeiros').insert({
+            const { error: insertError } = await supabase.from('lancamentos_financeiros').insert({
               cliente_id: pericia.cliente_id,
               pericia_id: id,
               tipo_receita: tipoReceitaMap[pericia.tipo_pericia] || 'outros',
@@ -455,6 +467,11 @@ export function useUpdatePericiaStatus() {
               valor_pago: 0,
               status: 'em_aberto'
             });
+
+            if (insertError) {
+              // Não bloquear mudança de status por falha de criação do lançamento
+              console.warn('[Pericias] Falha ao criar lançamento financeiro (ignorado):', insertError);
+            }
           }
         }
       }

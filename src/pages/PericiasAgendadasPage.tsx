@@ -190,6 +190,11 @@ export default function PericiasAgendadasPage() {
   const handleStatusChange = async () => {
     if (!selectedPericia) return;
     try {
+      // Garantir que o valor enviado é um status válido do sistema
+      if (!formData?.newStatus || !(formData.newStatus in STATUS_PERICIA_LABELS)) {
+        console.error('[Pericias] Status inválido selecionado:', formData?.newStatus);
+        return;
+      }
       await updateStatus.mutateAsync({
         id: selectedPericia.id,
         status: formData.newStatus,
@@ -197,7 +202,10 @@ export default function PericiasAgendadasPage() {
       });
       setShowStatusDialog(false);
       setStatusObservacao('');
-    } catch (error) {}
+    } catch (error) {
+      // O hook já mostra toast, mas logamos aqui para diagnóstico real do erro
+      console.error('[Pericias] Erro ao alterar status:', error);
+    }
   };
 
   const openStatusDialog = (pericia: Pericia) => {
