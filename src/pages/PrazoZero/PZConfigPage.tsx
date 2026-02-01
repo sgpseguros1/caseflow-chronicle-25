@@ -12,7 +12,8 @@ import {
   Zap,
   CheckCircle,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,9 +29,11 @@ type PrazoPrioridade = Database['public']['Enums']['prazo_prioridade'];
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { usePZRegras, useCreatePZRegra, usePZUsuarios, PZRegra } from '@/hooks/usePrazoZero';
+import { usePZRegras, useCreatePZRegra, usePZUsuarios, usePZEmailConexoes, useCreatePZEmailConexao, useDeletePZEmailConexao, PZRegra, PZEmailConexao } from '@/hooks/usePrazoZero';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 function RegraCard({ regra }: { regra: PZRegra }) {
   const condicoes = regra.condicoes as any;
@@ -89,11 +92,16 @@ export default function PZConfigPage() {
   const { isAdmin } = useAuth();
   const { data: regras, isLoading: regrasLoading } = usePZRegras();
   const { data: usuarios } = usePZUsuarios();
+  const { data: emailConexoes, isLoading: conexoesLoading } = usePZEmailConexoes();
   const createRegra = useCreatePZRegra();
+  const createEmailConexao = useCreatePZEmailConexao();
+  const deleteEmailConexao = useDeletePZEmailConexao();
 
   const [showRegraDialog, setShowRegraDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState<'gmail' | 'outlook' | 'imap' | null>(null);
   const [emailCredentials, setEmailCredentials] = useState({
+    nome: '',
+    email: '',
     clientId: '',
     clientSecret: '',
     // IMAP fields
@@ -112,6 +120,47 @@ export default function PZConfigPage() {
     acao_prioridade: '',
     acao_criar_tarefa: true,
   });
+
+  const resetEmailForm = () => {
+    setEmailCredentials({
+      nome: '',
+      email: '',
+      clientId: '',
+      clientSecret: '',
+      imapHost: '',
+      imapPort: '993',
+      imapUser: '',
+      imapPassword: '',
+    });
+  };
+
+  const handleSaveEmailConnection = async () => {
+    if (showEmailDialog === 'imap') {
+      if (!emailCredentials.nome || !emailCredentials.imapHost || !emailCredentials.imapUser || !emailCredentials.imapPassword) {
+        toast.error('Preencha todos os campos obrigatórios');
+        return;
+      }
+      
+      try {
+        await createEmailConexao.mutateAsync({
+          nome: emailCredentials.nome,
+          tipo: 'imap',
+          email: emailCredentials.imapUser,
+          imap_host: emailCredentials.imapHost,
+          imap_port: parseInt(emailCredentials.imapPort) || 993,
+          imap_user: emailCredentials.imapUser,
+          imap_password: emailCredentials.imapPassword,
+        });
+        setShowEmailDialog(null);
+        resetEmailForm();
+      } catch (error) {
+        console.error('Erro ao salvar conexão:', error);
+      }
+    } else {
+      // Gmail/Outlook OAuth - em desenvolvimento
+      toast.info('OAuth em desenvolvimento. Use IMAP por enquanto.');
+    }
+  };
 
   if (!isAdmin) {
     return (
@@ -205,48 +254,97 @@ export default function PZConfigPage() {
                     Conecte seus e-mails para sincronização automática
                   </CardDescription>
                 </div>
+                <Button onClick={() => setShowEmailDialog('imap')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Conectar E-mail
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Mail className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">Nenhuma caixa conectada</h3>
-                <p className="text-muted-foreground mt-1 max-w-md">
-                  Conecte sua conta Gmail, Outlook ou configure um servidor IMAP para começar a receber e-mails automaticamente.
-                </p>
-                <div className="flex gap-3 mt-6">
-                  <Button variant="outline" onClick={() => setShowEmailDialog('gmail')}>
-                    <img src="https://www.google.com/favicon.ico" className="h-4 w-4 mr-2" alt="" />
-                    Gmail
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowEmailDialog('outlook')}>
-                    <img src="https://www.microsoft.com/favicon.ico" className="h-4 w-4 mr-2" alt="" />
-                    Outlook
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowEmailDialog('imap')}>
-                    <Mail className="h-4 w-4 mr-2" />
-                    IMAP
-                  </Button>
+              {conexoesLoading ? (
+                <p className="text-center text-muted-foreground py-8">Carregando...</p>
+              ) : emailConexoes && emailConexoes.length > 0 ? (
+                <div className="space-y-3">
+                  {emailConexoes.map((conexao) => (
+                    <div key={conexao.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${conexao.ativo ? 'bg-green-100' : 'bg-gray-100'}`}>
+                          <Mail className={`h-5 w-5 ${conexao.ativo ? 'text-green-600' : 'text-gray-500'}`} />
+                        </div>
+                        <div>
+                          <p className="font-medium">{conexao.nome}</p>
+                          <p className="text-sm text-muted-foreground">{conexao.email}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">{conexao.tipo.toUpperCase()}</Badge>
+                            {conexao.ultimo_sync && (
+                              <span className="text-xs text-muted-foreground">
+                                Último sync: {format(new Date(conexao.ultimo_sync), "dd/MM HH:mm", { locale: ptBR })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" title="Sincronizar">
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-destructive"
+                          onClick={() => {
+                            if (confirm('Remover esta conexão de e-mail?')) {
+                              deleteEmailConexao.mutate(conexao.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Mail className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">Nenhuma caixa conectada</h3>
+                  <p className="text-muted-foreground mt-1 max-w-md">
+                    Conecte sua conta de e-mail via IMAP para começar a receber e-mails automaticamente.
+                  </p>
+                  <div className="flex gap-3 mt-6">
+                    <Button variant="outline" onClick={() => setShowEmailDialog('gmail')} disabled>
+                      <img src="https://www.google.com/favicon.ico" className="h-4 w-4 mr-2" alt="" />
+                      Gmail (em breve)
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowEmailDialog('outlook')} disabled>
+                      <img src="https://www.microsoft.com/favicon.ico" className="h-4 w-4 mr-2" alt="" />
+                      Outlook (em breve)
+                    </Button>
+                    <Button onClick={() => setShowEmailDialog('imap')}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      IMAP
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Info Card */}
-          <Card className="mt-4 bg-amber-50 border-amber-200">
+          <Card className="mt-4 bg-muted/50">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-600" />
-                Configuração Necessária
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                Como Configurar IMAP
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm space-y-2">
-              <p>Para conectar o Gmail ou Outlook, você precisa:</p>
-              <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                <li><strong>Gmail:</strong> Criar um projeto no <a href="https://console.cloud.google.com" target="_blank" rel="noopener" className="text-blue-600 underline">Google Cloud Console</a> e habilitar a Gmail API</li>
-                <li><strong>Outlook:</strong> Registrar um app no <a href="https://portal.azure.com" target="_blank" rel="noopener" className="text-blue-600 underline">Azure Portal</a></li>
-                <li>Obter as credenciais OAuth (Client ID e Client Secret)</li>
-              </ol>
+              <p>Para conectar via IMAP, você precisa das configurações do seu provedor de e-mail:</p>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li><strong>Gmail:</strong> imap.gmail.com (porta 993) - Use uma "Senha de App"</li>
+                <li><strong>Outlook:</strong> outlook.office365.com (porta 993)</li>
+                <li><strong>Outros:</strong> Consulte as configurações do seu provedor</li>
+              </ul>
             </CardContent>
           </Card>
         </TabsContent>
@@ -578,21 +676,31 @@ export default function PZConfigPage() {
           {showEmailDialog === 'imap' && (
             <div className="space-y-4">
               <div>
-                <Label>Servidor IMAP *</Label>
+                <Label>Nome da Conexão *</Label>
                 <Input
-                  value={emailCredentials.imapHost}
-                  onChange={(e) => setEmailCredentials({ ...emailCredentials, imapHost: e.target.value })}
-                  placeholder="imap.seuservidor.com"
+                  value={emailCredentials.nome}
+                  onChange={(e) => setEmailCredentials({ ...emailCredentials, nome: e.target.value })}
+                  placeholder="Ex: E-mail do Escritório"
                 />
               </div>
 
-              <div>
-                <Label>Porta</Label>
-                <Input
-                  value={emailCredentials.imapPort}
-                  onChange={(e) => setEmailCredentials({ ...emailCredentials, imapPort: e.target.value })}
-                  placeholder="993"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Servidor IMAP *</Label>
+                  <Input
+                    value={emailCredentials.imapHost}
+                    onChange={(e) => setEmailCredentials({ ...emailCredentials, imapHost: e.target.value })}
+                    placeholder="imap.gmail.com"
+                  />
+                </div>
+                <div>
+                  <Label>Porta</Label>
+                  <Input
+                    value={emailCredentials.imapPort}
+                    onChange={(e) => setEmailCredentials({ ...emailCredentials, imapPort: e.target.value })}
+                    placeholder="993"
+                  />
+                </div>
               </div>
 
               <div>
@@ -610,26 +718,28 @@ export default function PZConfigPage() {
                   type="password"
                   value={emailCredentials.imapPassword}
                   onChange={(e) => setEmailCredentials({ ...emailCredentials, imapPassword: e.target.value })}
-                  placeholder="Sua senha"
+                  placeholder="Sua senha ou senha de app"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Para Gmail, use uma <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" className="text-primary underline">Senha de App</a>
+                </p>
               </div>
             </div>
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEmailDialog(null)}>
+            <Button variant="outline" onClick={() => { setShowEmailDialog(null); resetEmailForm(); }}>
               Cancelar
             </Button>
             <Button 
-              onClick={() => {
-                toast.info('Funcionalidade em desenvolvimento. As credenciais serão salvas em breve.');
-                setShowEmailDialog(null);
-              }}
+              onClick={handleSaveEmailConnection}
               disabled={
+                createEmailConexao.isPending ||
                 (showEmailDialog !== 'imap' && (!emailCredentials.clientId || !emailCredentials.clientSecret)) ||
-                (showEmailDialog === 'imap' && (!emailCredentials.imapHost || !emailCredentials.imapUser || !emailCredentials.imapPassword))
+                (showEmailDialog === 'imap' && (!emailCredentials.nome || !emailCredentials.imapHost || !emailCredentials.imapUser || !emailCredentials.imapPassword))
               }
             >
+              {createEmailConexao.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Conectar
             </Button>
           </DialogFooter>
