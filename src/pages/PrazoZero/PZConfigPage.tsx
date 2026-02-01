@@ -92,6 +92,16 @@ export default function PZConfigPage() {
   const createRegra = useCreatePZRegra();
 
   const [showRegraDialog, setShowRegraDialog] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState<'gmail' | 'outlook' | 'imap' | null>(null);
+  const [emailCredentials, setEmailCredentials] = useState({
+    clientId: '',
+    clientSecret: '',
+    // IMAP fields
+    imapHost: '',
+    imapPort: '993',
+    imapUser: '',
+    imapPassword: '',
+  });
   const [regraForm, setRegraForm] = useState({
     nome: '',
     descricao: '',
@@ -195,10 +205,6 @@ export default function PZConfigPage() {
                     Conecte seus e-mails para sincronização automática
                   </CardDescription>
                 </div>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Conectar E-mail
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -209,20 +215,38 @@ export default function PZConfigPage() {
                   Conecte sua conta Gmail, Outlook ou configure um servidor IMAP para começar a receber e-mails automaticamente.
                 </p>
                 <div className="flex gap-3 mt-6">
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={() => setShowEmailDialog('gmail')}>
                     <img src="https://www.google.com/favicon.ico" className="h-4 w-4 mr-2" alt="" />
                     Gmail
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={() => setShowEmailDialog('outlook')}>
                     <img src="https://www.microsoft.com/favicon.ico" className="h-4 w-4 mr-2" alt="" />
                     Outlook
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={() => setShowEmailDialog('imap')}>
                     <Mail className="h-4 w-4 mr-2" />
                     IMAP
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Info Card */}
+          <Card className="mt-4 bg-amber-50 border-amber-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                Configuração Necessária
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-2">
+              <p>Para conectar o Gmail ou Outlook, você precisa:</p>
+              <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                <li><strong>Gmail:</strong> Criar um projeto no <a href="https://console.cloud.google.com" target="_blank" rel="noopener" className="text-blue-600 underline">Google Cloud Console</a> e habilitar a Gmail API</li>
+                <li><strong>Outlook:</strong> Registrar um app no <a href="https://portal.azure.com" target="_blank" rel="noopener" className="text-blue-600 underline">Azure Portal</a></li>
+                <li>Obter as credenciais OAuth (Client ID e Client Secret)</li>
+              </ol>
             </CardContent>
           </Card>
         </TabsContent>
@@ -470,6 +494,143 @@ export default function PZConfigPage() {
             </Button>
             <Button onClick={handleCreateRegra} disabled={createRegra.isPending}>
               Criar Regra
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Conexão de E-mail */}
+      <Dialog open={!!showEmailDialog} onOpenChange={(open) => !open && setShowEmailDialog(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {showEmailDialog === 'gmail' && (
+                <>
+                  <img src="https://www.google.com/favicon.ico" className="h-5 w-5" alt="" />
+                  Conectar Gmail
+                </>
+              )}
+              {showEmailDialog === 'outlook' && (
+                <>
+                  <img src="https://www.microsoft.com/favicon.ico" className="h-5 w-5" alt="" />
+                  Conectar Outlook
+                </>
+              )}
+              {showEmailDialog === 'imap' && (
+                <>
+                  <Mail className="h-5 w-5" />
+                  Configurar IMAP
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          {(showEmailDialog === 'gmail' || showEmailDialog === 'outlook') && (
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg text-sm space-y-2">
+                <p className="font-medium">Passos para obter as credenciais:</p>
+                {showEmailDialog === 'gmail' ? (
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                    <li>Acesse o <a href="https://console.cloud.google.com" target="_blank" rel="noopener" className="text-primary underline">Google Cloud Console</a></li>
+                    <li>Crie um projeto ou selecione um existente</li>
+                    <li>Habilite a <strong>Gmail API</strong></li>
+                    <li>Vá em "Credenciais" → "Criar credenciais" → "ID do cliente OAuth"</li>
+                    <li>Selecione "Aplicativo da Web"</li>
+                    <li>Adicione como URI de redirecionamento: <code className="bg-background px-1 rounded">{window.location.origin}/api/gmail-callback</code></li>
+                    <li>Copie o Client ID e Client Secret abaixo</li>
+                  </ol>
+                ) : (
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                    <li>Acesse o <a href="https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank" rel="noopener" className="text-primary underline">Azure Portal - App Registrations</a></li>
+                    <li>Clique em "Novo registro"</li>
+                    <li>Configure o redirect URI: <code className="bg-background px-1 rounded">{window.location.origin}/api/outlook-callback</code></li>
+                    <li>Vá em "Certificados e segredos" para criar um Client Secret</li>
+                    <li>Copie o Application ID (Client ID) e o Secret abaixo</li>
+                  </ol>
+                )}
+              </div>
+
+              <div>
+                <Label>Client ID *</Label>
+                <Input
+                  value={emailCredentials.clientId}
+                  onChange={(e) => setEmailCredentials({ ...emailCredentials, clientId: e.target.value })}
+                  placeholder={showEmailDialog === 'gmail' ? 'xxx.apps.googleusercontent.com' : 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'}
+                />
+              </div>
+
+              <div>
+                <Label>Client Secret *</Label>
+                <Input
+                  type="password"
+                  value={emailCredentials.clientSecret}
+                  onChange={(e) => setEmailCredentials({ ...emailCredentials, clientSecret: e.target.value })}
+                  placeholder="Seu client secret"
+                />
+              </div>
+
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                <strong>Importante:</strong> Suas credenciais serão armazenadas de forma segura e usadas apenas para sincronizar seus e-mails.
+              </div>
+            </div>
+          )}
+
+          {showEmailDialog === 'imap' && (
+            <div className="space-y-4">
+              <div>
+                <Label>Servidor IMAP *</Label>
+                <Input
+                  value={emailCredentials.imapHost}
+                  onChange={(e) => setEmailCredentials({ ...emailCredentials, imapHost: e.target.value })}
+                  placeholder="imap.seuservidor.com"
+                />
+              </div>
+
+              <div>
+                <Label>Porta</Label>
+                <Input
+                  value={emailCredentials.imapPort}
+                  onChange={(e) => setEmailCredentials({ ...emailCredentials, imapPort: e.target.value })}
+                  placeholder="993"
+                />
+              </div>
+
+              <div>
+                <Label>E-mail / Usuário *</Label>
+                <Input
+                  value={emailCredentials.imapUser}
+                  onChange={(e) => setEmailCredentials({ ...emailCredentials, imapUser: e.target.value })}
+                  placeholder="seu@email.com"
+                />
+              </div>
+
+              <div>
+                <Label>Senha / Senha de App *</Label>
+                <Input
+                  type="password"
+                  value={emailCredentials.imapPassword}
+                  onChange={(e) => setEmailCredentials({ ...emailCredentials, imapPassword: e.target.value })}
+                  placeholder="Sua senha"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEmailDialog(null)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                toast.info('Funcionalidade em desenvolvimento. As credenciais serão salvas em breve.');
+                setShowEmailDialog(null);
+              }}
+              disabled={
+                (showEmailDialog !== 'imap' && (!emailCredentials.clientId || !emailCredentials.clientSecret)) ||
+                (showEmailDialog === 'imap' && (!emailCredentials.imapHost || !emailCredentials.imapUser || !emailCredentials.imapPassword))
+              }
+            >
+              Conectar
             </Button>
           </DialogFooter>
         </DialogContent>
