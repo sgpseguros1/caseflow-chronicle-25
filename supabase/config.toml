@@ -5,3 +5,15 @@ verify_jwt = false
 
 [functions.check-process-alerts]
 verify_jwt = false
+
+[functions.gmail-oauth]
+verify_jwt = false
+
+[functions.gmail-oauth-callback]
+verify_jwt = false
+
+[functions.gmail-sync]
+verify_jwt = false
+
+[functions.gmail-classify]
+verify_jwt = false

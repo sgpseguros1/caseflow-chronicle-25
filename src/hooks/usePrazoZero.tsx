@@ -678,3 +678,202 @@ export function useDeletePZEmailConexao() {
     },
   });
 }
+
+// ============ GMAIL OAUTH ============
+
+export interface PZGmailToken {
+  id: string;
+  user_id: string;
+  email: string;
+  token_expiry: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function usePZGmailTokens() {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['pz-gmail-tokens', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      try {
+        const { data, error } = await (supabase as any)
+          .from('pz_gmail_tokens')
+          .select('id, user_id, email, token_expiry, created_at, updated_at')
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Gmail tokens error:', error);
+          return [];
+        }
+        return (data || []) as PZGmailToken[];
+      } catch (e) {
+        console.error('Gmail tokens error:', e);
+        return [];
+      }
+    },
+    enabled: !!user?.id,
+  });
+}
+
+export function useGmailOAuth() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Você precisa estar logado');
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gmail-oauth`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao iniciar OAuth');
+      }
+
+      const { authUrl } = await response.json();
+      return authUrl;
+    },
+    onSuccess: (authUrl) => {
+      // Open OAuth popup
+      const width = 600;
+      const height = 700;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      
+      const popup = window.open(
+        authUrl,
+        'Gmail OAuth',
+        `width=${width},height=${height},left=${left},top=${top}`
+      );
+
+      // Listen for completion
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === 'gmail-oauth-success') {
+          queryClient.invalidateQueries({ queryKey: ['pz-gmail-tokens'] });
+          toast.success('Gmail conectado com sucesso!');
+        }
+        window.removeEventListener('message', handleMessage);
+      };
+
+      window.addEventListener('message', handleMessage);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erro ao conectar Gmail');
+    },
+  });
+}
+
+export function useGmailSync() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Você precisa estar logado');
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gmail-sync`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao sincronizar');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['pz-emails-triagem'] });
+      queryClient.invalidateQueries({ queryKey: ['pz-dashboard-stats'] });
+      toast.success(`Sincronização concluída: ${data.imported} novos e-mails importados`);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erro ao sincronizar');
+    },
+  });
+}
+
+export function useGmailClassify() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Você precisa estar logado');
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gmail-classify`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao classificar');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['pz-emails-triagem'] });
+      toast.success(`${data.classified} e-mails classificados pela IA`);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erro ao classificar');
+    },
+  });
+}
+
+export function useDisconnectGmail() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (tokenId: string) => {
+      const { error } = await (supabase as any)
+        .from('pz_gmail_tokens')
+        .delete()
+        .eq('id', tokenId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pz-gmail-tokens'] });
+      toast.success('Gmail desconectado');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erro ao desconectar');
+    },
+  });
+}
