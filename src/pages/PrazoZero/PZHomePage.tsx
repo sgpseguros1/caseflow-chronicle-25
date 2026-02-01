@@ -12,7 +12,9 @@ import {
   Inbox,
   FileText,
   Scale,
-  TrendingUp
+  TrendingUp,
+  Settings,
+  Mail
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -227,7 +229,7 @@ export default function PZHomePage() {
       </div>
 
       {/* Quick Links */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Link to="/prazo-zero/tarefas">
           <Card className="hover:bg-accent transition-colors cursor-pointer">
             <CardContent className="flex items-center gap-3 p-4">
@@ -271,6 +273,18 @@ export default function PZHomePage() {
               <div>
                 <p className="font-medium">Relatórios</p>
                 <p className="text-sm text-muted-foreground">Produtividade</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/prazo-zero/config">
+          <Card className="hover:bg-accent transition-colors cursor-pointer border-dashed border-2">
+            <CardContent className="flex items-center gap-3 p-4">
+              <Mail className="h-8 w-8 text-primary" />
+              <div>
+                <p className="font-medium">Conectar E-mail</p>
+                <p className="text-sm text-muted-foreground">Gmail / Outlook</p>
               </div>
             </CardContent>
           </Card>
