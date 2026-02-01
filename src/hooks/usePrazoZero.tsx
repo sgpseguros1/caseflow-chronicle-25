@@ -722,25 +722,6 @@ export function useGmailOAuth() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // Abrir popup imediatamente (ainda dentro do gesto do clique) para evitar bloqueio do browser.
-    onMutate: () => {
-      const width = 600;
-      const height = 700;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-
-      const popup = window.open(
-        'about:blank',
-        'Gmail OAuth',
-        `width=${width},height=${height},left=${left},top=${top},noopener,noreferrer`
-      );
-
-      if (!popup) {
-        toast.error('Permita pop-ups para conectar o Gmail.');
-      }
-
-      return { popup };
-    },
     mutationFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
@@ -766,39 +747,13 @@ export function useGmailOAuth() {
       const { authUrl } = await response.json();
       return authUrl;
     },
-    onSuccess: (authUrl, _vars, ctx) => {
-      const popup = ctx?.popup ?? null;
-
-      // Navega o popup já aberto (evita bloqueio do browser por async)
-      if (popup && !popup.closed) {
-        try {
-          popup.location.href = authUrl;
-          popup.focus();
-        } catch {
-          // fallback: abre nova aba
-          window.open(authUrl, '_blank', 'noopener,noreferrer');
-        }
-      } else {
-        window.open(authUrl, '_blank', 'noopener,noreferrer');
-      }
-
-      // Listen for completion
-      const handleMessage = (event: MessageEvent) => {
-        if (event.data?.type === 'gmail-oauth-success') {
-          queryClient.invalidateQueries({ queryKey: ['pz-gmail-tokens'] });
-          toast.success('Gmail conectado com sucesso!');
-        }
-        window.removeEventListener('message', handleMessage);
-      };
-
-      window.addEventListener('message', handleMessage);
+    onSuccess: (authUrl) => {
+      // Estratégia anti-bloqueio: redirect na mesma aba (browser não bloqueia)
+      // O callback já redireciona de volta para /prazo-zero/config.
+      toast.message('Abrindo autorização do Gmail…');
+      window.location.assign(authUrl);
     },
-    onError: (error: any, _vars, ctx) => {
-      try {
-        ctx?.popup?.close?.();
-      } catch {
-        // ignore
-      }
+    onError: (error: any) => {
       toast.error(error.message || 'Erro ao conectar Gmail');
     },
   });
