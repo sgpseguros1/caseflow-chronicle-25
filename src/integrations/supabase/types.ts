@@ -3687,6 +3687,655 @@ export type Database = {
           },
         ]
       }
+      pz_agenda: {
+        Row: {
+          cliente_id: string | null
+          concluido: boolean | null
+          created_at: string | null
+          criado_por: string | null
+          data_fim: string | null
+          data_inicio: string
+          descricao: string | null
+          dia_inteiro: boolean | null
+          id: string
+          processo_id: string | null
+          responsavel_id: string | null
+          tarefa_id: string | null
+          tipo: string
+          titulo: string
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          concluido?: boolean | null
+          created_at?: string | null
+          criado_por?: string | null
+          data_fim?: string | null
+          data_inicio: string
+          descricao?: string | null
+          dia_inteiro?: boolean | null
+          id?: string
+          processo_id?: string | null
+          responsavel_id?: string | null
+          tarefa_id?: string | null
+          tipo: string
+          titulo: string
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          concluido?: boolean | null
+          created_at?: string | null
+          criado_por?: string | null
+          data_fim?: string | null
+          data_inicio?: string
+          descricao?: string | null
+          dia_inteiro?: boolean | null
+          id?: string
+          processo_id?: string | null
+          responsavel_id?: string | null
+          tarefa_id?: string | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pz_agenda_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_agenda_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_agenda_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_agenda_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_agenda_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "pz_tarefas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pz_caixas_email: {
+        Row: {
+          ativo: boolean | null
+          config_imap: Json | null
+          created_at: string | null
+          criado_por: string | null
+          email: string
+          id: string
+          nome: string
+          provedor: string
+          tokens_encrypted: string | null
+          ultima_sincronizacao: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          config_imap?: Json | null
+          created_at?: string | null
+          criado_por?: string | null
+          email: string
+          id?: string
+          nome: string
+          provedor: string
+          tokens_encrypted?: string | null
+          ultima_sincronizacao?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          config_imap?: Json | null
+          created_at?: string | null
+          criado_por?: string | null
+          email?: string
+          id?: string
+          nome?: string
+          provedor?: string
+          tokens_encrypted?: string | null
+          ultima_sincronizacao?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pz_caixas_email_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pz_checklist_templates: {
+        Row: {
+          ativo: boolean | null
+          categoria: Database["public"]["Enums"]["email_categoria"]
+          created_at: string | null
+          id: string
+          itens: Json
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria: Database["public"]["Enums"]["email_categoria"]
+          created_at?: string | null
+          id?: string
+          itens: Json
+          nome: string
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: Database["public"]["Enums"]["email_categoria"]
+          created_at?: string | null
+          id?: string
+          itens?: Json
+          nome?: string
+        }
+        Relationships: []
+      }
+      pz_emails: {
+        Row: {
+          anexos: Json | null
+          assunto: string | null
+          caixa_id: string | null
+          categoria: Database["public"]["Enums"]["email_categoria"] | null
+          classificado_manualmente: boolean | null
+          confianca_ia: number | null
+          corpo_html: string | null
+          corpo_texto: string | null
+          created_at: string | null
+          dados_extraidos: Json | null
+          data_recebimento: string | null
+          destinatarios: string[] | null
+          id: string
+          lido: boolean | null
+          lido_em: string | null
+          lido_por: string | null
+          message_id: string | null
+          processado: boolean | null
+          remetente: string | null
+          remetente_nome: string | null
+          tem_anexos: boolean | null
+          triagem_pendente: boolean | null
+        }
+        Insert: {
+          anexos?: Json | null
+          assunto?: string | null
+          caixa_id?: string | null
+          categoria?: Database["public"]["Enums"]["email_categoria"] | null
+          classificado_manualmente?: boolean | null
+          confianca_ia?: number | null
+          corpo_html?: string | null
+          corpo_texto?: string | null
+          created_at?: string | null
+          dados_extraidos?: Json | null
+          data_recebimento?: string | null
+          destinatarios?: string[] | null
+          id?: string
+          lido?: boolean | null
+          lido_em?: string | null
+          lido_por?: string | null
+          message_id?: string | null
+          processado?: boolean | null
+          remetente?: string | null
+          remetente_nome?: string | null
+          tem_anexos?: boolean | null
+          triagem_pendente?: boolean | null
+        }
+        Update: {
+          anexos?: Json | null
+          assunto?: string | null
+          caixa_id?: string | null
+          categoria?: Database["public"]["Enums"]["email_categoria"] | null
+          classificado_manualmente?: boolean | null
+          confianca_ia?: number | null
+          corpo_html?: string | null
+          corpo_texto?: string | null
+          created_at?: string | null
+          dados_extraidos?: Json | null
+          data_recebimento?: string | null
+          destinatarios?: string[] | null
+          id?: string
+          lido?: boolean | null
+          lido_em?: string | null
+          lido_por?: string | null
+          message_id?: string | null
+          processado?: boolean | null
+          remetente?: string | null
+          remetente_nome?: string | null
+          tem_anexos?: boolean | null
+          triagem_pendente?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pz_emails_caixa_id_fkey"
+            columns: ["caixa_id"]
+            isOneToOne: false
+            referencedRelation: "pz_caixas_email"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_emails_lido_por_fkey"
+            columns: ["lido_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pz_logs: {
+        Row: {
+          created_at: string | null
+          detalhes: Json | null
+          entidade: string | null
+          entidade_id: string | null
+          id: string
+          ip_address: string | null
+          tipo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          detalhes?: Json | null
+          entidade?: string | null
+          entidade_id?: string | null
+          id?: string
+          ip_address?: string | null
+          tipo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          detalhes?: Json | null
+          entidade?: string | null
+          entidade_id?: string | null
+          id?: string
+          ip_address?: string | null
+          tipo?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pz_logs_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pz_regras: {
+        Row: {
+          acao_categoria: Database["public"]["Enums"]["email_categoria"] | null
+          acao_checklist_padrao: Json | null
+          acao_criar_tarefa: boolean | null
+          acao_prioridade:
+            | Database["public"]["Enums"]["prazo_prioridade"]
+            | null
+          acao_responsavel_id: string | null
+          ativo: boolean | null
+          condicoes: Json
+          created_at: string | null
+          criado_por: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          ordem: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          acao_categoria?: Database["public"]["Enums"]["email_categoria"] | null
+          acao_checklist_padrao?: Json | null
+          acao_criar_tarefa?: boolean | null
+          acao_prioridade?:
+            | Database["public"]["Enums"]["prazo_prioridade"]
+            | null
+          acao_responsavel_id?: string | null
+          ativo?: boolean | null
+          condicoes: Json
+          created_at?: string | null
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          ordem?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          acao_categoria?: Database["public"]["Enums"]["email_categoria"] | null
+          acao_checklist_padrao?: Json | null
+          acao_criar_tarefa?: boolean | null
+          acao_prioridade?:
+            | Database["public"]["Enums"]["prazo_prioridade"]
+            | null
+          acao_responsavel_id?: string | null
+          ativo?: boolean | null
+          condicoes?: Json
+          created_at?: string | null
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          ordem?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pz_regras_acao_responsavel_id_fkey"
+            columns: ["acao_responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_regras_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pz_tarefa_anexos: {
+        Row: {
+          created_at: string | null
+          enviado_por: string | null
+          id: string
+          nome_arquivo: string
+          origem: string | null
+          path_storage: string
+          tamanho: number | null
+          tarefa_id: string | null
+          tipo_arquivo: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enviado_por?: string | null
+          id?: string
+          nome_arquivo: string
+          origem?: string | null
+          path_storage: string
+          tamanho?: number | null
+          tarefa_id?: string | null
+          tipo_arquivo?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enviado_por?: string | null
+          id?: string
+          nome_arquivo?: string
+          origem?: string | null
+          path_storage?: string
+          tamanho?: number | null
+          tarefa_id?: string | null
+          tipo_arquivo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pz_tarefa_anexos_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_tarefa_anexos_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "pz_tarefas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pz_tarefa_checklist: {
+        Row: {
+          concluido: boolean | null
+          concluido_em: string | null
+          concluido_por: string | null
+          created_at: string | null
+          id: string
+          ordem: number | null
+          tarefa_id: string | null
+          texto: string
+        }
+        Insert: {
+          concluido?: boolean | null
+          concluido_em?: string | null
+          concluido_por?: string | null
+          created_at?: string | null
+          id?: string
+          ordem?: number | null
+          tarefa_id?: string | null
+          texto: string
+        }
+        Update: {
+          concluido?: boolean | null
+          concluido_em?: string | null
+          concluido_por?: string | null
+          created_at?: string | null
+          id?: string
+          ordem?: number | null
+          tarefa_id?: string | null
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pz_tarefa_checklist_concluido_por_fkey"
+            columns: ["concluido_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_tarefa_checklist_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "pz_tarefas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pz_tarefa_comentarios: {
+        Row: {
+          comentario: string
+          created_at: string | null
+          id: string
+          tarefa_id: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          comentario: string
+          created_at?: string | null
+          id?: string
+          tarefa_id?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          comentario?: string
+          created_at?: string | null
+          id?: string
+          tarefa_id?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pz_tarefa_comentarios_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "pz_tarefas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_tarefa_comentarios_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pz_tarefas: {
+        Row: {
+          categoria: Database["public"]["Enums"]["email_categoria"] | null
+          cliente_id: string | null
+          concluido_em: string | null
+          concluido_por: string | null
+          created_at: string | null
+          criado_por: string | null
+          data_prazo: string | null
+          data_prazo_alerta_12h: boolean | null
+          data_prazo_alerta_1d: boolean | null
+          data_prazo_alerta_2h: boolean | null
+          data_prazo_alerta_3d: boolean | null
+          data_prazo_alerta_7d: boolean | null
+          delegado_em: string | null
+          delegado_por: string | null
+          descricao: string | null
+          email_origem_id: string | null
+          id: string
+          prioridade: Database["public"]["Enums"]["prazo_prioridade"] | null
+          processo_id: string | null
+          protocolo_id: string | null
+          responsavel_id: string | null
+          status: Database["public"]["Enums"]["tarefa_status_pz"] | null
+          titulo: string
+          updated_at: string | null
+          valor: number | null
+        }
+        Insert: {
+          categoria?: Database["public"]["Enums"]["email_categoria"] | null
+          cliente_id?: string | null
+          concluido_em?: string | null
+          concluido_por?: string | null
+          created_at?: string | null
+          criado_por?: string | null
+          data_prazo?: string | null
+          data_prazo_alerta_12h?: boolean | null
+          data_prazo_alerta_1d?: boolean | null
+          data_prazo_alerta_2h?: boolean | null
+          data_prazo_alerta_3d?: boolean | null
+          data_prazo_alerta_7d?: boolean | null
+          delegado_em?: string | null
+          delegado_por?: string | null
+          descricao?: string | null
+          email_origem_id?: string | null
+          id?: string
+          prioridade?: Database["public"]["Enums"]["prazo_prioridade"] | null
+          processo_id?: string | null
+          protocolo_id?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["tarefa_status_pz"] | null
+          titulo: string
+          updated_at?: string | null
+          valor?: number | null
+        }
+        Update: {
+          categoria?: Database["public"]["Enums"]["email_categoria"] | null
+          cliente_id?: string | null
+          concluido_em?: string | null
+          concluido_por?: string | null
+          created_at?: string | null
+          criado_por?: string | null
+          data_prazo?: string | null
+          data_prazo_alerta_12h?: boolean | null
+          data_prazo_alerta_1d?: boolean | null
+          data_prazo_alerta_2h?: boolean | null
+          data_prazo_alerta_3d?: boolean | null
+          data_prazo_alerta_7d?: boolean | null
+          delegado_em?: string | null
+          delegado_por?: string | null
+          descricao?: string | null
+          email_origem_id?: string | null
+          id?: string
+          prioridade?: Database["public"]["Enums"]["prazo_prioridade"] | null
+          processo_id?: string | null
+          protocolo_id?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["tarefa_status_pz"] | null
+          titulo?: string
+          updated_at?: string | null
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pz_tarefas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_tarefas_concluido_por_fkey"
+            columns: ["concluido_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_tarefas_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_tarefas_delegado_por_fkey"
+            columns: ["delegado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_tarefas_email_origem_id_fkey"
+            columns: ["email_origem_id"]
+            isOneToOne: false
+            referencedRelation: "pz_emails"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_tarefas_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_tarefas_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pz_tarefas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seguradoras: {
         Row: {
           cnpj: string | null
@@ -4089,6 +4738,23 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "gestor" | "funcionario"
+      email_categoria:
+        | "prazo_processual"
+        | "intimacao"
+        | "audiencia"
+        | "pagamento"
+        | "cobranca"
+        | "cliente_retorno"
+        | "documentacao_pendente"
+        | "ignorar"
+        | "nao_classificado"
+      prazo_prioridade: "baixa" | "media" | "alta" | "urgente"
+      tarefa_status_pz:
+        | "pendente"
+        | "em_andamento"
+        | "aguardando"
+        | "concluida"
+        | "cancelada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4217,6 +4883,25 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "gestor", "funcionario"],
+      email_categoria: [
+        "prazo_processual",
+        "intimacao",
+        "audiencia",
+        "pagamento",
+        "cobranca",
+        "cliente_retorno",
+        "documentacao_pendente",
+        "ignorar",
+        "nao_classificado",
+      ],
+      prazo_prioridade: ["baixa", "media", "alta", "urgente"],
+      tarefa_status_pz: [
+        "pendente",
+        "em_andamento",
+        "aguardando",
+        "concluida",
+        "cancelada",
+      ],
     },
   },
 } as const

@@ -26,6 +26,7 @@ import {
   ListTodo,
   MessagesSquare,
   Coins,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,6 +43,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Painel', path: '/' },
+  { icon: Clock, label: 'PRAZO ZERO', path: '/prazo-zero' },
   { icon: FileText, label: 'Protocolos', path: '/protocolos' },
   { icon: AlertTriangle, label: 'Alertas Críticos', path: '/alertas-criticos' },
   { icon: Building2, label: 'BAU (Hospitais)', path: '/bau' },
