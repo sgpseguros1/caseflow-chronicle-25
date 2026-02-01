@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { userId } = JSON.parse(decodeURIComponent(state));
+    const { userId, returnTo } = JSON.parse(decodeURIComponent(state));
 
     const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID');
     const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET');
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(generateHtml('Sucesso!', `Gmail conectado: ${profile.emailAddress}`, true), {
+    return new Response(generateHtml('Sucesso!', `Gmail conectado: ${profile.emailAddress}`, true, returnTo), {
       headers: { 'Content-Type': 'text/html' },
     });
   } catch (error) {
@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
   }
 });
 
-function generateHtml(title: string, message: string, success = false): string {
+function generateHtml(title: string, message: string, success = false, returnTo?: string): string {
   return `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -167,11 +167,21 @@ function generateHtml(title: string, message: string, success = false): string {
     </button>
   </div>
   <script>
+    // Se foi aberto em popup, sinaliza a janela mãe
     setTimeout(() => {
       if (window.opener) {
         window.opener.postMessage({ type: 'gmail-oauth-${success ? 'success' : 'error'}' }, '*');
       }
-    }, 1000);
+    }, 500);
+
+    // Se foi fluxo sem popup (mesma aba), volta automaticamente para o app
+    const returnTo = ${JSON.stringify(returnTo || '')};
+    if (${success ? 'true' : 'false'} && returnTo) {
+      // volta para a página de config do Prazo Zero
+      setTimeout(() => {
+        window.location.href = returnTo.replace(/\/$/, '') + '/prazo-zero/config?gmail=connected';
+      }, 1200);
+    }
   </script>
 </body>
 </html>

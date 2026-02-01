@@ -44,11 +44,13 @@ Deno.serve(async (req) => {
     }
 
     const userId = claimsData.claims.sub;
+    const origin = req.headers.get('Origin') ?? '';
 
     // Build OAuth URL
     const redirectUri = `${SUPABASE_URL}/functions/v1/gmail-oauth-callback`;
     const scope = encodeURIComponent('https://www.googleapis.com/auth/gmail.readonly');
-    const state = encodeURIComponent(JSON.stringify({ userId }));
+    // Inclui um return_to para permitir fluxo sem popup (redirect na mesma aba)
+    const state = encodeURIComponent(JSON.stringify({ userId, returnTo: origin }));
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${GOOGLE_CLIENT_ID}` +
