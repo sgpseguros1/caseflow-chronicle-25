@@ -22,14 +22,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { Database } from '@/integrations/supabase/types';
-
-type EmailCategoria = Database['public']['Enums']['email_categoria'];
-type PrazoPrioridade = Database['public']['Enums']['prazo_prioridade'];
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { usePZRegras, useCreatePZRegra, usePZUsuarios, usePZEmailConexoes, useCreatePZEmailConexao, useDeletePZEmailConexao, PZRegra, PZEmailConexao } from '@/hooks/usePrazoZero';
+import { 
+  usePZRegras, 
+  useCreatePZRegra, 
+  usePZUsuarios, 
+  usePZEmailConexoes, 
+  useCreatePZEmailConexao, 
+  useDeletePZEmailConexao, 
+  usePZGmailTokens,
+  useGmailOAuth,
+  useGmailSync,
+  useGmailClassify,
+  useDisconnectGmail,
+  PZRegra 
+} from '@/hooks/usePrazoZero';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -93,9 +102,16 @@ export default function PZConfigPage() {
   const { data: regras, isLoading: regrasLoading } = usePZRegras();
   const { data: usuarios } = usePZUsuarios();
   const { data: emailConexoes, isLoading: conexoesLoading } = usePZEmailConexoes();
+  const { data: gmailTokens, isLoading: gmailLoading } = usePZGmailTokens();
   const createRegra = useCreatePZRegra();
   const createEmailConexao = useCreatePZEmailConexao();
   const deleteEmailConexao = useDeletePZEmailConexao();
+  
+  // Gmail OAuth hooks
+  const gmailOAuth = useGmailOAuth();
+  const gmailSync = useGmailSync();
+  const gmailClassify = useGmailClassify();
+  const disconnectGmail = useDisconnectGmail();
 
   const [showRegraDialog, setShowRegraDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState<'gmail' | 'outlook' | 'imap' | null>(null);
@@ -104,7 +120,6 @@ export default function PZConfigPage() {
     email: '',
     clientId: '',
     clientSecret: '',
-    // IMAP fields
     imapHost: '',
     imapPort: '993',
     imapUser: '',
@@ -120,6 +135,18 @@ export default function PZConfigPage() {
     acao_prioridade: '',
     acao_criar_tarefa: true,
   });
+
+  const handleConnectGmail = () => {
+    gmailOAuth.mutate();
+  };
+
+  const handleSyncGmail = () => {
+    gmailSync.mutate();
+  };
+
+  const handleClassifyEmails = () => {
+    gmailClassify.mutate();
+  };
 
   const resetEmailForm = () => {
     setEmailCredentials({
@@ -156,9 +183,6 @@ export default function PZConfigPage() {
       } catch (error) {
         console.error('Erro ao salvar conexão:', error);
       }
-    } else {
-      // Gmail/Outlook OAuth - em desenvolvimento
-      toast.info('OAuth em desenvolvimento. Use IMAP por enquanto.');
     }
   };
 
@@ -190,9 +214,9 @@ export default function PZConfigPage() {
         nome: regraForm.nome,
         descricao: regraForm.descricao || null,
         condicoes: { palavras, remetentes },
-        acao_categoria: (regraForm.acao_categoria || null) as EmailCategoria | null,
+        acao_categoria: (regraForm.acao_categoria || null) as any,
         acao_responsavel_id: regraForm.acao_responsavel_id || null,
-        acao_prioridade: (regraForm.acao_prioridade || null) as PrazoPrioridade | null,
+        acao_prioridade: (regraForm.acao_prioridade || null) as any,
         acao_criar_tarefa: regraForm.acao_criar_tarefa,
       });
 
@@ -211,6 +235,8 @@ export default function PZConfigPage() {
       console.error('Erro ao criar regra:', error);
     }
   };
+
+  const hasGmailConnected = gmailTokens && gmailTokens.length > 0;
 
   return (
     <div className="space-y-6">
@@ -254,47 +280,66 @@ export default function PZConfigPage() {
                     Conecte seus e-mails para sincronização automática
                   </CardDescription>
                 </div>
-                <Button onClick={() => setShowEmailDialog('imap')}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Conectar E-mail
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {conexoesLoading ? (
-                <p className="text-center text-muted-foreground py-8">Carregando...</p>
-              ) : emailConexoes && emailConexoes.length > 0 ? (
-                <div className="space-y-3">
-                  {emailConexoes.map((conexao) => (
-                    <div key={conexao.id} className="flex items-center justify-between p-4 border rounded-lg">
+              {/* Gmail Connections */}
+              {gmailLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : hasGmailConnected ? (
+                <div className="space-y-3 mb-6">
+                  {gmailTokens.map((token) => (
+                    <div key={token.id} className="flex items-center justify-between p-4 border rounded-lg bg-green-50 border-green-200">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${conexao.ativo ? 'bg-green-100' : 'bg-gray-100'}`}>
-                          <Mail className={`h-5 w-5 ${conexao.ativo ? 'text-green-600' : 'text-gray-500'}`} />
+                        <div className="p-2 rounded-full bg-green-100">
+                          <img src="https://www.google.com/favicon.ico" className="h-5 w-5" alt="Gmail" />
                         </div>
                         <div>
-                          <p className="font-medium">{conexao.nome}</p>
-                          <p className="text-sm text-muted-foreground">{conexao.email}</p>
+                          <p className="font-medium">{token.email}</p>
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">{conexao.tipo.toUpperCase()}</Badge>
-                            {conexao.ultimo_sync && (
-                              <span className="text-xs text-muted-foreground">
-                                Último sync: {format(new Date(conexao.ultimo_sync), "dd/MM HH:mm", { locale: ptBR })}
-                              </span>
-                            )}
+                            <Badge className="bg-green-600">Gmail Conectado</Badge>
+                            <span className="text-xs text-muted-foreground">
+                              Conectado em: {format(new Date(token.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                            </span>
                           </div>
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" title="Sincronizar">
-                          <RefreshCw className="h-4 w-4" />
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleSyncGmail}
+                          disabled={gmailSync.isPending}
+                        >
+                          {gmailSync.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                          )}
+                          Sincronizar
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleClassifyEmails}
+                          disabled={gmailClassify.isPending}
+                        >
+                          {gmailClassify.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <Zap className="h-4 w-4 mr-2" />
+                          )}
+                          Classificar IA
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           className="text-destructive"
                           onClick={() => {
-                            if (confirm('Remover esta conexão de e-mail?')) {
-                              deleteEmailConexao.mutate(conexao.id);
+                            if (confirm('Desconectar esta conta do Gmail?')) {
+                              disconnectGmail.mutate(token.id);
                             }
                           }}
                         >
@@ -309,41 +354,62 @@ export default function PZConfigPage() {
                   <Mail className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium">Nenhuma caixa conectada</h3>
                   <p className="text-muted-foreground mt-1 max-w-md">
-                    Conecte sua conta de e-mail via IMAP para começar a receber e-mails automaticamente.
+                    Conecte sua conta do Gmail para começar a receber e-mails automaticamente.
                   </p>
                   <div className="flex gap-3 mt-6">
-                    <Button variant="outline" onClick={() => setShowEmailDialog('gmail')} disabled>
-                      <img src="https://www.google.com/favicon.ico" className="h-4 w-4 mr-2" alt="" />
-                      Gmail (em breve)
+                    <Button 
+                      onClick={handleConnectGmail}
+                      disabled={gmailOAuth.isPending}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {gmailOAuth.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <img src="https://www.google.com/favicon.ico" className="h-4 w-4 mr-2" alt="" />
+                      )}
+                      Conectar Gmail
                     </Button>
-                    <Button variant="outline" onClick={() => setShowEmailDialog('outlook')} disabled>
-                      <img src="https://www.microsoft.com/favicon.ico" className="h-4 w-4 mr-2" alt="" />
-                      Outlook (em breve)
-                    </Button>
-                    <Button onClick={() => setShowEmailDialog('imap')}>
+                    <Button variant="outline" onClick={() => setShowEmailDialog('imap')}>
                       <Mail className="h-4 w-4 mr-2" />
-                      IMAP
+                      IMAP Manual
                     </Button>
                   </div>
                 </div>
+              )}
+
+              {/* Add more Gmail button if already connected */}
+              {hasGmailConnected && (
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-4"
+                  onClick={handleConnectGmail}
+                  disabled={gmailOAuth.isPending}
+                >
+                  {gmailOAuth.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  Conectar outra conta Gmail
+                </Button>
               )}
             </CardContent>
           </Card>
 
           {/* Info Card */}
-          <Card className="mt-4 bg-muted/50">
+          <Card className="mt-4 bg-blue-50 border-blue-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
-                Como Configurar IMAP
+                <CheckCircle className="h-5 w-5 text-blue-600" />
+                Como Funciona
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm space-y-2">
-              <p>Para conectar via IMAP, você precisa das configurações do seu provedor de e-mail:</p>
+              <p>Após conectar sua conta Gmail:</p>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li><strong>Gmail:</strong> imap.gmail.com (porta 993) - Use uma "Senha de App"</li>
-                <li><strong>Outlook:</strong> outlook.office365.com (porta 993)</li>
-                <li><strong>Outros:</strong> Consulte as configurações do seu provedor</li>
+                <li><strong>Sincronizar:</strong> Busca os últimos 50 e-mails da caixa de entrada</li>
+                <li><strong>Classificar IA:</strong> Usa inteligência artificial para categorizar e-mails</li>
+                <li><strong>Triagem:</strong> E-mails não classificados aparecem na página de triagem</li>
               </ul>
             </CardContent>
           </Card>
