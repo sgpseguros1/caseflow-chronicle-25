@@ -53,6 +53,7 @@ import MonitoramentoRealtimePage from "./pages/MonitoramentoRealtimePage";
 import MonitoramentoSessoesPage from "./pages/MonitoramentoSessoesPage";
 import NotFound from "./pages/NotFound";
 import CalendarioPage from "./pages/CalendarioPage";
+import { PZHomePage, PZTarefasPage, PZTarefaFormPage, PZTriagemPage, PZAgendaPage, PZConfigPage } from "./pages/PrazoZero";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -144,6 +145,14 @@ const App = () => (
           <Route path="/relatorios" element={<ProtectedRoute><RelatoriosPage /></ProtectedRoute>} />
           {/* Comissões */}
           <Route path="/comissoes" element={<ProtectedRoute><ComissoesPage /></ProtectedRoute>} />
+          {/* PRAZO ZERO */}
+          <Route path="/prazo-zero" element={<ProtectedRoute><PZHomePage /></ProtectedRoute>} />
+          <Route path="/prazo-zero/tarefas" element={<ProtectedRoute><PZTarefasPage /></ProtectedRoute>} />
+          <Route path="/prazo-zero/tarefas/nova" element={<ProtectedRoute><PZTarefaFormPage /></ProtectedRoute>} />
+          <Route path="/prazo-zero/tarefas/:id" element={<ProtectedRoute><PZTarefaFormPage /></ProtectedRoute>} />
+          <Route path="/prazo-zero/triagem" element={<ProtectedRoute><PZTriagemPage /></ProtectedRoute>} />
+          <Route path="/prazo-zero/agenda" element={<ProtectedRoute><PZAgendaPage /></ProtectedRoute>} />
+          <Route path="/prazo-zero/config" element={<ProtectedRoute><PZConfigPage /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
