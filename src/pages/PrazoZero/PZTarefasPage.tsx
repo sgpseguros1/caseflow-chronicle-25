@@ -212,12 +212,12 @@ export default function PZTarefasPage() {
               </SelectContent>
             </Select>
 
-            <Select value={categoriaFiltro} onValueChange={setCategoriaFiltro}>
+            <Select value={categoriaFiltro || '__none__'} onValueChange={(v) => setCategoriaFiltro(v === '__none__' ? '' : v)}>
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas</SelectItem>
+                <SelectItem value="__none__">Todas</SelectItem>
                 <SelectItem value="prazo_processual">Prazo Processual</SelectItem>
                 <SelectItem value="intimacao">Intimação</SelectItem>
                 <SelectItem value="audiencia">Audiência</SelectItem>
@@ -228,13 +228,13 @@ export default function PZTarefasPage() {
               </SelectContent>
             </Select>
 
-            <Select value={responsavelFiltro} onValueChange={setResponsavelFiltro}>
+            <Select value={responsavelFiltro || '__none__'} onValueChange={(v) => setResponsavelFiltro(v === '__none__' ? '' : v)}>
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="Responsável" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
-                {usuarios?.map(u => (
+                <SelectItem value="__none__">Todos</SelectItem>
+                {usuarios?.filter(u => u.id).map(u => (
                   <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
                 ))}
               </SelectContent>

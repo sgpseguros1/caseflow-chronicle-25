@@ -320,12 +320,13 @@ export default function PZAgendaPage() {
 
             <div>
               <Label>Responsável</Label>
-              <Select value={formData.responsavel_id} onValueChange={(v) => setFormData({ ...formData, responsavel_id: v })}>
+              <Select value={formData.responsavel_id || '__none__'} onValueChange={(v) => setFormData({ ...formData, responsavel_id: v === '__none__' ? '' : v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {usuarios?.map(u => (
+                  <SelectItem value="__none__">Nenhum</SelectItem>
+                  {usuarios?.filter(u => u.id).map(u => (
                     <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
                   ))}
                 </SelectContent>
