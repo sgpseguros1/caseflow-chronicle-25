@@ -4004,6 +4004,39 @@ export type Database = {
           },
         ]
       }
+      pz_gmail_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          email: string
+          id: string
+          refresh_token: string | null
+          token_expiry: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          email: string
+          id?: string
+          refresh_token?: string | null
+          token_expiry?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          email?: string
+          id?: string
+          refresh_token?: string | null
+          token_expiry?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pz_logs: {
         Row: {
           created_at: string | null
