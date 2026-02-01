@@ -590,3 +590,91 @@ export function usePZUsuarios() {
     },
   });
 }
+
+// ============ CONEXÕES DE EMAIL ============
+
+export interface PZEmailConexao {
+  id: string;
+  nome: string;
+  tipo: 'gmail' | 'outlook' | 'imap';
+  email: string;
+  imap_host?: string | null;
+  imap_port?: number | null;
+  ativo: boolean;
+  ultimo_sync?: string | null;
+  erro_ultimo_sync?: string | null;
+  created_at: string;
+}
+
+export function usePZEmailConexoes() {
+  return useQuery({
+    queryKey: ['pz-email-conexoes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pz_email_conexoes')
+        .select('id, nome, tipo, email, imap_host, imap_port, ativo, ultimo_sync, erro_ultimo_sync, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as unknown as PZEmailConexao[];
+    },
+  });
+}
+
+export function useCreatePZEmailConexao() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (data: {
+      nome: string;
+      tipo: 'gmail' | 'outlook' | 'imap';
+      email: string;
+      imap_host?: string;
+      imap_port?: number;
+      imap_user?: string;
+      imap_password?: string;
+    }) => {
+      const { error } = await supabase
+        .from('pz_email_conexoes')
+        .insert({
+          nome: data.nome,
+          tipo: data.tipo,
+          email: data.email,
+          imap_host: data.imap_host,
+          imap_port: data.imap_port || 993,
+          imap_user: data.imap_user,
+          imap_password: data.imap_password,
+          criado_por: user?.id,
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pz-email-conexoes'] });
+      toast.success('Conexão de e-mail salva com sucesso!');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao salvar conexão: ' + error.message);
+    },
+  });
+}
+
+export function useDeletePZEmailConexao() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('pz_email_conexoes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pz-email-conexoes'] });
+      toast.success('Conexão removida');
+    },
+  });
+}

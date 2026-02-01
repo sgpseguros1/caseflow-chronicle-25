@@ -3854,6 +3854,66 @@ export type Database = {
         }
         Relationships: []
       }
+      pz_email_conexoes: {
+        Row: {
+          access_token: string | null
+          ativo: boolean | null
+          created_at: string
+          criado_por: string | null
+          email: string
+          erro_ultimo_sync: string | null
+          id: string
+          imap_host: string | null
+          imap_password: string | null
+          imap_port: number | null
+          imap_user: string | null
+          nome: string
+          refresh_token: string | null
+          tipo: string
+          token_expiry: string | null
+          ultimo_sync: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          ativo?: boolean | null
+          created_at?: string
+          criado_por?: string | null
+          email: string
+          erro_ultimo_sync?: string | null
+          id?: string
+          imap_host?: string | null
+          imap_password?: string | null
+          imap_port?: number | null
+          imap_user?: string | null
+          nome: string
+          refresh_token?: string | null
+          tipo: string
+          token_expiry?: string | null
+          ultimo_sync?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          ativo?: boolean | null
+          created_at?: string
+          criado_por?: string | null
+          email?: string
+          erro_ultimo_sync?: string | null
+          id?: string
+          imap_host?: string | null
+          imap_password?: string | null
+          imap_port?: number | null
+          imap_user?: string | null
+          nome?: string
+          refresh_token?: string | null
+          tipo?: string
+          token_expiry?: string | null
+          ultimo_sync?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pz_emails: {
         Row: {
           anexos: Json | null
