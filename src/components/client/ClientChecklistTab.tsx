@@ -93,11 +93,26 @@ export function ClientChecklistTab({ clientId }: ClientChecklistTabProps) {
 
   const handleSave = async () => {
     try {
-      await saveChecklist.mutateAsync({ clientId, data: formData });
+      // Recalculate progress with latest formData
+      const currentProgress = progress;
       
-      // Update workflow status
-      const workflowStatus = progress.isComplete ? 'concluido' : 
-        progress.percentage > 0 ? 'em_preenchimento' : 'pendente';
+      // Determine checklist status and completion
+      const checklistStatus = currentProgress.isComplete ? 'concluido' : 'em_preenchimento';
+      const completionData: Partial<ClientChecklistIA> = {
+        ...formData,
+        status: checklistStatus,
+      };
+      
+      // If complete, mark conclusion date
+      if (currentProgress.isComplete) {
+        completionData.concluido_em = new Date().toISOString();
+      }
+      
+      await saveChecklist.mutateAsync({ clientId, data: completionData });
+      
+      // Auto-update workflow status: pendente → em_preenchimento → concluido
+      const workflowStatus = currentProgress.isComplete ? 'concluido' : 
+        currentProgress.percentage > 0 ? 'em_preenchimento' : 'pendente';
       
       await updateWorkflow.mutateAsync({
         clientId,
