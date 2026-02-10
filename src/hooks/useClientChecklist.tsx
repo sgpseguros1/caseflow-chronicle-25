@@ -135,8 +135,27 @@ export function useChecklistProgress(checklist: ClientChecklistIA | null): {
 } {
   if (!checklist) return { total: 0, filled: 0, percentage: 0, isComplete: false };
 
-  // Define mandatory fields
-  const mandatoryFields = [
+  // All fields that could be boolean in the DB
+  const booleanFields = [
+    'atendimento_medico', 'internacao', 'lesao_corporal', 'obito',
+    'dano_material_comprovavel', 'afastamento', 'perda_renda',
+    'veiculo_segurado', 'trabalhava', 'e_clt', 'havia_epi',
+    'havia_treinamento', 'houve_cat', 'e_motorista_app',
+    'contribuia_inss', 'afastamento_15_dias', 'recebeu_beneficio',
+    'tem_conta_banco', 'tem_cartao_credito', 'tem_emprestimo',
+    'fez_financiamento', 'usa_fintech',
+  ];
+
+  const isFilled = (field: string) => {
+    const value = (checklist as any)[field];
+    if (booleanFields.includes(field)) {
+      return typeof value === 'boolean';
+    }
+    return value !== null && value !== undefined && value !== '';
+  };
+
+  // Base mandatory fields (always required)
+  const mandatoryFields: string[] = [
     'tipo_ocorrencia',
     'data_evento',
     'cidade_uf_evento',
@@ -144,7 +163,7 @@ export function useChecklistProgress(checklist: ClientChecklistIA | null): {
     'atendimento_medico',
   ];
 
-  // Conditional fields based on tipo_ocorrencia
+  // Conditional: Trânsito
   if (checklist.tipo_ocorrencia === 'transito') {
     mandatoryFields.push(
       'perfil_vitima',
@@ -156,6 +175,7 @@ export function useChecklistProgress(checklist: ClientChecklistIA | null): {
     );
   }
 
+  // Conditional: Trabalho
   if (checklist.tipo_ocorrencia === 'trabalho') {
     mandatoryFields.push(
       'trabalhava',
@@ -165,18 +185,18 @@ export function useChecklistProgress(checklist: ClientChecklistIA | null): {
     );
   }
 
-  // INSS fields if applicable
-  if (checklist.trabalhava || checklist.e_clt) {
+  // Conditional: INSS fields - required when trabalhava=true OR e_clt=true OR regime_trabalho='clt'
+  if (checklist.trabalhava === true || checklist.e_clt === true || checklist.regime_trabalho === 'clt') {
     mandatoryFields.push(
       'contribuia_inss',
       'afastamento_15_dias'
     );
   }
 
-  // Damage fields
+  // Damage fields (always required)
   mandatoryFields.push('lesao_corporal', 'sequelas');
 
-  // Caça-seguro fields
+  // Caça-seguro fields (always required)
   mandatoryFields.push(
     'tem_conta_banco',
     'tem_cartao_credito',
@@ -184,35 +204,15 @@ export function useChecklistProgress(checklist: ClientChecklistIA | null): {
     'fez_financiamento'
   );
 
-  const total = mandatoryFields.length;
+  // Deduplicate in case of overlap
+  const uniqueFields = [...new Set(mandatoryFields)];
+
+  const total = uniqueFields.length;
   let filled = 0;
 
-  // Boolean fields that count as filled when explicitly set to true OR false
-  const booleanFields = [
-    'atendimento_medico',
-    'lesao_corporal',
-    'tem_conta_banco',
-    'tem_cartao_credito',
-    'tem_emprestimo',
-    'fez_financiamento',
-    'trabalhava',
-    'contribuia_inss',
-    'afastamento_15_dias'
-  ];
-
-  for (const field of mandatoryFields) {
-    const value = (checklist as any)[field];
-    
-    // For boolean fields, check if it's explicitly true or false (not null/undefined)
-    if (booleanFields.includes(field)) {
-      if (typeof value === 'boolean') {
-        filled++;
-      }
-    } else {
-      // For other fields, check normal value presence
-      if (value !== null && value !== undefined && value !== '') {
-        filled++;
-      }
+  for (const field of uniqueFields) {
+    if (isFilled(field)) {
+      filled++;
     }
   }
 

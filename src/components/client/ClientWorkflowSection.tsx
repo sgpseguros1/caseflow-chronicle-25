@@ -60,7 +60,7 @@ function getStepStatus(workflow: WorkflowData | null, step: typeof WORKFLOW_STEP
   
   if (typeof value === 'string') {
     if (['concluido', 'recebido', 'validado', 'aprovado'].includes(value)) return 'concluido';
-    if (['em_andamento', 'em_analise', 'solicitado'].includes(value)) return 'em_andamento';
+    if (['em_andamento', 'em_analise', 'solicitado', 'em_preenchimento'].includes(value)) return 'em_andamento';
     if (['incompleto', 'pendente_documento'].includes(value)) return 'incompleto';
   }
   
