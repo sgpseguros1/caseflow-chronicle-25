@@ -14,14 +14,17 @@ export function useRecalcularWorkflow() {
     if (!clientId) return;
 
     try {
-      // Fetch all related data in parallel
-      const checklistRes: any = await supabase.from('client_checklist_ia' as any).select('status, concluido_em').eq('client_id', clientId).maybeSingle();
-      const bausRes: any = await supabase.from('client_baus' as any).select('id, status').eq('client_id', clientId);
-      const protocolosRes: any = await supabase.from('protocolos' as any).select('id, status').eq('cliente_id', clientId);
-      const periciasRes: any = await supabase.from('pericias' as any).select('id, status').eq('cliente_id', clientId);
-      const financeiroRes: any = await supabase.from('lancamentos_financeiros' as any).select('id').eq('cliente_id', clientId).limit(1);
-      const workflowRes: any = await supabase.from('client_workflow' as any).select('*').eq('client_id', clientId).maybeSingle();
-      const clientRes: any = await supabase.from('clients' as any).select('id, name, has_police_report, police_report_number').eq('id', clientId).single();
+      // Fetch all related data in parallel (including documents for auto-detection)
+      const [checklistRes, bausRes, protocolosRes, periciasRes, financeiroRes, workflowRes, clientRes, docsRes]: any[] = await Promise.all([
+        supabase.from('client_checklist_ia' as any).select('status, concluido_em').eq('client_id', clientId).maybeSingle(),
+        supabase.from('client_baus' as any).select('id, status').eq('client_id', clientId),
+        supabase.from('protocolos' as any).select('id, status').eq('cliente_id', clientId),
+        supabase.from('pericias' as any).select('id, status').eq('cliente_id', clientId),
+        supabase.from('lancamentos_financeiros' as any).select('id').eq('cliente_id', clientId).limit(1),
+        supabase.from('client_workflow' as any).select('*').eq('client_id', clientId).maybeSingle(),
+        supabase.from('clients' as any).select('id, name, has_police_report, police_report_number').eq('id', clientId).single(),
+        supabase.from('client_documents' as any).select('file_name, document_category').eq('client_id', clientId),
+      ]);
 
       const checklist = checklistRes.data;
       const baus = bausRes.data || [];
@@ -29,13 +32,25 @@ export function useRecalcularWorkflow() {
       const pericias = periciasRes.data || [];
       const temFinanceiro = (financeiroRes.data || []).length > 0;
       const client = clientRes.data;
+      const docs: { file_name: string; document_category: string | null }[] = docsRes.data || [];
+
+      // --- Auto-detect from document names ---
+      const docNames = docs.map(d => (d.file_name || '').toUpperCase());
+      const hasDocBAU = docNames.some(n => n.includes('BAU') || n.includes('PRONTUARIO') || n.includes('PRONTUÁRIO'));
+      const hasDocBO = docNames.some(n => n.includes('BO') || n.includes('BOLETIM') || n.includes('CAT'));
+      const hasDocLaudo = docNames.some(n => n.includes('LAUDO') || n.includes('ATESTADO') || n.includes('PARECER'));
+      const hasDocCTPS = docNames.some(n => n.includes('CTPS') || n.includes('CARTEIRA DE TRABALHO'));
+      const hasDocRX = docNames.some(n => n.includes('RAIO') || n.includes('RX') || n.includes('EXAME') || n.includes('TOMOGRAFIA') || n.includes('RESSONANCIA'));
+      const hasDocCNH = docNames.some(n => n.includes('CNH') || n.includes('HABILITACAO') || n.includes('HABILITAÇÃO'));
+      const hasDocContaBancaria = docNames.some(n => n.includes('CONTA') || n.includes('BANCARI') || n.includes('PICPAY') || n.includes('NUBANK'));
+      const hasDocCompResid = docNames.some(n => n.includes('COMP') && n.includes('RESID') || n.includes('COMPROVANTE DE RESIDENCIA'));
 
       // --- Calculate each step status ---
 
       // 1. Cliente cadastrado - always true if client exists
       const clienteCadastrado = !!client;
 
-      // 2. Checklist IA
+      // 2. Checklist IA - check record OR infer from documents
       let checklistStatus: string = 'pendente';
       if (checklist) {
         if (checklist.status === 'concluido' || checklist.concluido_em) {
@@ -45,10 +60,13 @@ export function useRecalcularWorkflow() {
         } else if (checklist.status) {
           checklistStatus = checklist.status;
         }
+      } else if (docs.length >= 3) {
+        // If 3+ documents uploaded but no checklist record, infer as concluido
+        checklistStatus = 'concluido';
       }
 
-      // 3. BAU Hospitalar
-      let bauAcionado = baus.length > 0;
+      // 3. BAU Hospitalar - check records OR documents
+      let bauAcionado = baus.length > 0 || hasDocBAU;
       let bauStatus: string | null = null;
       if (baus.length > 0) {
         const allConcluido = baus.every(b => ['concluido', 'recebido', 'validado'].includes(b.status));
@@ -58,14 +76,16 @@ export function useRecalcularWorkflow() {
         } else if (anyEmAndamento || bauAcionado) {
           bauStatus = 'em_andamento';
         }
+      } else if (hasDocBAU) {
+        // Document exists but no formal BAU record - mark as concluido (doc received)
+        bauStatus = 'concluido';
       }
 
-      // 4. Boletim de Ocorrência
+      // 4. Boletim de Ocorrência - check records OR documents (CAT/BO)
       let boStatus: string | null = null;
-      if (client?.has_police_report === true || client?.police_report_number) {
+      if (client?.has_police_report === true || client?.police_report_number || hasDocBO) {
         boStatus = 'concluido';
       } else if (checklist && checklist.status) {
-        // Check from checklist bo_status field
         const checklistFullRes: any = await supabase
           .from('client_checklist_ia' as any)
           .select('bo_status')
@@ -79,14 +99,16 @@ export function useRecalcularWorkflow() {
         }
       }
 
-      // 5. Laudo Médico - check workflow existing data
+      // 5. Laudo Médico - check workflow data OR documents
       const existingWorkflow = workflowRes.data;
       let laudoStatus = existingWorkflow?.laudo_status || null;
-      // If laudo fields are filled, mark as concluido
       if (existingWorkflow?.laudo_medico && existingWorkflow?.laudo_cid) {
         laudoStatus = 'concluido';
       } else if (existingWorkflow?.laudo_medico || existingWorkflow?.laudo_cid) {
         laudoStatus = 'em_andamento';
+      } else if (hasDocLaudo) {
+        // Document with laudo/atestado exists - mark as concluido
+        laudoStatus = 'concluido';
       }
 
       // 6. Protocolo
@@ -111,7 +133,7 @@ export function useRecalcularWorkflow() {
       }
 
       // 8. Financeiro
-      const financeiroLiberado = temFinanceiro;
+      const financeiroLiberado = temFinanceiro || hasDocContaBancaria;
 
       // 9. Jurídico - check if there's a judicial process
       const processosRes: any = await supabase
