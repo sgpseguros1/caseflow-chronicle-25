@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,8 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useRecalcularWorkflow } from '@/hooks/useRecalcularWorkflow';
 import { Button } from '@/components/ui/button';
+import { WorkflowStepDetailSheet } from './WorkflowStepDetailSheet';
+import type { WorkflowStepKey } from '@/lib/documentClassification';
 
 interface ClientWorkflowSectionProps {
   clientId: string;
@@ -32,7 +34,7 @@ interface WorkflowData {
   updated_at: string;
 }
 
-const WORKFLOW_STEPS = [
+const WORKFLOW_STEPS: { key: WorkflowStepKey; label: string; icon: any; field: string }[] = [
   { key: 'cliente', label: 'Cliente Cadastrado', icon: CheckCircle2, field: 'cliente_cadastrado' },
   { key: 'checklist', label: 'Checklist IA', icon: FileText, field: 'checklist_ia_status' },
   { key: 'bau', label: 'BAU Hospitalar', icon: Building2, field: 'bau_status' },
@@ -54,43 +56,32 @@ const STATUS_COLORS: Record<string, string> = {
 
 function getStepStatus(workflow: WorkflowData | null, step: typeof WORKFLOW_STEPS[0]): 'pendente' | 'em_andamento' | 'concluido' | 'incompleto' {
   if (!workflow) return 'pendente';
-  
   const value = (workflow as any)[step.field];
-  
-  if (typeof value === 'boolean') {
-    return value ? 'concluido' : 'pendente';
-  }
-  
+  if (typeof value === 'boolean') return value ? 'concluido' : 'pendente';
   if (typeof value === 'string') {
     if (['concluido', 'recebido', 'validado', 'aprovado'].includes(value)) return 'concluido';
     if (['em_andamento', 'em_analise', 'solicitado', 'em_preenchimento'].includes(value)) return 'em_andamento';
     if (['incompleto', 'pendente_documento'].includes(value)) return 'incompleto';
   }
-  
   return 'pendente';
 }
 
 function getStepIcon(status: string) {
   switch (status) {
-    case 'concluido':
-      return <CheckCircle2 className="h-5 w-5 text-green-600" />;
-    case 'em_andamento':
-      return <Clock className="h-5 w-5 text-blue-600 animate-pulse" />;
-    case 'incompleto':
-      return <AlertTriangle className="h-5 w-5 text-yellow-600" />;
-    default:
-      return <Circle className="h-5 w-5 text-gray-400" />;
+    case 'concluido': return <CheckCircle2 className="h-5 w-5 text-green-600" />;
+    case 'em_andamento': return <Clock className="h-5 w-5 text-blue-600 animate-pulse" />;
+    case 'incompleto': return <AlertTriangle className="h-5 w-5 text-yellow-600" />;
+    default: return <Circle className="h-5 w-5 text-gray-400" />;
   }
 }
 
 export function ClientWorkflowSection({ clientId }: ClientWorkflowSectionProps) {
   const { recalcular } = useRecalcularWorkflow();
+  const [selectedStep, setSelectedStep] = useState<WorkflowStepKey | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  // Auto-recalculate on mount to sync with real data
   useEffect(() => {
-    if (clientId) {
-      recalcular(clientId);
-    }
+    if (clientId) recalcular(clientId);
   }, [clientId, recalcular]);
 
   const { data: workflow, isLoading } = useQuery({
@@ -101,12 +92,16 @@ export function ClientWorkflowSection({ clientId }: ClientWorkflowSectionProps) 
         .select('*')
         .eq('client_id', clientId)
         .maybeSingle();
-      
       if (error) throw error;
       return data as WorkflowData | null;
     },
     enabled: !!clientId,
   });
+
+  const handleStepClick = (stepKey: WorkflowStepKey) => {
+    setSelectedStep(stepKey);
+    setSheetOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -122,93 +117,89 @@ export function ClientWorkflowSection({ clientId }: ClientWorkflowSectionProps) 
     );
   }
 
-  // Calculate progress
-  const completedSteps = WORKFLOW_STEPS.filter(step => 
-    getStepStatus(workflow, step) === 'concluido'
-  ).length;
+  const completedSteps = WORKFLOW_STEPS.filter(step => getStepStatus(workflow, step) === 'concluido').length;
   const progress = Math.round((completedSteps / WORKFLOW_STEPS.length) * 100);
 
+  const selectedStepStatus = selectedStep
+    ? getStepStatus(workflow, WORKFLOW_STEPS.find(s => s.key === selectedStep)!)
+    : 'pendente';
+
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            Workflow de Triagem
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => recalcular(clientId)}
-              title="Recalcular status"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            <Badge variant="outline" className="text-sm">
-              {progress}% concluído
-            </Badge>
-          </div>
-        </div>
-        {/* Progress bar */}
-        <div className="w-full h-2 bg-muted rounded-full overflow-hidden mt-2">
-          <div 
-            className="h-full bg-primary transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {WORKFLOW_STEPS.map((step, index) => {
-          const status = getStepStatus(workflow, step);
-          const Icon = step.icon;
-          const isLast = index === WORKFLOW_STEPS.length - 1;
-          
-          return (
-            <div key={step.key} className="relative">
-              <div className={`flex items-center gap-3 p-3 rounded-lg border ${STATUS_COLORS[status]}`}>
-                <div className="flex-shrink-0">
-                  {getStepIcon(status)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{step.label}</p>
-                  {workflow && (step.key === 'bo' && workflow.bo_numero) && (
-                    <p className="text-xs opacity-75">Nº: {workflow.bo_numero}</p>
-                  )}
-                  {workflow && (step.key === 'laudo' && workflow.laudo_medico) && (
-                    <p className="text-xs opacity-75">Dr. {workflow.laudo_medico}</p>
-                  )}
-                </div>
-                <Badge 
-                  variant="secondary" 
-                  className={`text-xs ${
-                    status === 'concluido' ? 'bg-green-500 text-white' :
-                    status === 'em_andamento' ? 'bg-blue-500 text-white' :
-                    status === 'incompleto' ? 'bg-yellow-500 text-white' :
-                    'bg-gray-200 text-gray-600'
-                  }`}
-                >
-                  {status === 'concluido' ? 'Concluído' :
-                   status === 'em_andamento' ? 'Em Andamento' :
-                   status === 'incompleto' ? 'Incompleto' : 'Pendente'}
-                </Badge>
-              </div>
-              
-              {/* Connector line */}
-              {!isLast && (
-                <div className="absolute left-6 top-full w-0.5 h-2 bg-border" />
-              )}
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Workflow de Triagem
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => recalcular(clientId)} title="Recalcular status">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <Badge variant="outline" className="text-sm">{progress}% concluído</Badge>
             </div>
-          );
-        })}
-        
-        {workflow?.updated_at && (
-          <p className="text-xs text-muted-foreground text-center pt-2">
-            Última atualização: {format(parseISO(workflow.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+          </div>
+          <div className="w-full h-2 bg-muted rounded-full overflow-hidden mt-2">
+            <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {WORKFLOW_STEPS.map((step, index) => {
+            const status = getStepStatus(workflow, step);
+            const isLast = index === WORKFLOW_STEPS.length - 1;
+
+            return (
+              <div key={step.key} className="relative">
+                <button
+                  type="button"
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] ${STATUS_COLORS[status]}`}
+                  onClick={() => handleStepClick(step.key)}
+                  title={`Clique para ver detalhes de ${step.label}`}
+                >
+                  <div className="flex-shrink-0">{getStepIcon(status)}</div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="font-medium text-sm">{step.label}</p>
+                    {workflow && step.key === 'bo' && workflow.bo_numero && (
+                      <p className="text-xs opacity-75">Nº: {workflow.bo_numero}</p>
+                    )}
+                    {workflow && step.key === 'laudo' && workflow.laudo_medico && (
+                      <p className="text-xs opacity-75">Dr. {workflow.laudo_medico}</p>
+                    )}
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className={`text-xs ${
+                      status === 'concluido' ? 'bg-green-500 text-white' :
+                      status === 'em_andamento' ? 'bg-blue-500 text-white' :
+                      status === 'incompleto' ? 'bg-yellow-500 text-white' :
+                      'bg-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {status === 'concluido' ? 'Concluído' :
+                     status === 'em_andamento' ? 'Em Andamento' :
+                     status === 'incompleto' ? 'Incompleto' : 'Pendente'}
+                  </Badge>
+                </button>
+                {!isLast && <div className="absolute left-6 top-full w-0.5 h-2 bg-border" />}
+              </div>
+            );
+          })}
+          {workflow?.updated_at && (
+            <p className="text-xs text-muted-foreground text-center pt-2">
+              Última atualização: {format(parseISO(workflow.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <WorkflowStepDetailSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        stepKey={selectedStep}
+        clientId={clientId}
+        stepStatus={selectedStepStatus}
+      />
+    </>
   );
 }
