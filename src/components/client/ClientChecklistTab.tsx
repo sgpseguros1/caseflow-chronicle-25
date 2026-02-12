@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { useClientChecklist, useCreateOrUpdateChecklist, useChecklistProgress, ClientChecklistIA } from '@/hooks/useClientChecklist';
 import { useCreateOrUpdateWorkflow } from '@/hooks/useClientWorkflow';
+import { useRecalcularWorkflow } from '@/hooks/useRecalcularWorkflow';
 
 interface ClientChecklistTabProps {
   clientId: string;
@@ -69,6 +70,7 @@ export function ClientChecklistTab({ clientId }: ClientChecklistTabProps) {
   const { data: checklist, isLoading } = useClientChecklist(clientId);
   const saveChecklist = useCreateOrUpdateChecklist();
   const updateWorkflow = useCreateOrUpdateWorkflow();
+  const { recalcular } = useRecalcularWorkflow();
   const [formData, setFormData] = useState<Partial<ClientChecklistIA>>({});
   
   useEffect(() => {
@@ -93,31 +95,22 @@ export function ClientChecklistTab({ clientId }: ClientChecklistTabProps) {
 
   const handleSave = async () => {
     try {
-      // Recalculate progress with latest formData
       const currentProgress = progress;
       
-      // Determine checklist status and completion
       const checklistStatus = currentProgress.isComplete ? 'concluido' : 'em_preenchimento';
       const completionData: Partial<ClientChecklistIA> = {
         ...formData,
         status: checklistStatus,
       };
       
-      // If complete, mark conclusion date
       if (currentProgress.isComplete) {
         completionData.concluido_em = new Date().toISOString();
       }
       
       await saveChecklist.mutateAsync({ clientId, data: completionData });
       
-      // Auto-update workflow status: pendente → em_preenchimento → concluido
-      const workflowStatus = currentProgress.isComplete ? 'concluido' : 
-        currentProgress.percentage > 0 ? 'em_preenchimento' : 'pendente';
-      
-      await updateWorkflow.mutateAsync({
-        clientId,
-        data: { checklist_ia_status: workflowStatus }
-      });
+      // Recalcular workflow completo baseado em dados reais
+      await recalcular(clientId);
       
       toast.success('Checklist salvo com sucesso!');
     } catch (error) {

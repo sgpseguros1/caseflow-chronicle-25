@@ -1,10 +1,13 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Circle, Clock, AlertTriangle, FileText, Stethoscope, Building2, Scale, Banknote } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, AlertTriangle, FileText, Stethoscope, Building2, Scale, Banknote, RefreshCw } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useRecalcularWorkflow } from '@/hooks/useRecalcularWorkflow';
+import { Button } from '@/components/ui/button';
 
 interface ClientWorkflowSectionProps {
   clientId: string;
@@ -81,6 +84,15 @@ function getStepIcon(status: string) {
 }
 
 export function ClientWorkflowSection({ clientId }: ClientWorkflowSectionProps) {
+  const { recalcular } = useRecalcularWorkflow();
+
+  // Auto-recalculate on mount to sync with real data
+  useEffect(() => {
+    if (clientId) {
+      recalcular(clientId);
+    }
+  }, [clientId, recalcular]);
+
   const { data: workflow, isLoading } = useQuery({
     queryKey: ['client-workflow', clientId],
     queryFn: async () => {
@@ -124,9 +136,20 @@ export function ClientWorkflowSection({ clientId }: ClientWorkflowSectionProps) 
             <FileText className="h-5 w-5 text-primary" />
             Workflow de Triagem
           </CardTitle>
-          <Badge variant="outline" className="text-sm">
-            {progress}% concluído
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => recalcular(clientId)}
+              title="Recalcular status"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Badge variant="outline" className="text-sm">
+              {progress}% concluído
+            </Badge>
+          </div>
         </div>
         {/* Progress bar */}
         <div className="w-full h-2 bg-muted rounded-full overflow-hidden mt-2">
