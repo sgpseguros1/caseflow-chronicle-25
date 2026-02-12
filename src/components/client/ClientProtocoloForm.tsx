@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCreateProtocolo, useUpsertAuxilioAcidente, useUpsertProtocoloFinanceiro } from '@/hooks/useProtocolos';
+import { useRecalcularWorkflow } from '@/hooks/useRecalcularWorkflow';
 import { useFuncionarios } from '@/hooks/useFuncionarios';
 import { useAdvogados } from '@/hooks/useAdvogados';
 import { useSeguradoras } from '@/hooks/useSeguradoras';
@@ -61,6 +62,7 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
   const createProtocolo = useCreateProtocolo();
   const upsertAuxilio = useUpsertAuxilioAcidente();
   const upsertFinanceiro = useUpsertProtocoloFinanceiro();
+  const { recalcular } = useRecalcularWorkflow();
   
   const { data: funcionarios = [] } = useFuncionarios();
   const { data: advogados = [] } = useAdvogados();
@@ -135,6 +137,9 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
           valor_estimado: data.valor_estimado,
         });
       }
+
+      // Recalcular workflow após criação de protocolo
+      await recalcular(clienteId);
 
       toast.success('Protocolo criado com sucesso!');
       onSuccess();
