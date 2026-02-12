@@ -15,6 +15,7 @@ import { useClientPermissions } from '@/hooks/useClientPermissions';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientProtocolosTab } from '@/components/client/ClientProtocolosTab';
+import { ClientWorkflowSection } from '@/components/client/ClientWorkflowSection';
 import { formatDateOnly } from '@/lib/dateUtils';
 
 export default function ClientViewPage() {
@@ -187,6 +188,9 @@ export default function ClientViewPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Workflow de Triagem */}
+      {id && <ClientWorkflowSection clientId={id} />}
 
       {/* Tabs */}
       <Tabs defaultValue={defaultTab} className="space-y-4">
