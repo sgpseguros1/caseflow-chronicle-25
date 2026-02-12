@@ -44,7 +44,7 @@ interface FormData {
   data_acidente: string;
   data_requerimento: string;
   numero_protocolo_inss: string;
-  tipo_beneficio: TipoBeneficio | '';
+  tipo_beneficio: TipoBeneficio | '' | '__none__';
   situacao_atual: string;
   pericia_realizada: boolean;
   data_pericia: string;
@@ -71,16 +71,16 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
       natureza: 'ADMINISTRATIVO',
       prioridade: 'normal',
       status: 'novo',
-      funcionario_id: '',
-      advogado_id: '',
-      seguradora_id: '',
+      funcionario_id: '__none__',
+      advogado_id: '__none__',
+      seguradora_id: '__none__',
       observacoes: '',
       sla_dias: 30,
       prazo_estimado: '',
       data_acidente: '',
       data_requerimento: '',
       numero_protocolo_inss: '',
-      tipo_beneficio: '',
+      tipo_beneficio: '__none__',
       situacao_atual: '',
       pericia_realizada: false,
       data_pericia: '',
@@ -103,9 +103,9 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
         natureza: data.natureza,
         prioridade: data.prioridade,
         status: data.status,
-        funcionario_id: data.funcionario_id || null,
-        advogado_id: data.advogado_id || null,
-        seguradora_id: data.seguradora_id || null,
+        funcionario_id: data.funcionario_id === '__none__' ? null : data.funcionario_id || null,
+        advogado_id: data.advogado_id === '__none__' ? null : data.advogado_id || null,
+        seguradora_id: data.seguradora_id === '__none__' ? null : data.seguradora_id || null,
         observacoes: data.observacoes || null,
         sla_dias: data.sla_dias,
         prazo_estimado: data.prazo_estimado || null,
@@ -118,7 +118,7 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
           data_acidente: data.data_acidente || null,
           data_requerimento: data.data_requerimento || null,
           numero_protocolo_inss: data.numero_protocolo_inss || null,
-          tipo_beneficio: data.tipo_beneficio || null,
+          tipo_beneficio: data.tipo_beneficio === '__none__' || !data.tipo_beneficio ? null : data.tipo_beneficio,
           situacao_atual: data.situacao_atual || null,
           pericia_realizada: data.pericia_realizada,
           data_pericia: data.data_pericia || null,
@@ -249,11 +249,12 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
               name="funcionario_id"
               control={control}
               render={({ field }) => (
-                <Select value={field.value || ''} onValueChange={field.onChange}>
+                <Select value={field.value || '__none__'} onValueChange={field.onChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecionar..." />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="__none__">Nenhum</SelectItem>
                     {funcionariosAtivos.map((f) => (
                       <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
                     ))}
@@ -270,11 +271,12 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
               name="advogado_id"
               control={control}
               render={({ field }) => (
-                <Select value={field.value || ''} onValueChange={field.onChange}>
+                <Select value={field.value || '__none__'} onValueChange={field.onChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecionar..." />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="__none__">Nenhum</SelectItem>
                     {advogadosAtivos.map((a) => (
                       <SelectItem key={a.id} value={a.id}>{a.nome} - OAB {a.oab}/{a.uf}</SelectItem>
                     ))}
@@ -291,11 +293,12 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
               name="seguradora_id"
               control={control}
               render={({ field }) => (
-                <Select value={field.value || ''} onValueChange={field.onChange}>
+                <Select value={field.value || '__none__'} onValueChange={field.onChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecionar..." />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="__none__">Nenhuma</SelectItem>
                     {seguradorasAtivas.map((s) => (
                       <SelectItem key={s.id} value={s.id}>{s.razao_social}</SelectItem>
                     ))}
@@ -359,11 +362,12 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
                 name="tipo_beneficio"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value || ''} onValueChange={field.onChange}>
+                  <Select value={field.value || '__none__'} onValueChange={field.onChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecionar..." />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
                       {Object.entries(TIPO_BENEFICIO_LABELS).map(([key, label]) => (
                         <SelectItem key={key} value={key}>{label}</SelectItem>
                       ))}
