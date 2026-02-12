@@ -17,7 +17,7 @@ export function useRecalcularWorkflow() {
       // Fetch all related data in parallel
       const checklistRes: any = await supabase.from('client_checklist_ia' as any).select('status, concluido_em').eq('client_id', clientId).maybeSingle();
       const bausRes: any = await supabase.from('client_baus' as any).select('id, status').eq('client_id', clientId);
-      const protocolosRes: any = await supabase.from('protocolos' as any).select('id, status').eq('client_id', clientId);
+      const protocolosRes: any = await supabase.from('protocolos' as any).select('id, status').eq('cliente_id', clientId);
       const periciasRes: any = await supabase.from('pericias' as any).select('id, status').eq('cliente_id', clientId);
       const financeiroRes: any = await supabase.from('lancamentos_financeiros' as any).select('id').eq('cliente_id', clientId).limit(1);
       const workflowRes: any = await supabase.from('client_workflow' as any).select('*').eq('client_id', clientId).maybeSingle();
