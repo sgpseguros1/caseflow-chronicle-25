@@ -1034,6 +1034,59 @@ export type Database = {
           },
         ]
       }
+      client_historico: {
+        Row: {
+          acao: string
+          categoria: string
+          client_id: string
+          created_at: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          descricao: string
+          id: string
+          registro_id: string | null
+          tabela_origem: string | null
+          usuario_id: string | null
+          usuario_nome: string | null
+        }
+        Insert: {
+          acao: string
+          categoria?: string
+          client_id: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          descricao: string
+          id?: string
+          registro_id?: string | null
+          tabela_origem?: string | null
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Update: {
+          acao?: string
+          categoria?: string
+          client_id?: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          descricao?: string
+          id?: string
+          registro_id?: string | null
+          tabela_origem?: string | null
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_historico_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_seguradoras: {
         Row: {
           client_id: string
