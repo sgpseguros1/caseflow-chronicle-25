@@ -1149,6 +1149,7 @@ export type Database = {
           checklist_ia_status: string | null
           client_id: string
           cliente_cadastrado: boolean | null
+          conta_status: string | null
           created_at: string
           financeiro_liberado: boolean | null
           id: string
@@ -1175,6 +1176,7 @@ export type Database = {
           checklist_ia_status?: string | null
           client_id: string
           cliente_cadastrado?: boolean | null
+          conta_status?: string | null
           created_at?: string
           financeiro_liberado?: boolean | null
           id?: string
@@ -1201,6 +1203,7 @@ export type Database = {
           checklist_ia_status?: string | null
           client_id?: string
           cliente_cadastrado?: boolean | null
+          conta_status?: string | null
           created_at?: string
           financeiro_liberado?: boolean | null
           id?: string

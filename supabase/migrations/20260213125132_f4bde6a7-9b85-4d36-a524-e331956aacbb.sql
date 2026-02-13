@@ -1,0 +1,1 @@
+ALTER TABLE public.client_workflow ADD COLUMN IF NOT EXISTS conta_status text;

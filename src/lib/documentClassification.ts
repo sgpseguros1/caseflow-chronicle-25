@@ -8,6 +8,7 @@ export type WorkflowStepKey =
   | 'checklist' 
   | 'bau' 
   | 'bo' 
+  | 'conta'
   | 'laudo' 
   | 'protocolo' 
   | 'pericia' 
@@ -42,6 +43,11 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
     label: 'Boletim de Ocorrência / CAT',
   },
   {
+    step: 'conta',
+    keywords: ['CONTA', 'BANCARI', 'PICPAY', 'NUBANK', 'EXTRATO', 'PIX', 'COMPROVANTE CONTA', 'DADOS BANCARIOS', 'DADOS BANCÁRIOS', 'AGENCIA', 'AGÊNCIA'],
+    label: 'Conta Bancária',
+  },
+  {
     step: 'laudo',
     keywords: ['LAUDO', 'ATESTADO', 'PARECER', 'EXAME', 'RAIO', 'RX', 'TOMOGRAFIA', 'RESSONANCIA', 'RESSONÂNCIA', 'ULTRASSOM', 'RECEITA', 'CID', 'SEQUELA'],
     label: 'Laudo / Exames Médicos',
@@ -58,8 +64,8 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   },
   {
     step: 'financeiro',
-    keywords: ['CONTA', 'BANCARI', 'PICPAY', 'NUBANK', 'PAGAMENTO', 'RECIBO', 'NOTA FISCAL', 'NF', 'COMPROVANTE PAGAMENTO', 'EXTRATO', 'PIX', 'TRANSFERENCIA', 'TRANSFERÊNCIA', 'BOLETO'],
-    label: 'Financeiro',
+    keywords: ['PAGAMENTO', 'RECIBO', 'NOTA FISCAL', 'NF', 'COMPROVANTE PAGAMENTO', 'HONORARIO', 'HONORÁRIO', 'CONTRATO HONORARIO', 'BOLETO', 'TRANSFERENCIA', 'TRANSFERÊNCIA'],
+    label: 'Financeiro / Honorários',
   },
   {
     step: 'juridico',
@@ -108,6 +114,7 @@ export function classificarDocumentos(
     checklist: [],
     bau: [],
     bo: [],
+    conta: [],
     laudo: [],
     protocolo: [],
     pericia: [],

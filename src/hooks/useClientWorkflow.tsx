@@ -11,6 +11,7 @@ export interface ClientWorkflow {
   bau_status: string | null;
   bau_id: string | null;
   bo_status: string | null;
+  conta_status: string | null;
   bo_numero: string | null;
   bo_data: string | null;
   bo_orgao: string | null;
