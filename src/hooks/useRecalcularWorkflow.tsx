@@ -42,7 +42,7 @@ export function useRecalcularWorkflow() {
       const hasDocCTPS = docNames.some(n => n.includes('CTPS') || n.includes('CARTEIRA DE TRABALHO'));
       const hasDocRX = docNames.some(n => n.includes('RAIO') || n.includes('RX') || n.includes('EXAME') || n.includes('TOMOGRAFIA') || n.includes('RESSONANCIA'));
       const hasDocCNH = docNames.some(n => n.includes('CNH') || n.includes('HABILITACAO') || n.includes('HABILITAÇÃO'));
-      const hasDocContaBancaria = docNames.some(n => n.includes('CONTA') || n.includes('BANCARI') || n.includes('PICPAY') || n.includes('NUBANK'));
+      const hasDocContaBancaria = docNames.some(n => n.includes('CONTA') || n.includes('BANCARI') || n.includes('PICPAY') || n.includes('NUBANK') || n.includes('EXTRATO') || n.includes('DADOS BANCARIOS') || n.includes('AGENCIA'));
       const hasDocCompResid = docNames.some(n => n.includes('COMP') && n.includes('RESID') || n.includes('COMPROVANTE DE RESIDENCIA'));
 
       // --- Calculate each step status ---
@@ -150,10 +150,13 @@ export function useRecalcularWorkflow() {
         );
       }
 
-      // 8. Financeiro
-      const financeiroLiberado = temFinanceiro || hasDocContaBancaria;
+      // 8. Conta Bancária - detect from documents
+      const contaStatus = hasDocContaBancaria ? 'concluido' : (client?.bank_name ? 'concluido' : null);
 
-      // 9. Jurídico - check if there's a judicial process
+      // 9. Financeiro - only payments/honorários
+      const financeiroLiberado = temFinanceiro;
+
+      // 10. Jurídico - check if there's a judicial process
       const processosRes: any = await supabase
         .from('processos_judiciais' as any)
         .select('id')
@@ -170,6 +173,7 @@ export function useRecalcularWorkflow() {
         bau_acionado: bauAcionado,
         bau_status: bauStatus,
         bo_status: boStatus,
+        conta_status: contaStatus,
         laudo_status: laudoStatus,
         protocolo_status: protocoloStatus,
         pericia_liberada: periciaLiberada,
