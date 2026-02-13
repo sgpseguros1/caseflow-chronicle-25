@@ -98,20 +98,35 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
 
   const onSubmit = async (data: FormData) => {
     try {
-      // 1. Criar protocolo principal
-      const result = await createProtocolo.mutateAsync({
+      // Build clean insert payload - only include fields that exist in the protocolos table
+      const insertPayload: Record<string, any> = {
         cliente_id: clienteId,
         tipo,
         natureza: data.natureza,
         prioridade: data.prioridade,
         status: data.status,
-        funcionario_id: data.funcionario_id === '__none__' ? null : data.funcionario_id || null,
-        advogado_id: data.advogado_id === '__none__' ? null : data.advogado_id || null,
-        seguradora_id: data.seguradora_id === '__none__' ? null : data.seguradora_id || null,
         observacoes: data.observacoes || null,
         sla_dias: data.sla_dias,
-        prazo_estimado: data.prazo_estimado || null,
-      });
+      };
+
+      // Only add optional FK fields if they have valid values
+      if (data.funcionario_id && data.funcionario_id !== '__none__') {
+        insertPayload.funcionario_id = data.funcionario_id;
+      }
+      if (data.advogado_id && data.advogado_id !== '__none__') {
+        insertPayload.advogado_id = data.advogado_id;
+      }
+      if (data.seguradora_id && data.seguradora_id !== '__none__') {
+        insertPayload.seguradora_id = data.seguradora_id;
+      }
+      if (data.prazo_estimado) {
+        insertPayload.prazo_estimado = data.prazo_estimado;
+      }
+
+      console.log('Inserindo protocolo:', insertPayload);
+
+      // 1. Criar protocolo principal
+      const result = await createProtocolo.mutateAsync(insertPayload as any);
 
       // 2. Se for Auxílio-Acidente, criar dados específicos
       if (tipo === 'AUXILIO_ACIDENTE') {
@@ -143,9 +158,10 @@ export function ClientProtocoloForm({ clienteId, onSuccess }: ClientProtocoloFor
 
       toast.success('Protocolo criado com sucesso!');
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao criar protocolo:', error);
-      toast.error('Erro ao criar protocolo. Tente novamente.');
+      const msg = error?.message || 'Erro desconhecido';
+      toast.error(`Erro ao criar protocolo: ${msg}`);
     }
   };
 
