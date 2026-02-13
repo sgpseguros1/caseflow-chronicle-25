@@ -55,13 +55,31 @@ export function useRecalcularWorkflow() {
       if (checklist) {
         if (checklist.status === 'concluido' || checklist.concluido_em) {
           checklistStatus = 'concluido';
-        } else if (checklist.status === 'em_preenchimento') {
-          checklistStatus = 'em_preenchimento';
-        } else if (checklist.status) {
-          checklistStatus = checklist.status;
+        } else {
+          // Count filled fields to determine real completion
+          const checklistFullRes: any = await supabase
+            .from('client_checklist_ia' as any)
+            .select('*')
+            .eq('client_id', clientId)
+            .maybeSingle();
+          const checklistFull = checklistFullRes.data;
+          if (checklistFull) {
+            const skipFields = ['id', 'client_id', 'created_at', 'updated_at', 'status', 'concluido_em', 'concluido_por'];
+            const allFields = Object.keys(checklistFull).filter(k => !skipFields.includes(k));
+            const filledFields = allFields.filter(k => checklistFull[k] !== null && checklistFull[k] !== '' && checklistFull[k] !== undefined);
+            const fillRatio = allFields.length > 0 ? filledFields.length / allFields.length : 0;
+            if (fillRatio >= 0.8) {
+              checklistStatus = 'concluido';
+            } else if (filledFields.length > 0) {
+              checklistStatus = 'em_preenchimento';
+            }
+          } else if (checklist.status === 'em_preenchimento') {
+            checklistStatus = 'em_preenchimento';
+          } else if (checklist.status) {
+            checklistStatus = checklist.status;
+          }
         }
       } else if (docs.length >= 3) {
-        // If 3+ documents uploaded but no checklist record, infer as concluido
         checklistStatus = 'concluido';
       }
 
