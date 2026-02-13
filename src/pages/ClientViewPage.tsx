@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, FileText, AlertTriangle, User, MapPin, Phone, Building2, Car, Stethoscope, Hospital, UserPlus, Briefcase, Loader2, Download, Eye, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, FileText, AlertTriangle, User, MapPin, Phone, Building2, Car, Stethoscope, Hospital, UserPlus, Briefcase, Loader2, Download, Eye, ClipboardList, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientProtocolosTab } from '@/components/client/ClientProtocolosTab';
 import { ClientWorkflowSection } from '@/components/client/ClientWorkflowSection';
+import { ClientHistoricoTab } from '@/components/client/ClientHistoricoTab';
 import { formatDateOnly } from '@/lib/dateUtils';
 
 export default function ClientViewPage() {
@@ -194,16 +195,20 @@ export default function ClientViewPage() {
 
       {/* Tabs */}
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="dados">Dados Pessoais</TabsTrigger>
           <TabsTrigger value="acidente">Acidente</TabsTrigger>
           <TabsTrigger value="medico">Médico</TabsTrigger>
-          <TabsTrigger value="documentos">Documentos ({documents.length})</TabsTrigger>
+          <TabsTrigger value="documentos">Docs ({documents.length})</TabsTrigger>
           <TabsTrigger value="protocolos" className="gap-1">
             <ClipboardList className="h-4 w-4" />
             Protocolos
           </TabsTrigger>
           <TabsTrigger value="processos">Processos ({processes.length})</TabsTrigger>
+          <TabsTrigger value="historico" className="gap-1">
+            <History className="h-4 w-4" />
+            Histórico
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dados" className="space-y-4">
@@ -469,6 +474,10 @@ export default function ClientViewPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="historico">
+          {id && <ClientHistoricoTab clientId={id} />}
         </TabsContent>
       </Tabs>
     </div>
